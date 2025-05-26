@@ -38,7 +38,7 @@ use Psr\Log\LogLevel;
 use Throwable;
 use yii\base\Event;
 use yii\base\InvalidRouteException;
-use yii\log\Dispatcher
+use yii\log\Dispatcher;
 use yii\log\Logger;
 
 /**
@@ -94,7 +94,7 @@ class Cockpit extends Plugin
     /**
      * @inheritdoc
      */
-    public function(): void
+    public function init(): void
     {
         parent::init();
         self::$plugin = $this;
@@ -103,7 +103,7 @@ class Cockpit extends Plugin
         $this->registerLogTarget();
 
         $request = Craft::$app->getRequest();
-        if ($request->isConsoleRequest()) {
+        if ($request->getIsConsoleRequest()) {
             $this->controllerNamespace = 'craftpulse\cockpit\console\controllers';
         }
 
