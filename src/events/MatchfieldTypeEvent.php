@@ -24,7 +24,7 @@ class MatchfieldTypeEvent extends Event
     public ?MatchfieldType $matchfieldType = null;
 
     /**
-     * @var bool Whether the product type is brand new
+     * @var bool Whether the matchfield type is brand new
      */
     public bool $isNew = false;
 }

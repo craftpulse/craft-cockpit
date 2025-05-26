@@ -98,7 +98,7 @@ class MatchfieldType extends Model
     }
 
     /**
-     * Returns the product types’s config.
+     * Returns the matchfield types’s config.
      *
      * @return array
      * @since 5.2.0
