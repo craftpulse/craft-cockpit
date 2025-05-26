@@ -11,6 +11,9 @@
 namespace craftpulse\cockpit;
 
 use Craft;
+use Monolog\Formatter\LineFormatter;
+use Psr\Log\LogLevel;
+use Throwable;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\elements\User;
@@ -21,21 +24,20 @@ use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\Json;
 use craft\log\MonologTarget;
+use craft\services\Elements;
 use craft\services\Plugins;
 use craft\services\UserPermissions;
 use craft\services\Utilities;
-use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 use craft\web\View;
-
-use craftpulse\cockpit\services\ServicesTrait;
+use craft\web\twig\variables\CraftVariable;
+use craftpulse\cockpit\elements\Contact;
+use craftpulse\cockpit\elements\Job;
+use craftpulse\cockpit\elements\Office;
 use craftpulse\cockpit\models\SettingsModel;
-
+use craftpulse\cockpit\services\ServicesTrait;
 use craftpulse\passwordpolicy\rules\UserRules;
 use craftpulse\passwordpolicy\variables\PasswordPolicyVariable;
-use Monolog\Formatter\LineFormatter;
-use Psr\Log\LogLevel;
-use Throwable;
 use yii\base\Event;
 use yii\base\InvalidRouteException;
 use yii\log\Dispatcher;
@@ -123,6 +125,15 @@ class Cockpit extends Plugin
                 ['name' => $this->name]
             )
         );
+        Event::on(Elements::class, Elements::EVENT_REGISTER_ELEMENT_TYPES, function (RegisterComponentTypesEvent $event) {
+            $event->types[] = Job::class;
+        });
+        Event::on(Elements::class, Elements::EVENT_REGISTER_ELEMENT_TYPES, function (RegisterComponentTypesEvent $event) {
+            $event->types[] = Office::class;
+        });
+        Event::on(Elements::class, Elements::EVENT_REGISTER_ELEMENT_TYPES, function (RegisterComponentTypesEvent $event) {
+            $event->types[] = Contact::class;
+        });
     }
 
     // Public Methods
@@ -171,6 +182,13 @@ class Cockpit extends Plugin
 
         if (!$general->allowAdminChanges) {
             $editableSettings = false;
+        }
+
+        if ($currentUser->can('cockpit:view-contacts')) {
+            $subNavs['contacts'] = [
+                'label' => Craft::t('cockpit', 'Contacts'),
+                'url' => 'cockpit/contacts',
+            ];
         }
 
         if ($currentUser->can('cockpit:view-jobs')) {
@@ -265,9 +283,22 @@ class Cockpit extends Plugin
                 // Merge so that settings controller action comes first (important!)
                 $event->rules = array_merge(
                     [
+                        // Settings
                         'cockpit' => 'cockpit/settings/edit',
                         'cockpit/settings' => 'cockpit/settings/edit',
                         'cockpit/plugins/cockpit' => 'cockpit/settings/edit',
+
+                        // Contact Element
+                        'cockpit/contacts' => ['template' => 'cockpit/contacts/_index.twig'],
+                        'cockpit/contacts/<elementId:\\d+>' => 'elements/edit',
+
+                        // Job Element
+                        'cockpit/jobs' => ['template' => 'cockpit/jobs/_index.twig'],
+                        'cockpit/jobs/<elementId:\\d+>' => 'elements/edit',
+
+                        // Office Element
+                        'cockpit/offices' => ['template' => 'cockpit/offices/_index.twig'],
+                        'cockpit/offices/<elementId:\\d+>' => 'elements/edit',
                     ],
                     $event->rules
                 );
@@ -285,6 +316,9 @@ class Cockpit extends Plugin
                 $event->permissions[] = [
                     'heading' => 'Cockpit',
                     'permissions' => [
+                        'cockpit:contacts' => [
+                            'label' => Craft::t('cockpit', 'Contacts.'),
+                        ],
                         'cockpit:jobs' => [
                             'label' => Craft::t('cockpit', 'View Jobs.'),
                         ],
