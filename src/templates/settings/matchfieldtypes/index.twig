@@ -1,4 +1,5 @@
 {% extends 'cockpit/_layouts/cockpit-cp-settings' %}
+{% do view.registerAssetBundle('craft\\web\\assets\\admintable\\AdminTableAsset') -%}
 
 {%- set crumbs = [
     { label: 'Cockpit ATS'|t('cockpit'), url: url('cockpit') },
@@ -30,15 +31,15 @@
 
 {% js %}
     var columns = [
-    { name: '__slot:title', title: Craft.t('cockpit', 'Name') },
-    { name: '__slot:handle', title: Craft.t('cockpit', 'Handle') },
+        { name: '__slot:title', title: Craft.t('cockpit', 'Name') },
+        { name: '__slot:handle', title: Craft.t('cockpit', 'Handle') },
     ];
 
     let config = {
-    columns: columns,
-    container: '#matchfieldtypes-vue-admin-table',
-    emptyMessage: Craft.t('cockpit', 'No matchfield types exist yet.'),
-    tableData: {{ tableData|json_encode|raw }}
+        columns: columns,
+        container: '#matchfieldtypes-vue-admin-table',
+        emptyMessage: Craft.t('cockpit', 'No matchfield types exist yet.'),
+        tableData: {{ tableData|json_encode|raw }}
     };
 
     {% if not readOnly %}
