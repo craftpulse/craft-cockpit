@@ -7,43 +7,34 @@
 
 {% block actionButton %}
     {% if not readOnly %}
-        <a href="{{ url('cockpit/settings/matchfieldtypes/new') }}" class="btn submit add icon">{{ 'New match field type'|t('cockpit') }}</a>
+        <a href="{{ url('cockpit/settings/matchfields/new') }}" class="btn submit add icon">{{ 'New match field type'|t('cockpit') }}</a>
     {% endif %}
 {% endblock %}
 
-{% block content %}
-    <div id="matchfieldtypes-vue-admin-table"></div>
-{% endblock %}
+{% if readOnly %}
+    {% set contentNotice = readOnlyNotice() %}
+{% endif %}
 
-{% set tableData = [] %}
-{% for type in matchfieldTypes %}
-    {% set tableData = tableData|merge(
-        [
-            {
-                id: type.id,
-                title: type.name|t('cockpit'),
-                url: type.cpEditUrl,
-                handle: type.handle|e,
-            }
-        ]
-    ) %}
-{% endfor %}
+{% block content %}
+    <div id="matchfields-vue-admin-table"></div>
+{% endblock %}
 
 {% js %}
     var columns = [
         { name: '__slot:title', title: Craft.t('cockpit', 'Name') },
         { name: '__slot:handle', title: Craft.t('cockpit', 'Handle') },
+        { name: 'type', title: Craft.t('app', 'Type'), sortField: true },
     ];
 
     let config = {
         columns: columns,
-        container: '#matchfieldtypes-vue-admin-table',
-        emptyMessage: Craft.t('cockpit', 'No matchfield types exist yet.'),
-        tableData: {{ tableData|json_encode|raw }}
+        container: '#matchfields-vue-admin-table',
+        emptyMessage: Craft.t('cockpit', 'No matchfields exist yet.'),
+        tableDataEndpoint: 'cockpit/matchfields/table-data',
     };
 
     {% if not readOnly %}
-        config['deleteAction'] = 'cockpit/matchfield-types/delete-matchfield-type';
+        config['deleteAction'] = 'cockpit/matchfields/delete-matchfield';
         config['deleteConfirmationMessage'] = Craft.t('cockpit', 'Are you sure you want to delete “{name}” and all its matchfields? Please make sure you have a backup of your database before performing this destructive action.');
     {% endif %}
 

@@ -1,0 +1,289 @@
+<?php
+/**
+ * Cockpit ATS plugin for Craft CMS
+ *
+ * This plugin fully synchronises with the Cockpit ATS system.
+ *
+ * @link      https://craft-pulse.com
+ * @copyright Copyright (c) 2025 CraftPulse
+ */
+
+namespace craftpulse\cockpit\controllers;
+
+use Craft;
+use craft\base\Element;
+use craft\enums\PropagationMethod;
+use craft\helpers\UrlHelper;
+use craft\web\Controller;
+
+use craftpulse\cockpit\Cockpit;
+use craftpulse\cockpit\errors\MatchFieldNotFoundException;
+use craftpulse\cockpit\models\MatchField as MatchFieldModel;
+use craftpulse\cockpit\models\MatchField_SiteSettings as MatchField_SiteSettingsModel;
+
+use Throwable;
+use yii\base\InvalidConfigException;
+use yii\web\BadRequestHttpException;
+use yii\web\ForbiddenHttpException;
+use yii\web\MethodNotAllowedHttpException;
+use yii\web\NotFoundHttpException;
+use yii\web\Response;
+
+class MatchfieldsController extends Controller
+{
+    private bool $readOnly;
+
+    /**
+     * @inheritdoc
+     */
+    public function beforeAction($action): bool
+    {
+        if (!parent::beforeAction($action)) {
+            return false;
+        }
+
+        $viewActions = ['index', 'edit-matchfield', 'table-data'];
+        if (in_array($action->id, $viewActions)) {
+            // Some actions require admin but not allowAdminChanges
+            $this->requireAdmin(false);
+        } else {
+            // All other actions require an admin & allowAdminChanges
+            $this->requireAdmin();
+        }
+
+        $this->readOnly = !Craft::$app->getConfig()->getGeneral()->allowAdminChanges;
+
+        return true;
+    }
+
+    /**
+     * Matchfield index.
+     *
+     * @param array $variables
+     * @return Response The rendering result
+     */
+    public function actionMatchfieldIndex(): Response
+    {
+        // Ensure they have permission to edit the plugin settings
+        $currentUser = Craft::$app->getUser()->getIdentity();
+        if (!$currentUser->can('cockpit:settings-matchfields')) {
+            throw new ForbiddenHttpException('You do not have permission to view the Matchfield settings.');
+        }
+
+        $general = Craft::$app->getConfig()->getGeneral();
+        if (!$general->allowAdminChanges) {
+            throw new ForbiddenHttpException('Unable to edit matchfield settings because admin changes are disabled in this environment.');
+        }
+
+        $matchFields = Cockpit::$plugin->getMatchFields()->getAllMatchFields();
+
+        // View the matchfield settings
+        $pluginName = 'Cockpit';
+        $variables = [];
+        $templateTitle = Craft::t('cockpit', 'Matchfields overview');
+        $variables['title'] = $templateTitle;
+        $variables['readOnly'] = $this->readOnly;
+        $variables['docTitle'] = "{$pluginName} - {$templateTitle}";
+        $variables['crumbs'] = [
+            [
+                'label' => $pluginName,
+                'url' => UrlHelper::cpUrl('cockpit'),
+            ],
+            [
+                'label' => $templateTitle,
+                'url' => UrlHelper::cpUrl('cockpit/plugin'),
+            ],
+        ];
+        $variables['matchfields'] = $matchFields;
+
+        return $this->renderTemplate('cockpit/settings/matchfields/index', $variables);
+    }
+
+    /**
+     * Edit a matchfield.
+     *
+     * @param int|null $matchFieldId The matchfields’ ID, if any.
+     * @param MatchFieldModel|null $matchField
+     * @return Response
+     * @throws ForbiddenHttpException
+     * @throws NotFoundHttpException if the requested match field cannot be found
+     * @throws InvalidConfigException
+     */
+    public function actionEditMatchfield(?int $matchFieldId = null, ?MatchfieldModel $matchField = null): Response
+    {
+        if ($matchFieldId === null && $this->readOnly) {
+            throw new ForbiddenHttpException('Administrative changes are disallowed in this environment.');
+        }
+
+        $matchFieldService = Cockpit::$plugin->getMatchfields();
+
+        $variables = [
+            'matchfieldId' => $matchFieldId,
+            'brandNewMatchfield' => false,
+        ];
+
+        if ($matchFieldId !== null) {
+            if ($matchField === null) {
+                $matchField = $matchFieldService->getMatchfieldById($matchFieldId);
+
+                if (!$matchField) {
+                    throw new NotFoundHttpException('Matchfield not found');
+                }
+            }
+
+            $variables['title'] = trim($matchField->name) ?: Craft::t('cockpit', 'Edit Matchfield');
+        } else {
+            if ($matchField === null) {
+                $matchField = new MatchfieldModel();
+                $variables['brandNewMatchfield'] = true;
+            }
+
+            $variables['title'] = Craft::t('cockpit', 'Create a new matchfield');
+        }
+
+        // This needs to fetch data from the API
+        $typeOptions = [
+            'type1' => Craft::t('cockpit', 'Type 1'),
+            'type2' => Craft::t('cockpit', 'Type 2'),
+        ];
+
+        if (!$matchField->type) {
+            $matchField->type = 'type1';
+        }
+
+        $variables['matchfield'] = $matchField;
+        $variables['typeOptions'] = $typeOptions;
+        $variables['readOnly'] = $this->readOnly;
+
+        //$this->getView()->registerAssetBundle(EditMatchfieldAsset::class);
+
+        return $this->renderTemplate('cockpit/settings/matchfields/_edit.twig', $variables);
+    }
+
+    /**
+     * Saves a match field.
+     *
+     * @return Response|null
+     * @throws BadRequestHttpException if any invalid site IDs are specified in the request
+     * @throws InvalidConfigException
+     * @throws Throwable
+     * @throws MatchFieldNotFoundException
+     * @throws MethodNotAllowedHttpException
+     */
+    public function actionSaveMatchfield(): ?Response
+    {
+        $this->requirePostRequest();
+
+        $matchFieldService = Cockpit::$plugin->getMatchfields();
+        $matchFieldId = $this->request->getBodyParam('matchfieldId');
+        if ($matchFieldId) {
+            $matchField = $matchFieldService->getMatchFieldById($matchFieldId);
+            if (!$matchField) {
+                throw new BadRequestHttpException("Invalid matchfield ID: $matchFieldId");
+            }
+        } else {
+            $matchField = new MatchfieldModel();
+        }
+
+        // Main match field settings
+        $matchField->name = $this->request->getBodyParam('name');
+        $matchField->handle = $this->request->getBodyParam('handle');
+        $matchField->type = $this->request->getBodyParam('type');
+        $matchField->enableVersioning = $this->request->getBodyParam('enableVersioning', true);
+        $matchField->propagationMethod = PropagationMethod::tryFrom($this->request->getBodyParam('propagationMethod') ?? '')
+            ?? PropagationMethod::All;
+        $matchField->previewTargets = $this->request->getBodyParam('previewTargets') ?: [];
+        $matchField->maxLevels = $this->request->getBodyParam('maxLevels') ?: null;
+        $matchField->defaultPlacement = $this->request->getBodyParam('defaultPlacement') ?? $matchField->defaultPlacement;
+
+        // Site-specific settings
+        $allSiteSettings = [];
+
+        foreach (Craft::$app->getSites()->getAllSites() as $site) {
+            $postedSettings = $this->request->getBodyParam('sites.' . $site->handle);
+
+            // Skip disabled sites if this is a multi-site install
+            if (Craft::$app->getIsMultiSite() && empty($postedSettings['enabled'])) {
+                continue;
+            }
+
+            $siteSettings = new Matchfield_SiteSettings();
+            $siteSettings->siteId = $site->id;
+            $siteSettings->uriFormat = $postedSettings['uriFormat'] ?? null;
+            $siteSettings->enabledByDefault = (bool)$postedSettings['enabledByDefault'];
+
+            if ($siteSettings->hasUrls = (bool)$siteSettings->uriFormat) {
+                $siteSettings->template = $postedSettings['template'] ?? null;
+            }
+
+            $allSiteSettings[$site->id] = $siteSettings;
+        }
+
+        $matchField->setSiteSettings($allSiteSettings);
+
+        // Save it
+        if (!$matchFieldService->saveMatchField($matchField)) {
+            $this->setFailFlash(Craft::t('cockpit', 'Couldn’t save matchfield.'));
+
+            // Send the match field back to the template
+            Craft::$app->getUrlManager()->setRouteParams([
+                'matchfield' => $matchField,
+            ]);
+
+            return null;
+        }
+
+        $this->setSuccessFlash(Craft::t('app', 'Matchfield saved.'));
+        return $this->redirectToPostedUrl($matchField);
+    }
+
+    /**
+     * Deletes a Match field.
+     *
+     * @return Response
+     */
+    public function actionDeleteMatchfield(): Response
+    {
+        $this->requirePostRequest();
+        $this->requireAcceptsJson();
+
+        $matchFieldId = $this->request->getRequiredBodyParam('id');
+
+        Cockpit::$plugin->getMatchFields()->deleteMatchfieldById($matchFieldId);
+
+        return $this->asSuccess();
+    }
+
+    /**
+     * Returns data formatted for AdminTable vue component
+     *
+     * @return Response
+     * @throws BadRequestHttpException
+     */
+    public function actionTableData(): Response
+    {
+        $this->requireAcceptsJson();
+
+        $matchFieldService = Cockpit::$plugin->getMatchfields();
+
+        $page = (int)$this->request->getParam('page', 1);
+        $limit = (int)$this->request->getParam('per_page', 100);
+        $searchTerm = $this->request->getParam('search');
+        $orderBy = match ($this->request->getParam('sort.0.field')) {
+            '__slot:handle' => 'handle',
+            'type' => 'type',
+            default => 'name',
+        };
+        $sortDir = match ($this->request->getParam('sort.0.direction')) {
+            'desc' => SORT_DESC,
+            default => SORT_ASC,
+        };
+
+        [$pagination, $tableData] = $matchFieldService->getMatchfieldTableData($page, $limit, $searchTerm, $orderBy, $sortDir);
+
+        return $this->asSuccess(data: [
+            'pagination' => $pagination,
+            'data' => $tableData,
+        ]);
+    }
+}

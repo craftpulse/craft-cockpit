@@ -10,18 +10,18 @@
 
 namespace craftpulse\cockpit\events;
 
-use craftpulse\cockpit\models\MatchfieldType;
+use craftpulse\cockpit\models\MatchField;
 use yii\base\Event;
 
 /**
  * Matchfield type event class.
  */
-class MatchfieldTypeEvent extends Event
+class MatchFieldEvent extends Event
 {
     /**
-     * @var MatchfieldType|null The matchfield type model associated with the event.
+     * @var MatchField|null The match field model associated with the event.
      */
-    public ?MatchfieldType $matchfieldType = null;
+    public ?MatchField $matchField = null;
 
     /**
      * @var bool Whether the matchfield type is brand new

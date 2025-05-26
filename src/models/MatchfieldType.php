@@ -20,7 +20,7 @@ use craft\helpers\UrlHelper;
 use craft\validators\HandleValidator;
 use craft\validators\UniqueValidator;
 
-use craftpulse\cockpit\records\MatchfieldType as MatchfieldTypeRecord;
+use craftpulse\cockpit\records\MatchField as MatchfieldRecord;
 
 use DateTime;
 
@@ -104,14 +104,14 @@ class MatchfieldType extends Model
             [['id'], 'number', 'integerOnly' => true],
             [['name', 'handle'], 'required'],
             [['name', 'handle'], 'string', 'max' => 255],
-            [['handle'], UniqueValidator::class, 'targetClass' => MatchfieldTypeRecord::class, 'targetAttribute' => ['handle'], 'message' => 'Not Unique'],
+            [['handle'], UniqueValidator::class, 'targetClass' => MatchField::class, 'targetAttribute' => ['handle'], 'message' => 'Not Unique'],
             [['handle'], HandleValidator::class, 'reservedWords' => ['id', 'dateCreated', 'dateUpdated', 'uid', 'title']],
         ];
     }
 
     public function getCpEditUrl(): string
     {
-        return UrlHelper::cpUrl('cockpit/settings/matchfieldtypes/' . $this->id);
+        return UrlHelper::cpUrl('cockpit/settings/matchfields/' . $this->id);
     }
 
     /**

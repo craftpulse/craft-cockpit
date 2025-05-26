@@ -17,7 +17,6 @@ use Throwable;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\elements\User;
-use craft\events\DefineRulesEvent;
 use craft\events\PluginEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
@@ -26,20 +25,16 @@ use craft\helpers\Json;
 use craft\log\MonologTarget;
 use craft\services\Elements;
 use craft\services\Plugins;
-use craft\services\ProjectConfig;
 use craft\services\UserPermissions;
 use craft\services\Utilities;
 use craft\web\UrlManager;
-use craft\web\View;
-use craft\web\twig\variables\CraftVariable;
-
 use craftpulse\cockpit\elements\Contact;
 use craftpulse\cockpit\elements\Job;
+use craftpulse\cockpit\elements\MatchFieldEntry;
 use craftpulse\cockpit\elements\Office;
 use craftpulse\cockpit\models\SettingsModel;
-use craftpulse\cockpit\services\MatchfieldTypes;
+use craftpulse\cockpit\services\MatchField;
 use craftpulse\cockpit\services\ServicesTrait;
-
 use yii\base\Event;
 use yii\base\InvalidRouteException;
 use yii\log\Dispatcher;
@@ -136,6 +131,9 @@ class Cockpit extends Plugin
         Event::on(Elements::class, Elements::EVENT_REGISTER_ELEMENT_TYPES, function (RegisterComponentTypesEvent $event) {
             $event->types[] = Contact::class;
         });
+        Event::on(Elements::class, Elements::EVENT_REGISTER_ELEMENT_TYPES, function (RegisterComponentTypesEvent $event) {
+            $event->types[] = MatchFieldEntry::class;
+        });
     }
 
     // Public Methods
@@ -155,9 +153,9 @@ class Cockpit extends Plugin
 
         $encoded_params = str_replace('\\', '', Json::encode($params));
 
-        $message = Craft::t('password-policy', $message . ' ' . $encoded_params, $params);
+        $message = Craft::t('cockpit', $message . ' ' . $encoded_params, $params);
 
-        Craft::getLogger()->log($message, $type, 'password-policy');
+        Craft::getLogger()->log($message, $type, 'cockpit');
     }
 
     /**
@@ -166,7 +164,7 @@ class Cockpit extends Plugin
      */
     public function getSettingsResponse(): mixed
     {
-        return Craft::$app->getResponse()->redirect('password-policy/settings');
+        return Craft::$app->getResponse()->redirect('cockpit/settings');
     }
 
     /**
@@ -283,10 +281,10 @@ class Cockpit extends Plugin
     {
         $projectConfigService = Craft::$app->getProjectConfig();
 
-        $matchfieldTypeService = $this->getMatchfieldTypes();
-        $projectConfigService->onAdd(MatchfieldTypes::CONFIG_MATCHFIELDTYPES_KEY . '.{uid}', [$matchfieldTypeService, 'handleChangedMatchfieldType'])
-            ->onUpdate(MatchfieldTypes::CONFIG_MATCHFIELDTYPES_KEY . '.{uid}', [$matchfieldTypeService, 'handleChangedMatchfieldType'])
-            ->onRemove(MatchfieldTypes::CONFIG_MATCHFIELDTYPES_KEY . '.{uid}', [$matchfieldTypeService, 'handleDeletedMatchfieldType']);
+        /*$matchFieldsService = $this->getMatchFields();
+        $projectConfigService->onAdd(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleChangedMatchField'])
+            ->onUpdate(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleChangedMatchField'])
+            ->onRemove(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleDeletedMatchField']);*/
     }
 
     /**
@@ -302,9 +300,9 @@ class Cockpit extends Plugin
                 $event->rules['cockpit/plugins/cockpit'] = 'cockpit/settings/edit';
 
                 // Match Field Types
-                $event->rules['cockpit/settings/matchfieldtypes'] = 'cockpit/matchfield-types/matchfield-type-index';
-                $event->rules['cockpit/settings/matchfieldtypes/<matchfieldTypeId:\d+>'] = 'cockpit/matchfield-types/edit-matchfield-type';
-                $event->rules['cockpit/settings/matchfieldtypes/new'] = 'cockpit/matchfield-types/edit-matchfield-type';
+                $event->rules['cockpit/settings/matchfields'] = 'cockpit/matchfields/matchfield-index';
+                $event->rules['cockpit/settings/matchfields/<matchFieldId:\d+>'] = 'cockpit/matchfields/edit-matchfield';
+                $event->rules['cockpit/settings/matchfields/new'] = 'cockpit/matchfields/edit-matchfield';
 
                 // Contact Elements
                 $event->rules['cockpit/contacts'] = ['template' => 'cockpit/contacts/_index.twig'];
@@ -317,6 +315,9 @@ class Cockpit extends Plugin
                 // Office Elements
                 $event->rules['cockpit/offices'] = ['template' => 'cockpit/offices/_index.twig'];
                 $event->rules['cockpit/offices/<elementId:\\d+>'] = 'elements/edit';
+
+                /*$event->rules['match-field-entries'] = ['template' => 'cockpit/match-field-entries/_index.twig'];
+                $event->rules['match-field-entries/<elementId:\\d+>'] = 'elements/edit';*/
             }
         );
     }
@@ -373,8 +374,8 @@ class Cockpit extends Plugin
     {
         if (Craft::getLogger()->dispatcher instanceof Dispatcher) {
             Craft::getLogger()->dispatcher->targets[] = new MonologTarget([
-                'name' => 'password-policy',
-                'categories' => ['password-policy'],
+                'name' => 'cockpit',
+                'categories' => ['cockpit'],
                 'level' => LogLevel::INFO,
                 'logContext' => false,
                 'allowLineBreaks' => true,
