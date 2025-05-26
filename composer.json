@@ -2,7 +2,7 @@
   "name": "craftpulse/craft-cockpit",
   "description": "Cockpit ATS plugin",
   "type": "craft-plugin",
-  "version": "5.0.3",
+  "version": "5.0.0",
   "keywords": [
     "craft",
     "cms",
