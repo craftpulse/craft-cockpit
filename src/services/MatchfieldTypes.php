@@ -100,6 +100,8 @@ class MatchfieldTypes extends Component
             ]));
         }
 
+        Craft::dd($matchfieldType);
+
         if ($runValidation && !$matchfieldType->validate()) {
             Craft::info('Matchfield type not saved due to validation error.', __METHOD__);
 
