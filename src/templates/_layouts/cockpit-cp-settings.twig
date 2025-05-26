@@ -6,10 +6,16 @@
 {%- endif -%}
 
 {%- set navItems = {
+    'settings-heading': { heading: 'Settings'|t('cockpit') },
     'general': { title: 'General settings'|t('cockpit') },
-    'contacts': { title: 'Contact settings'|t('cockpit') },
-    'companies': { title: 'Company settings'|t('cockpit') },
-    'deals': { title: 'Deal settings'|t('cockpit') }
+    'webhooks-heading': { heading: 'Webhooks'|t('cockpit') },
+    'overview': { title: 'Overview'|t('cockpit') },
+    'matchfields-heading': { title: 'Matchfields'|t('cockpit') },
+    'matchfields': { title: 'Company settings'|t('cockpit') },
+    'elements-heading': { heading: "Elements"|t('cockpit') },
+    'contacts': { title: 'Contacts'|t('cockpit') },
+    'jobs': { title: 'Jobs'|t('cockpit') },
+    'offices': { title: 'Offices'|t('cockpit') }
 } -%}
 
 {% if selectedItem is not defined %}
