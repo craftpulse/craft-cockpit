@@ -132,18 +132,12 @@ class Install extends Migration
         if(!$this->db->tableExists(Table::MATCHFIELD_TYPES)) {
             $this->createTable(Table::MATCHFIELD_TYPES, [
                 'id' => $this->primaryKey(),
-                'fieldLayoutId' => $this->integer(),
                 'name' => $this->string()->notNull(),
                 'handle' => $this->string()->notNull(),
-                'enableVersioning' => $this->boolean()->defaultValue(false)->notNull(),
-                'title' => $this->string()->notNull(),
-                'titleFormat' => $this->string()->notNull(),
-                'titleTranslationMethod' => $this->string()->defaultValue('site')->notNull(),
-                'titleTranslationKeyFormat' => $this->string(),
-                'propagationMethod' => $this->string()->defaultValue(PropagationMethod::All->value)->notNull(),
+                'title' => $this->string()->notNull()->defaultValue(''),
                 'dateCreated' => $this->dateTime()->notNull(),
                 'dateUpdated' => $this->dateTime()->notNull(),
-                'cockpitId' => $this->string()->notNull(),
+                'cockpitId' => $this->string()->notNull()->defaultValue(''),
                 'uid' => $this->uid(),
             ]);
         }

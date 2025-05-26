@@ -19,14 +19,8 @@ use yii\db\ActiveQueryInterface;
  * Matchfield type record.
  *
  * @property int $id
- * @property FieldLayout $fieldLayout
  * @property string $name
  * @property string $handle
- * @property bool $enableVersioning
- * @property string $titleFormat
- * @property string $titleTranslationMethod
- * @property string $titleTranslationKeyFormat
- * @property string $propagationMethod
  * @property string $cockpitId
  */
 class MatchfieldType extends ActiveRecord

@@ -26,18 +26,20 @@ use craft\helpers\Json;
 use craft\log\MonologTarget;
 use craft\services\Elements;
 use craft\services\Plugins;
+use craft\services\ProjectConfig;
 use craft\services\UserPermissions;
 use craft\services\Utilities;
 use craft\web\UrlManager;
 use craft\web\View;
 use craft\web\twig\variables\CraftVariable;
+
 use craftpulse\cockpit\elements\Contact;
 use craftpulse\cockpit\elements\Job;
 use craftpulse\cockpit\elements\Office;
 use craftpulse\cockpit\models\SettingsModel;
+use craftpulse\cockpit\services\MatchfieldTypes;
 use craftpulse\cockpit\services\ServicesTrait;
-use craftpulse\passwordpolicy\rules\UserRules;
-use craftpulse\passwordpolicy\variables\PasswordPolicyVariable;
+
 use yii\base\Event;
 use yii\base\InvalidRouteException;
 use yii\log\Dispatcher;
@@ -266,12 +268,26 @@ class Cockpit extends Plugin
             }
         );
 
-        $this->registerUserPermissions();
-        $this->registerUtilities();
+        $this->_registerUserPermissions();
+        $this->_registerUtilities();
+        $this->_registerProjectConfigEventListeners();
     }
 
     // Private Methods
     // =========================================================================
+
+    /**
+     * Register Commerce’s project config event listeners
+     */
+    private function _registerProjectConfigEventListeners(): void
+    {
+        $projectConfigService = Craft::$app->getProjectConfig();
+
+        $matchfieldTypeService = $this->getMatchfieldTypes();
+        $projectConfigService->onAdd(MatchfieldTypes::CONFIG_MATCHFIELDTYPES_KEY . '.{uid}', [$matchfieldTypeService, 'handleChangedMatchfieldType'])
+            ->onUpdate(MatchfieldTypes::CONFIG_MATCHFIELDTYPES_KEY . '.{uid}', [$matchfieldTypeService, 'handleChangedMatchfieldType'])
+            ->onRemove(MatchfieldTypes::CONFIG_MATCHFIELDTYPES_KEY . '.{uid}', [$matchfieldTypeService, 'handleDeletedMatchfieldType']);
+    }
 
     /**
      * Registers CP URL rules event
@@ -287,8 +303,8 @@ class Cockpit extends Plugin
 
                 // Match Field Types
                 $event->rules['cockpit/settings/matchfieldtypes'] = 'cockpit/matchfield-types/matchfield-type-index';
-                $event->rules['cockpit/settings/matchfieldtypes/<productTypeId:\d+>'] = 'cockpit/matchfield-types/edit-matchfield-type';
-                $event->rules['cockpit/settings/matchfieldtypes/new'] = 'cockpit/matchfield-types/edit-matchtfield-type';
+                $event->rules['cockpit/settings/matchfieldtypes/<matchfieldTypeId:\d+>'] = 'cockpit/matchfield-types/edit-matchfield-type';
+                $event->rules['cockpit/settings/matchfieldtypes/new'] = 'cockpit/matchfield-types/edit-matchfield-type';
 
                 // Contact Elements
                 $event->rules['cockpit/contacts'] = ['template' => 'cockpit/contacts/_index.twig'];
@@ -308,7 +324,7 @@ class Cockpit extends Plugin
     /**
      * Registers user permissions
      */
-    private function registerUserPermissions(): void
+    private function _registerUserPermissions(): void
     {
         Event::on(UserPermissions::class, UserPermissions::EVENT_REGISTER_PERMISSIONS,
             function(RegisterUserPermissionsEvent $event) {
@@ -339,7 +355,7 @@ class Cockpit extends Plugin
     /**
      * Registers utilities
      */
-    private function registerUtilities(): void
+    private function _registerUtilities(): void
     {
         Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITIES,
             function(RegisterComponentTypesEvent $event) {

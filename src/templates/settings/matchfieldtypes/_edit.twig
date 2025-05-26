@@ -1,0 +1,64 @@
+{% extends "cockpit/_layouts/cockpit-cp" %}
+{% set title = matchfieldType.id ? matchfieldType.name : 'Create a new matchfield type'|t('cockpit') %}
+
+{% set crumbs = [
+    { label: 'Cockpit'|t('cockpit'), url: url('cockpit') },
+    { label: 'Settings'|t('cockpit'), url: url('cockpit/settings'), ariaLabel: 'Cockpit Settings'|t('cockpit') },
+    { label: "Matchfield Types"|t('cockpit'), url: url('cockpit/settings/matchfieldtypes') },
+] %}
+
+{% set selectedSubnavItem = 'settings' %}
+
+{% if readOnly %}
+    {% set contentNotice = readOnlyNotice() %}
+{% endif %}
+
+{% import "_includes/forms" as forms %}
+
+{% block content %}
+
+    {% if not readOnly %}
+        {{ actionInput('cockpit/matchfield-types/save-matchfield-type') }}
+        {{ redirectInput('cockpit/settings/matchfieldtypes') }}
+    {% endif %}
+
+    {% if matchfieldType.id %}
+        <input type="hidden" name="matchfieldTypeId" value="{{ matchfieldType.id }}">
+    {% endif %}
+
+    <div id="matchfield-type-settings">
+        {{ forms.textField({
+            first: true,
+            label: "Name"|t('cockpit'),
+            instructions: "What this matchfield type will be called in the control panel."|t('cockpit'),
+            id: 'name',
+            name: 'name',
+            value: matchfieldType.name,
+            errors: matchfieldType.getErrors('name'),
+            autofocus: true,
+            required: true,
+            disabled: readOnly,
+        }) }}
+
+        {{ forms.textField({
+            label: "Handle"|t('cockpit'),
+            instructions: "How you’ll refer to this matchfield type in the templates."|t('cockpit'),
+            id: 'handle',
+            class: 'code',
+            name: 'handle',
+            value: matchfieldType.handle,
+            errors: matchfieldType.getErrors('handle'),
+            required: true,
+            disabled: readOnly,
+        }) }}
+    </div>
+{% endblock %}
+
+{% if brandNewMatchfieldType %}
+    {% js %}
+        new Craft.HandleGenerator('#name', '#handle');
+
+        new Craft.UriFormatGenerator('#name', 'textarea[name$="[uriFormat]"]', { suffix: '/{slug}' });
+        new Craft.UriFormatGenerator('#name', 'textarea[name$="[template]"]', { suffix: '/_matchfield' });
+    {% endjs %}
+{% endif %}
