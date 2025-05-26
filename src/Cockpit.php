@@ -280,28 +280,27 @@ class Cockpit extends Plugin
     {
         Event::on(UrlManager::class, UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function(RegisterUrlRulesEvent $event) {
-                // Merge so that settings controller action comes first (important!)
-                $event->rules = array_merge(
-                    [
-                        // Settings
-                        'cockpit' => 'cockpit/settings/edit',
-                        'cockpit/settings' => 'cockpit/settings/edit',
-                        'cockpit/plugins/cockpit' => 'cockpit/settings/edit',
+                // General Settings
+                $event->rules['cockpit'] = 'cockpit/settings/edit';
+                $event->rules['cockpit/settings'] = 'cockpit/settings/edit';
+                $event->rules['cockpit/plugins/cockpit'] = 'cockpit/settings/edit';
 
-                        // Contact Element
-                        'cockpit/contacts' => ['template' => 'cockpit/contacts/_index.twig'],
-                        'cockpit/contacts/<elementId:\\d+>' => 'elements/edit',
+                // Match Field Types
+                $event->rules['cockpit/settings/matchfieldtypes'] = 'cockpit/matchfield-types/matchfield-type-index';
+                $event->rules['cockpit/settings/matchfieldtypes/<productTypeId:\d+>'] = 'cockpit/matchfield-types/edit-matchfield-type';
+                $event->rules['cockpit/settings/matchfieldtypes/new'] = 'cockpit/matchfield-types/edit-matchtfield-type';
 
-                        // Job Element
-                        'cockpit/jobs' => ['template' => 'cockpit/jobs/_index.twig'],
-                        'cockpit/jobs/<elementId:\\d+>' => 'elements/edit',
+                // Contact Elements
+                $event->rules['cockpit/contacts'] = ['template' => 'cockpit/contacts/_index.twig'];
+                $event->rules['cockpit/contacts/<elementId:\\d+>'] = 'elements/edit';
 
-                        // Office Element
-                        'cockpit/offices' => ['template' => 'cockpit/offices/_index.twig'],
-                        'cockpit/offices/<elementId:\\d+>' => 'elements/edit',
-                    ],
-                    $event->rules
-                );
+                // Job Elements
+                $event->rules['cockpit/jobs'] = ['template' => 'cockpit/jobs/_index.twig'];
+                $event->rules['cockpit/jobs/<elementId:\\d+>'] = 'elements/edit';
+
+                // Office Elements
+                $event->rules['cockpit/offices'] = ['template' => 'cockpit/offices/_index.twig'];
+                $event->rules['cockpit/offices/<elementId:\\d+>'] = 'elements/edit';
             }
         );
     }

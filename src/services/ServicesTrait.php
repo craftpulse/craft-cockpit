@@ -20,6 +20,7 @@ use yii\base\InvalidConfigException;
  * @property CleanupService $cleanup
  * @property JobService $jobs
  * @property OfficeService $offices
+ * @property MatchfieldTypes $matchfieldTypes
  * @property
  */
 trait ServicesTrait
@@ -28,6 +29,7 @@ trait ServicesTrait
     {
         return [
             'components' => [
+                'matchfieldTypes' => MatchFieldTypes::class,
                 'cleanup' => CleanupService::class,
                 'jobs' => JobService::class,
                 'offices' => OfficeService::class,
@@ -69,5 +71,16 @@ trait ServicesTrait
     public function getOffices(): OfficeService
     {
         return $this->get('offices');
+    }
+
+    /**
+     * Returns the matchfieldTypes service
+     *
+     * @return MatchfieldTypes The offices service
+     * @throws InvalidConfigException
+     */
+    public function getMatchfieldTypes(): MatchfieldTypes
+    {
+        return $this->get('matchfieldTypes');
     }
 }
