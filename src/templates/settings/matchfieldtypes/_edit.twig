@@ -57,8 +57,5 @@
 {% if brandNewMatchfieldType %}
     {% js %}
         new Craft.HandleGenerator('#name', '#handle');
-
-        new Craft.UriFormatGenerator('#name', 'textarea[name$="[uriFormat]"]', { suffix: '/{slug}' });
-        new Craft.UriFormatGenerator('#name', 'textarea[name$="[template]"]', { suffix: '/_matchfield' });
     {% endjs %}
 {% endif %}

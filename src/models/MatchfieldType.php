@@ -22,6 +22,8 @@ use craft\validators\UniqueValidator;
 
 use craftpulse\cockpit\records\MatchfieldType as MatchfieldTypeRecord;
 
+use DateTime;
+
 use yii\base\InvalidConfigException;
 
 /**
@@ -43,6 +45,11 @@ class MatchfieldType extends Model
     public ?string $name = null;
 
     /**
+     * @var string|null Name
+     */
+    public ?string $title = null;
+
+    /**
      * @var string|null Handle
      */
     public ?string $handle = null;
@@ -56,6 +63,16 @@ class MatchfieldType extends Model
      * @var string Cockpit ID
      */
     public ?string $cockpitId = null;
+
+    /**
+     * @var string dateCreated
+     */
+    public ?DateTime $dateCreated = null;
+
+    /**
+     * @var string dateUpdated
+     */
+    public ?DateTime $dateUpdated = null;
 
     /**
      * @var string|null UID

@@ -196,18 +196,6 @@ class Install extends Migration
                 'CASCADE'
             );
         }
-
-        if($this->db->tableExists(Table::MATCHFIELD_TYPES)) {
-            $this->addForeignKey(
-                null,
-                Table::MATCHFIELD_TYPES,
-                'id',
-                CraftTable::ELEMENTS,
-                'id',
-                'CASCADE',
-                'CASCADE'
-            );
-        }
     }
 
     /**
