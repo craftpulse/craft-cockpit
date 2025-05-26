@@ -113,7 +113,6 @@ class Cockpit extends Plugin
         // Register control panel events
         if (Craft::$app->getRequest()->getIsCpRequest()) {
             $this->registerCpUrlRules();
-            $this->installCpEventHandlers();
         }
 
         // Log that the plugin has loaded
@@ -174,6 +173,20 @@ class Cockpit extends Plugin
             $editableSettings = false;
         }
 
+        if ($currentUser->can('cockpit:view-jobs')) {
+            $subNavs['jobs'] = [
+                'label' => Craft::t('cockpit', 'Jobs'),
+                'url' => 'cockpit/jobs',
+            ];
+        }
+
+        if ($currentUser->can('cockpit:view-offices')) {
+            $subNavs['offices'] = [
+                'label' => Craft::t('cockpit', 'Offices'),
+                'url' => 'cockpit/offices',
+            ];
+        }
+
         if ($currentUser->can('cockpit:settings') && $editableSettings) {
             $subNavs['settings'] = [
                 'label' => 'Settings',
@@ -201,7 +214,7 @@ class Cockpit extends Plugin
     protected function settingsHtml(): ?string
     {
         return Craft::$app->getView()->renderTemplate(
-            'cockpit/_settings',
+            'cockpit/settings/general/_edit',
             ['settings' => $this->getSettings()]
         );
     }
@@ -272,6 +285,12 @@ class Cockpit extends Plugin
                 $event->permissions[] = [
                     'heading' => 'Cockpit',
                     'permissions' => [
+                        'cockpit:jobs' => [
+                            'label' => Craft::t('cockpit', 'View Jobs.'),
+                        ],
+                        'cockpit:offices' => [
+                            'label' => Craft::t('cockpit', 'View Offices.'),
+                        ],
                         'cockpit:settings' => [
                             'label' => Craft::t('cockpit', 'Manage plugin settings.'),
                         ],

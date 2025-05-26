@@ -1,0 +1,8 @@
+{% macro instructions(instructionText, infoText) -%}
+    <div>
+        {{ instructionText|t('cockpit') }}
+        <div class="info">
+            {{ infoText }}
+        </div>
+    </div>
+{%- endmacro %}

@@ -22,6 +22,29 @@ use craft\behaviors\EnvAttributeParserBehavior;
  */
 class SettingsModel extends Model
 {
+    // Public Properties
+    // =========================================================================
+
+    /**
+     * @var string|null the API Key of the Cockpit Environment
+     */
+    public ?string $apiKey = null;
+
+    /**
+     * @var string|null the API URL of the Cockpit Environment
+     */
+    public ?string $apiUrl = null;
+
+    /**
+     * @var bool if we want to enable Mapbox
+     */
+    public bool $enableMapbox = false;
+
+    /**
+     * @var bool the Mapbox API Key
+     */
+    public ?string $mapboxApiKey = null;
+
 
     /**
      * @return array[]
@@ -31,7 +54,7 @@ class SettingsModel extends Model
         return [
             'parser' => [
                 'class' => EnvAttributeParserBehavior::class,
-                'attributes' => [],
+                'attributes' => ['apiKey', 'apiUrl', 'enableMapbox', 'mapboxApiKey'],
             ],
         ];
     }
@@ -41,6 +64,9 @@ class SettingsModel extends Model
      */
     protected function defineRules(): array
     {
-        return [];
+        return [
+            [['apiKey', 'apiUrl'], 'required']
+            // @TODO if mapbox enabled, require mapboxApiKey,
+        ];
     }
 }
