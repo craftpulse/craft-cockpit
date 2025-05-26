@@ -1,0 +1,50 @@
+{% extends 'cockpit/_layouts/cockpit-cp-settings' %}
+
+{%- set crumbs = [
+    { label: 'Cockpit ATS'|t('cockpit'), url: url('cockpit') },
+] -%}
+
+{% block actionButton %}
+    {% if not readOnly %}
+        <a href="{{ url('cockpit/settings/matchfieldtypes/new') }}" class="btn submit add icon">{{ 'New match field type'|t('cockpit') }}</a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    <div id="matchfieldtypes-vue-admin-table"></div>
+{% endblock %}
+
+{% set tableData = [] %}
+{% for type in matchfieldTypes %}
+    {% set tableData = tableData|merge(
+        [
+            {
+                id: type.id,
+                title: type.name|t('cockpit'),
+                url: type.cpEditUrl,
+                handle: type.handle|e,
+            }
+        ]
+    ) %}
+{% endfor %}
+
+{% js %}
+    var columns = [
+    { name: '__slot:title', title: Craft.t('cockpit', 'Name') },
+    { name: '__slot:handle', title: Craft.t('cockpit', 'Handle') },
+    ];
+
+    let config = {
+    columns: columns,
+    container: '#matchfieldtypes-vue-admin-table',
+    emptyMessage: Craft.t('cockpit', 'No matchfield types exist yet.'),
+    tableData: {{ tableData|json_encode|raw }}
+    };
+
+    {% if not readOnly %}
+        config['deleteAction'] = 'cockpit/matchfield-types/delete-matchfield-type';
+        config['deleteConfirmationMessage'] = Craft.t('cockpit', 'Are you sure you want to delete “{name}” and all its matchfields? Please make sure you have a backup of your database before performing this destructive action.');
+    {% endif %}
+
+    new Craft.VueAdminTable(config);
+{% endjs %}

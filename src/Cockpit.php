@@ -327,6 +327,9 @@ class Cockpit extends Plugin
                         'cockpit:settings' => [
                             'label' => Craft::t('cockpit', 'Manage plugin settings.'),
                         ],
+                        'cockpit:settings-matchfields' => [
+                            'label' => Craft::t('cockpit', 'Manage matchfields.'),
+                        ],
                     ],
                 ];
             }
