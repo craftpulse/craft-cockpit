@@ -8,6 +8,7 @@
 ] %}
 
 {% set selectedSubnavItem = 'settings' %}
+{% set fullPageForm = not readOnly %}
 
 {% if readOnly %}
     {% set contentNotice = readOnlyNotice() %}

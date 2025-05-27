@@ -206,7 +206,7 @@ class MatchField extends Model implements Chippable, CpEditable, Iconic
             $currentSiteIds = (new Query())
                 ->select(['siteId'])
                 ->from([Table::MATCHFIELDS_SITES])
-                ->where(['matchfieldId' => $this->id])
+                ->where(['matchFieldId' => $this->id])
                 ->column();
 
             if (empty(array_intersect($currentSiteIds, array_keys($this->getSiteSettings())))) {
