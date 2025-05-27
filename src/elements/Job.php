@@ -8,6 +8,7 @@ use craft\elements\User;
 use craft\elements\conditions\ElementConditionInterface;
 use craft\elements\db\ElementQueryInterface;
 use craft\helpers\UrlHelper;
+use craft\models\FieldLayout;
 use craft\web\CpScreenResponseBehavior;
 use craftpulse\cockpit\elements\conditions\JobCondition;
 use craftpulse\cockpit\elements\db\JobQuery;
@@ -18,6 +19,11 @@ use yii\web\Response;
  */
 class Job extends Element
 {
+    // Properties
+    // =========================================================================
+    
+    // Methods
+    // =========================================================================
     public static function displayName(): string
     {
         return Craft::t('cockpit', 'Job');
@@ -197,7 +203,7 @@ class Job extends Element
             return true;
         }
         // todo: implement user permissions
-        return $user->can('viewJobs');
+        return $user->can('cockpit:jobs');
     }
 
     public function canSave(User $user): bool
@@ -206,7 +212,7 @@ class Job extends Element
             return true;
         }
         // todo: implement user permissions
-        return $user->can('saveJobs');
+        return $user->can('cockpit:save-jobs');
     }
 
     public function canDuplicate(User $user): bool
@@ -215,7 +221,7 @@ class Job extends Element
             return true;
         }
         // todo: implement user permissions
-        return $user->can('saveJobs');
+        return $user->can('cockpit:save-jobs');
     }
 
     public function canDelete(User $user): bool
@@ -224,22 +230,31 @@ class Job extends Element
             return true;
         }
         // todo: implement user permissions
-        return $user->can('deleteJobs');
+        return $user->can('cockpit:delete-jobs');
     }
 
     public function canCreateDrafts(User $user): bool
     {
-        return true;
+        return false;
     }
 
     protected function cpEditUrl(): ?string
     {
-        return sprintf('jobs/%s', $this->getCanonicalId());
+        return sprintf('cockpit/jobs/%s', $this->getCanonicalId());
     }
 
     public function getPostEditUrl(): ?string
     {
-        return UrlHelper::cpUrl('jobs');
+        return UrlHelper::cpUrl('cockpit/jobs');
+    }
+
+    /**
+     * @inheritdoc
+     * @return FieldLayout|null
+     */
+    public function getFieldLayout(): ?FieldLayout
+    {
+        return Craft::$app->fields->getLayoutByType(Product::class);
     }
 
     public function prepareEditScreen(Response $response, string $containerId): void

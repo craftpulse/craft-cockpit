@@ -18,7 +18,7 @@ use yii\base\InvalidConfigException;
  * @since     5.0.0
  *
  * @property CleanupService $cleanup
- * @property JobService $jobs
+ * @property JobsService $jobs
  * @property OfficeService $offices
  * @property MatchField $matchFields
  * @property
@@ -31,7 +31,7 @@ trait ServicesTrait
             'components' => [
                 'matchFields' => MatchField::class,
                 'cleanup' => CleanupService::class,
-                'jobs' => JobService::class,
+                'jobs' => JobsService::class,
                 'offices' => OfficeService::class,
             ],
         ];

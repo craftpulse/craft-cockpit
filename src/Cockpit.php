@@ -11,6 +11,8 @@
 namespace craftpulse\cockpit;
 
 use Craft;
+use craft\events\DefineFieldLayoutFieldsEvent;
+use craft\models\FieldLayout;
 use Monolog\Formatter\LineFormatter;
 use Psr\Log\LogLevel;
 use Throwable;
@@ -56,12 +58,17 @@ class Cockpit extends Plugin
 
     use ServicesTrait;
 
+    // Const Properties
+    // =========================================================================
+    public const CONFIG_JOBFIELD_LAYOUT_KEY = 'cockpit.jobFieldLayout';
+
     // Static Properties
     // =========================================================================
     /**
      * @var ?Cockpit
      */
     public static ?Cockpit $plugin = null;
+
 
     // Public Properties
     // =========================================================================
@@ -111,8 +118,11 @@ class Cockpit extends Plugin
 
         // Register control panel events
         if (Craft::$app->getRequest()->getIsCpRequest()) {
-            $this->registerCpUrlRules();
+            $this->_registerCpUrlRules();
+            $this->_registerElements();
+            $this->_registerFieldLayouts();
         }
+
 
         // Log that the plugin has loaded
         Craft::info(
@@ -122,18 +132,6 @@ class Cockpit extends Plugin
                 ['name' => $this->name]
             )
         );
-        Event::on(Elements::class, Elements::EVENT_REGISTER_ELEMENT_TYPES, function (RegisterComponentTypesEvent $event) {
-            $event->types[] = Job::class;
-        });
-        Event::on(Elements::class, Elements::EVENT_REGISTER_ELEMENT_TYPES, function (RegisterComponentTypesEvent $event) {
-            $event->types[] = Office::class;
-        });
-        Event::on(Elements::class, Elements::EVENT_REGISTER_ELEMENT_TYPES, function (RegisterComponentTypesEvent $event) {
-            $event->types[] = Contact::class;
-        });
-        Event::on(Elements::class, Elements::EVENT_REGISTER_ELEMENT_TYPES, function (RegisterComponentTypesEvent $event) {
-            $event->types[] = MatchFieldEntry::class;
-        });
     }
 
     // Public Methods
@@ -281,6 +279,12 @@ class Cockpit extends Plugin
     {
         $projectConfigService = Craft::$app->getProjectConfig();
 
+        $jobsService = $this->getJobs();
+
+        $projectConfigService->onAdd(self::CONFIG_JOBFIELD_LAYOUT_KEY, [$jobsService, 'handleChangedFieldLayout'])
+            ->onUpdate(self::CONFIG_JOBFIELD_LAYOUT_KEY, [$jobsService, 'handleChangedFieldLayout'])
+            ->onRemove(self::CONFIG_JOBFIELD_LAYOUT_KEY, [$jobsService, 'handleDeletedFieldLayout']);
+
         /*$matchFieldsService = $this->getMatchFields();
         $projectConfigService->onAdd(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleChangedMatchField'])
             ->onUpdate(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleChangedMatchField'])
@@ -290,7 +294,7 @@ class Cockpit extends Plugin
     /**
      * Registers CP URL rules event
      */
-    private function registerCpUrlRules(): void
+    private function _registerCpUrlRules(): void
     {
         Event::on(UrlManager::class, UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function(RegisterUrlRulesEvent $event) {
@@ -309,6 +313,7 @@ class Cockpit extends Plugin
                 $event->rules['cockpit/contacts/<elementId:\\d+>'] = 'elements/edit';
 
                 // Job Elements
+                $event->rules['cockpit/settings/jobs'] = 'cockpit/jobs/edit-settings';
                 $event->rules['cockpit/jobs'] = ['template' => 'cockpit/jobs/_index.twig'];
                 $event->rules['cockpit/jobs/<elementId:\\d+>'] = 'elements/edit';
 
@@ -318,6 +323,39 @@ class Cockpit extends Plugin
 
                 /*$event->rules['match-field-entries'] = ['template' => 'cockpit/match-field-entries/_index.twig'];
                 $event->rules['match-field-entries/<elementId:\\d+>'] = 'elements/edit';*/
+            }
+        );
+    }
+
+    /**
+     * Registers elements
+     */
+    private function _registerElements(): void
+    {
+        Event::on(Elements::class, Elements::EVENT_REGISTER_ELEMENT_TYPES,
+            function(RegisterComponentTypesEvent $event) {
+                $event->types[] = Contact::class;
+                $event->types[] = Job::class;
+                $event->types[] = Office::class;
+                $event->types[] = MatchFieldEntry::class;
+            }
+        );
+    }
+
+    private function _registerFieldLayouts(): void
+    {
+        Event::on(
+            FieldLayout::class,
+            FieldLayout::EVENT_DEFINE_NATIVE_FIELDS,
+            function (DefineFieldLayoutFieldsEvent $event) {
+                /** @var FieldLayout $fieldLayout */
+                $fieldLayout = $event->sender;
+
+                if ($fieldLayout->type === Job::class) {
+                    foreach ($this->getJobs()->createFields() as $field) {
+                        $event->fields[] = $field;
+                    }
+                }
             }
         );
     }
@@ -337,6 +375,12 @@ class Cockpit extends Plugin
                         ],
                         'cockpit:jobs' => [
                             'label' => Craft::t('cockpit', 'View Jobs.'),
+                        ],
+                        'cockpit:save-jobs' => [
+                            'label' => Craft::t('cockpit', 'Save Jobs.'),
+                        ],
+                        'cockpit:delete-jobs' => [
+                            'label' => Craft::t('cockpit', 'Delete Jobs.'),
                         ],
                         'cockpit:offices' => [
                             'label' => Craft::t('cockpit', 'View Offices.'),

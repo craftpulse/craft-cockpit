@@ -15,7 +15,7 @@
     'webhooks-heading': { heading: 'Webhooks'|t('cockpit') },
     'overview': { title: 'Overview'|t('cockpit') },
     'settings-heading': { heading: 'Settings'|t('cockpit') },
-    'general': { title: 'General settings'|t('cockpit') },
+    'general': { title: 'General settings'|t('cockpit'), url: 'cockpit/settings/edit' },
 } -%}
 
 {% if selectedItem is not defined %}
@@ -34,7 +34,7 @@
                     </li>
                 {% else %}
                     <li>
-                        <a href="{{ url('cockpit/settings/'~handle) }}" {{ handle == selectedItem ? 'class="sel"'-}}>
+                        <a href="{{ item.url ?? url('cockpit/settings/'~handle) }}" {{ handle == selectedItem ? 'class="sel"'-}}>
                             {{ item.title }}
                         </a>
                     </li>
