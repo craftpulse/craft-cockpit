@@ -1,5 +1,14 @@
 {% extends '_layouts/elementindex' %}
 {% set title = 'Jobs'|t('cockpit') %}
-
 {% set elementType = 'craftpulse\\cockpit\\elements\\Job' %}
 {% set canHaveDrafts = false %}
+
+{% block actionButton %}
+    {{ tag('a', {
+        class: 'btn submit add icon',
+        href: actionUrl('elements/create', {
+            elementType: elementType
+        }),
+        text: 'New job'|t('cockpit'),
+    }) }}
+{% endblock %}

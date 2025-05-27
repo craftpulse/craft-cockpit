@@ -108,8 +108,19 @@ class Install extends Migration
                     'uid' => $this->uid(),
                     'fieldLayoutId' => $this->integer(),
 
-                    // connectors
+                    // Job specific fields
+                    'applicationCount' => $this->integer(),
+                    'city' => $this->string()->notNull(),
+                    'cockpitCompanyId' => $this->string()->notNull(),
                     'cockpitId' => $this->string()->notNull(),
+                    'cockpitJobRequestId' => $this->string()->notNull(),
+                    'cockpitOfficeId' => $this->string()->notNull(),
+                    'companyName' => $this->string()->notNull(),
+                    'latitude' => $this->decimal(10, 8),
+                    'longitude' => $this->decimal(11, 8),
+                    'openPositions' => $this->integer(),
+                    'postCode' => $this->string(),
+                    'street' => $this->string(),
                 ]
             );
         }
@@ -193,6 +204,8 @@ class Install extends Migration
     {
         $this->createIndex(null, Table::CONTACTS, 'cockpitId', false);
         $this->createIndex(null, Table::JOBS, 'cockpitId', false);
+        $this->createIndex(null, Table::JOBS, 'cockpitJobRequestId', false);
+        $this->createIndex(null, Table::JOBS, 'cockpitOfficeId', false);
         $this->createIndex(null, Table::OFFICES, 'cockpitId', false);
         $this->createIndex(null, Table::MATCHFIELDS, ['handle'], false);
         $this->createIndex(null, Table::MATCHFIELDS, ['name'], false);

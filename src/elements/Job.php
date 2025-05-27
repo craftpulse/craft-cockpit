@@ -8,9 +8,12 @@ use craft\elements\User;
 use craft\elements\conditions\ElementConditionInterface;
 use craft\elements\db\ElementQueryInterface;
 use craft\helpers\UrlHelper;
+use craft\models\FieldLayout;
 use craft\web\CpScreenResponseBehavior;
+use craftpulse\cockpit\Cockpit;
 use craftpulse\cockpit\elements\conditions\JobCondition;
 use craftpulse\cockpit\elements\db\JobQuery;
+use craftpulse\cockpit\records\JobRecord;
 use yii\web\Response;
 
 /**
@@ -18,6 +21,29 @@ use yii\web\Response;
  */
 class Job extends Element
 {
+    // Properties
+    // =========================================================================
+    /**
+     * @var FieldLayout|null
+     */
+    private ?FieldLayout $fieldLayout = null;
+
+    public ?string $type = 'job';
+    public ?string $applicationCount = null;
+    public string $city = '';
+    public string $cockpitCompanyId ='';
+    public string $cockpitId = '';
+    public string $cockpitJobRequestId = '';
+    public string $cockpitOfficeId = '';
+    public string $companyName = '';
+    public ?float $latitude = null;
+    public ?float $longitude = null;
+    public ?int $openPositions = null;
+    public ?string $postCode = null;
+    public ?string $street = null;
+
+    // Methods
+    // =========================================================================
     public static function displayName(): string
     {
         return Craft::t('cockpit', 'Job');
@@ -151,42 +177,81 @@ class Job extends Element
 
     protected function defineRules(): array
     {
-        return array_merge(parent::defineRules(), [
-            // ...
-        ]);
+        $rules = parent::defineRules();
+
+        $rules[] = [
+            [
+                'applicationCount',
+                'city',
+                'cockpitCompanyId',
+                'cockpitId',
+                'cockpitJobRequestId',
+                'cockpitOfficeId',
+                'companyName',
+                'latitude',
+                'longitude',
+                'openPositions',
+                'postCode',
+                'street',
+            ],
+            'safe'
+        ];
+
+        if ($this->id !== null) {
+            $rules[] = [[
+                'city',
+                'cockpitCompanyId',
+                'cockpitId',
+                'cockpitJobRequestId',
+                'cockpitOfficeId',
+                'companyName',
+            ], 'required'];
+
+            $rules[] = [['applicationCount', 'openPositions'], 'integer'];
+            $rules[] = [['latitude'], 'number', 'min' => -90, 'max' => 90];
+            $rules[] = [['longitude'], 'number', 'min' => -180, 'max' => 180];
+        }
+
+        return $rules;
     }
 
     public function getUriFormat(): ?string
     {
         // If jobs should have URLs, define their URI format here
-        return null;
+        return Cockpit::getInstance()->getSettings()->jobUriFormat;
     }
 
     protected function previewTargets(): array
     {
-        $previewTargets = [];
-        $url = $this->getUrl();
-        if ($url) {
-            $previewTargets[] = [
-                'label' => Craft::t('app', 'Primary {type} page', [
-                    'type' => self::lowerDisplayName(),
-                ]),
-                'url' => $url,
-            ];
+        if ($uriFormat = $this->getUriFormat()) {
+            return [[
+                'urlFormat' => $uriFormat,
+            ]];
         }
-        return $previewTargets;
+
+        return [];
     }
 
     protected function route(): array|string|null
     {
-        // Define how jobs should be routed when their URLs are requested
-        return [
-            'templates/render',
-            [
-                'template' => 'site/template/path',
-                'variables' => ['job' => $this],
-            ]
-        ];
+        if (!$this->previewing && $this->getStatus() != self::STATUS_ENABLED) {
+            return null;
+        }
+
+        $settings = Cockpit::getInstance()->getSettings();
+
+        if ($settings->jobUriFormat) {
+            return [
+                'templates/render', [
+                    'template' => $settings->jobTemplate,
+                    'variables' => [
+                        'entry' => $this,
+                    ],
+                ],
+            ];
+        }
+
+        return null;
     }
 
     public function canView(User $user): bool
@@ -195,7 +260,7 @@ class Job extends Element
             return true;
         }
         // todo: implement user permissions
-        return $user->can('viewJobs');
+        return $user->can('cockpit:jobs');
     }
 
     public function canSave(User $user): bool
@@ -204,7 +269,7 @@ class Job extends Element
             return true;
         }
         // todo: implement user permissions
-        return $user->can('saveJobs');
+        return $user->can('cockpit:save-jobs');
     }
 
     public function canDuplicate(User $user): bool
@@ -213,7 +278,7 @@ class Job extends Element
             return true;
         }
         // todo: implement user permissions
-        return $user->can('saveJobs');
+        return $user->can('cockpit:save-jobs');
     }
 
     public function canDelete(User $user): bool
@@ -222,22 +287,37 @@ class Job extends Element
             return true;
         }
         // todo: implement user permissions
-        return $user->can('deleteJobs');
+        return $user->can('cockpit:delete-jobs');
     }
 
     public function canCreateDrafts(User $user): bool
     {
-        return true;
+        return false;
     }
 
     protected function cpEditUrl(): ?string
     {
-        return sprintf('jobs/%s', $this->getCanonicalId());
+        return sprintf('cockpit/jobs/%s', $this->getCanonicalId());
     }
 
     public function getPostEditUrl(): ?string
     {
-        return UrlHelper::cpUrl('jobs');
+        return UrlHelper::cpUrl('cockpit/jobs');
+    }
+
+    /**
+     * @inheritdoc
+     * @return FieldLayout|null
+     */
+    public function getFieldLayout(): ?FieldLayout
+    {
+        if ($this->fieldLayout !== null) {
+            return $this->fieldLayout;
+        }
+
+        $this->fieldLayout = Craft::$app->getFields()->getLayoutByType(self::class);
+
+        return $this->fieldLayout;
     }
 
     public function prepareEditScreen(Response $response, string $containerId): void
@@ -246,17 +326,63 @@ class Job extends Element
         $response->crumbs([
             [
                 'label' => self::pluralDisplayName(),
-                'url' => UrlHelper::cpUrl('jobs'),
+                'url' => UrlHelper::cpUrl('cockpit/jobs'),
             ],
         ]);
     }
 
+    /**
+     * @inheritdoc
+     * @throws Exception
+     */
     public function afterSave(bool $isNew): void
     {
         if (!$this->propagating) {
-            // todo: update the `jobs` table
+            if ($isNew) {
+                $jobRecord = new JobRecord();
+                $jobRecord->id = $this->id;
+            } else {
+                $jobRecord = JobRecord::findOne($this->id);
+            }
+
+            $jobRecord->fieldLayoutId = $this->fieldLayout->id;
+
+            // Job specific fields
+            $jobRecord->applicationCount = $this->applicationCount;
+            $jobRecord->city = $this->city;
+            $jobRecord->cockpitCompanyId = $this->cockpitCompanyId;
+            $jobRecord->cockpitId = $this->cockpitId;
+            $jobRecord->cockpitJobRequestId = $this->cockpitJobRequestId;
+            $jobRecord->cockpitOfficeId = $this->cockpitOfficeId;
+            $jobRecord->companyName = $this->companyName;
+            $jobRecord->latitude = $this->latitude;
+            $jobRecord->longitude = $this->longitude;
+            $jobRecord->openPositions = $this->openPositions;
+            $jobRecord->postCode = $this->postCode;
+            $jobRecord->street = $this->street;
+
+            if (!$jobRecord->validate()) {
+                $errors = $jobRecord->getErrors();
+                Craft::error(
+                    'Cockpit job record validation failed: ' . json_encode($errors, JSON_PRETTY_PRINT),
+                    __METHOD__
+                );
+
+                // Add errors to the element
+                foreach ($errors as $attribute => $attributeErrors) {
+                    foreach ($attributeErrors as $error) {
+                        $this->addError($attribute, $error);
+                    }
+                }
+                return;
+            }
+
+
+            // Save the record
+            $jobRecord->save(false);
         }
 
         parent::afterSave($isNew);
     }
+
 }

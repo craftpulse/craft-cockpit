@@ -12,6 +12,7 @@ namespace craftpulse\cockpit\models;
 use Craft;
 use craft\base\Model;
 use craft\behaviors\EnvAttributeParserBehavior;
+use craftpulse\cockpit\elements\Job;
 
 /**
  * Class SettingsModel
@@ -45,6 +46,13 @@ class SettingsModel extends Model
      */
     public ?string $mapboxApiKey = null;
 
+    public ?string $jobUriFormat = '';
+    public ?string $jobTemplate = '';
+
+    // Private Properties
+    // =========================================================================
+
+    private mixed $_jobFieldLayout;
 
     /**
      * @return array[]
@@ -54,7 +62,14 @@ class SettingsModel extends Model
         return [
             'parser' => [
                 'class' => EnvAttributeParserBehavior::class,
-                'attributes' => ['apiKey', 'apiUrl', 'enableMapbox', 'mapboxApiKey'],
+                'attributes' => [
+                    'apiKey',
+                    'apiUrl',
+                    'enableMapbox',
+                    'mapboxApiKey',
+                    'jobUriFormat',
+                    'jobTemplate',
+                ],
             ],
         ];
     }
@@ -68,5 +83,26 @@ class SettingsModel extends Model
             [['apiKey', 'apiUrl'], 'required']
             // @TODO if mapbox enabled, require mapboxApiKey,
         ];
+    }
+
+    /**
+     * @return \craft\models\FieldLayout|mixed
+     */
+    public function getJobFieldLayout()
+    {
+        if (!isset($this->_jobFieldLayout)) {
+            $this->_jobFieldLayout = Craft::$app->getFields()->getLayoutByType(Job::class);
+        }
+
+        return $this->_jobFieldLayout;
+    }
+
+    /**
+     * @param mixed $fieldLayout
+     * @return void
+     */
+    public function setJobFieldLayout(mixed $fieldLayout): void
+    {
+        $this->_jobFieldLayout = $fieldLayout;
     }
 }
