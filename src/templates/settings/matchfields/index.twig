@@ -30,11 +30,11 @@
         columns: columns,
         container: '#matchfields-vue-admin-table',
         emptyMessage: Craft.t('cockpit', 'No matchfields exist yet.'),
-        tableDataEndpoint: 'cockpit/matchfields/table-data',
+        tableDataEndpoint: 'cockpit/match-fields/table-data',
     };
 
     {% if not readOnly %}
-        config['deleteAction'] = 'cockpit/matchfields/delete-matchfield';
+        config['deleteAction'] = 'cockpit/match-fields/delete-matchfield';
         config['deleteConfirmationMessage'] = Craft.t('cockpit', 'Are you sure you want to delete “{name}” and all its match fields? Please make sure you have a backup of your database before performing this destructive action.');
     {% endif %}
 

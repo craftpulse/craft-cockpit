@@ -11,12 +11,12 @@
 namespace craftpulse\cockpit\controllers;
 
 use Craft;
-use craft\base\Element;
 use craft\enums\PropagationMethod;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
 
 use craftpulse\cockpit\Cockpit;
+use craftpulse\cockpit\elements\MatchFieldEntry;
 use craftpulse\cockpit\errors\MatchFieldNotFoundException;
 use craftpulse\cockpit\models\MatchField as MatchFieldModel;
 use craftpulse\cockpit\models\MatchField_SiteSettings as MatchField_SiteSettingsModel;
@@ -31,7 +31,7 @@ use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
-class MatchfieldsController extends Controller
+class MatchFieldsController extends Controller
 {
     private bool $readOnly;
 
@@ -220,6 +220,10 @@ class MatchfieldsController extends Controller
 
         $matchField->setSiteSettings($allSiteSettings);
 
+        $fieldLayout = Craft::$app->getFields()->assembleLayoutFromPost();
+        $fieldLayout->type = MatchFieldEntry::class;
+        $matchField->setFieldLayout($fieldLayout);
+
         // Save it
         if (!$matchFieldService->saveMatchField($matchField)) {
             $this->setFailFlash(Craft::t('cockpit', 'Couldn’t save match field.'));
@@ -232,7 +236,7 @@ class MatchfieldsController extends Controller
             return null;
         }
 
-        $this->setSuccessFlash(Craft::t('app', 'Matchfield saved.'));
+        $this->setSuccessFlash(Craft::t('app', 'Match field saved.'));
         return $this->redirectToPostedUrl($matchField);
     }
 

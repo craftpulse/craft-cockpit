@@ -145,6 +145,7 @@ class Install extends Migration
             $this->createTable(Table::MATCHFIELDS, [
                 'id' => $this->primaryKey(),
                 'structureId' => $this->integer(),
+                'fieldLayoutId' => $this->integer(),
                 'name' => $this->string()->notNull(),
                 'handle' => $this->string()->notNull(),
                 'type' => $this->string()->notNull(),
@@ -210,6 +211,7 @@ class Install extends Migration
         $this->createIndex(null, Table::MATCHFIELDS, ['handle'], false);
         $this->createIndex(null, Table::MATCHFIELDS, ['name'], false);
         $this->createIndex(null, Table::MATCHFIELDS, ['structureId'], false);
+        $this->createIndex(null, Table::MATCHFIELDS, ['fieldLayoutId'], false);
         $this->createIndex(null, Table::MATCHFIELDS, ['dateDeleted'], false);
         $this->createIndex(null, Table::MATCHFIELDS_ENTRIES, ['postDate'], false);
         $this->createIndex(null, Table::MATCHFIELDS_ENTRIES, ['expiryDate'], false);
@@ -230,6 +232,7 @@ class Install extends Migration
         $this->addForeignKey(null, Table::JOBS, 'id', CraftTable::ELEMENTS, 'id', 'CASCADE', null);
         $this->addForeignKey(null, Table::OFFICES, 'id', CraftTable::ELEMENTS, 'id', 'CASCADE', null);
         $this->addForeignKey(null, Table::MATCHFIELDS, ['structureId'], CraftTable::STRUCTURES, ['id'], 'SET NULL', null);
+        $this->addForeignKey(null, Table::MATCHFIELDS, ['fieldLayoutId'], CraftTable::FIELDLAYOUTS, ['id'], 'SET NULL', null);
         $this->addForeignKey(null, Table::MATCHFIELDS_ENTRIES, ['id'], CraftTable::ELEMENTS, ['id'], 'CASCADE', null);
         $this->addForeignKey(null, Table::MATCHFIELDS_ENTRIES, ['matchFieldId'], Table::MATCHFIELDS, ['id'], 'CASCADE', null);
         $this->addForeignKey(null, Table::MATCHFIELDS_ENTRIES, ['parentId'], Table::MATCHFIELDS_ENTRIES, ['id'], 'SET NULL', null);

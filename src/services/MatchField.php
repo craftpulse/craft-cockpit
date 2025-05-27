@@ -29,6 +29,7 @@ use craft\helpers\ProjectConfig as ProjectConfigHelper;
 use craft\helpers\Queue;
 use craft\helpers\StringHelper;
 use craft\i18n\Translation;
+use craft\models\FieldLayout;
 use craft\models\Structure;
 use craft\queue\jobs\ApplyNewPropagationMethod;
 use craft\queue\jobs\ResaveElements;
@@ -179,6 +180,7 @@ class MatchField extends Component
             ->select([
                 'cockpit_matchfields.id',
                 'cockpit_matchfields.structureId',
+                'cockpit_matchfields.fieldLayoutId',
                 'cockpit_matchfields.name',
                 'cockpit_matchfields.handle',
                 'cockpit_matchfields.type',
@@ -227,7 +229,7 @@ class MatchField extends Component
             return [];
         }
 
-        return ArrayHelper::where($this->getAllMatchFields(), fn(MatchFieldModel $matchField) => $user->can("cockpit:view-matchfields:$matchField->uid"), true, true, false);
+        return ArrayHelper::where($this->getAllMatchFields(), fn(MatchFieldModel $matchField) => $user->can("cockpit:view-match-fields:$matchField->uid"), true, true, false);
     }
 
     /**
@@ -343,26 +345,28 @@ class MatchField extends Component
             $matchField->uid = Db::uidById(Table::MATCHFIELDS, $matchField->id);
         }
 
-        // Assemble the match field config
-        // -----------------------------------------------------------------
-        $transaction = Craft::$app->getDb()->beginTransaction();
+        // If they've set maxLevels to 0 (don't ask why), then pretend like there are none.
+        if ((int)$matchField->maxLevels === 0) {
+            $matchField->maxLevels = null;
+        }
 
-        try {
-            // Save the match field config
-            // -----------------------------------------------------------------
-
-            $configPath = self::CONFIG_MATCHFIELDS_KEY . '.' . $matchField->uid;
-            $configData = $matchField->getConfig();
-            Craft::$app->getProjectConfig()->set($configPath, $configData, "Save match field “{$matchField->handle}”");
-
-            if ($isNewMatchField) {
-                $matchField->id = Db::idByUid(Table::MATCHFIELDS, $matchField->uid);
+        // Make sure the match field isn't missing any site settings
+        $allSiteSettings = $matchField->getSiteSettings();
+        foreach (Craft::$app->getSites()->getAllSiteIds() as $siteId) {
+            if (!isset($allSiteSettings[$siteId])) {
+                throw new Exception('Tried to save a match field that is missing site settings');
             }
+        }
 
-            $transaction->commit();
-        } catch (Throwable $e) {
-            $transaction->rollBack();
-            throw $e;
+        // Save the match field config
+        // -----------------------------------------------------------------
+
+        $configPath = self::CONFIG_MATCHFIELDS_KEY . '.' . $matchField->uid;
+        $configData = $matchField->getConfig();
+        Craft::$app->getProjectConfig()->set($configPath, $configData, "Save match field “{$matchField->handle}”");
+
+        if ($isNewMatchField) {
+            $matchField->id = Db::idByUid(Table::MATCHFIELDS, $matchField->uid);
         }
 
         return true;
@@ -408,7 +412,6 @@ class MatchField extends Component
             $isNewMatchField = $matchFieldRecord->getIsNewRecord();
             $propagationMethodChanged = $matchFieldRecord->propagationMethod != $matchFieldRecord->getOldAttribute('propagationMethod');
 
-
             $structuresService = Craft::$app->getStructures();
 
             // Save the structure
@@ -428,6 +431,21 @@ class MatchField extends Component
 
             $structuresService->saveStructure($structure);
             $matchFieldRecord->structureId = $structure->id;
+
+            // Save the field layout
+            if (!empty($data['fieldLayouts'])) {
+                // Save the field layout
+                $layout = FieldLayout::createFromConfig(reset($data['fieldLayouts']));
+                $layout->id = $matchFieldRecord->fieldLayoutId;
+                $layout->type = MatchFieldEntry::class;
+                $layout->uid = key($data['fieldLayouts']);
+                Craft::$app->getFields()->saveLayout($layout, false);
+                $matchFieldRecord->fieldLayoutId = $layout->id;
+            } elseif ($matchFieldRecord->fieldLayoutId) {
+                // Delete the field layout
+                Craft::$app->getFields()->deleteLayoutById($matchFieldRecord->fieldLayoutId);
+                $matchFieldRecord->fieldLayoutId = null;
+            }
 
             $resaveEntries = (
                 $matchFieldRecord->handle !== $matchFieldRecord->getOldAttribute('handle') ||

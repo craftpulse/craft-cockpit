@@ -10,6 +10,7 @@
 
 namespace craftpulse\cockpit\records;
 
+use craft\records\FieldLayout;
 use craftpulse\cockpit\db\Table;
 use craft\db\ActiveRecord;
 use craft\db\SoftDeleteTrait;
@@ -32,6 +33,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property string $cockpitId
  * @property MatchField_SiteSettings[] $siteSettings Site settings
  * @property Structure $structure Structure
+ * @property FieldLayout $fieldLayout Field layout
  * @mixin SoftDeleteBehavior
  */
 class MatchField extends ActiveRecord
