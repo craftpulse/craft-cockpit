@@ -151,9 +151,11 @@ class Job extends Element
 
     protected function defineRules(): array
     {
-        return array_merge(parent::defineRules(), [
-            // ...
-        ]);
+        $rules = parent::defineRules();
+
+        $rules[] = [[], 'safe'];
+
+        return $rules;
     }
 
     public function getUriFormat(): ?string
