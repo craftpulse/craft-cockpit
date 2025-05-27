@@ -21,6 +21,7 @@ use craftpulse\cockpit\errors\MatchFieldNotFoundException;
 use craftpulse\cockpit\models\MatchField as MatchFieldModel;
 use craftpulse\cockpit\models\MatchField_SiteSettings as MatchField_SiteSettingsModel;
 
+use GuzzleHttp\Exception\GuzzleException;
 use Throwable;
 use yii\base\ExitException;
 use yii\base\InvalidConfigException;
@@ -110,6 +111,7 @@ class MatchfieldsController extends Controller
      * @throws ForbiddenHttpException
      * @throws NotFoundHttpException if the requested match field cannot be found
      * @throws InvalidConfigException|ExitException
+     * @throws GuzzleException
      */
     public function actionEditMatchField(?int $matchFieldId = null, ?MatchfieldModel $matchField = null): Response
     {
@@ -137,29 +139,24 @@ class MatchfieldsController extends Controller
         } else {
             if ($matchField === null) {
                 $matchField = new MatchfieldModel();
-                $variables['brandNewMatchfield'] = true;
+                $variables['brandNewMatchField'] = true;
             }
 
             $variables['title'] = Craft::t('cockpit', 'Create a new match field');
         }
 
         // This needs to fetch data from the API
-        $typeOptions = [
-            'type1' => Craft::t('cockpit', 'Type 1'),
-            'type2' => Craft::t('cockpit', 'Type 2'),
-        ];
+        $typeOptions = Cockpit::$plugin->getApi()->getMatchFieldTypes();
+
+        Craft::dd(Cockpit::$plugin->getApi()->getWebhooks());
 
         if (!$matchField->type) {
-            $matchField->type = 'type1';
+            $matchField->type = $typeOptions->keys()->first();
         }
 
         $variables['matchField'] = $matchField;
         $variables['typeOptions'] = $typeOptions;
         $variables['readOnly'] = $this->readOnly;
-
-        //Craft::dd($matchField);
-
-        //$this->getView()->registerAssetBundle(EditMatchfieldAsset::class);
 
         return $this->renderTemplate('cockpit/settings/matchfields/_edit.twig', $variables);
     }
@@ -245,6 +242,9 @@ class MatchfieldsController extends Controller
      * Deletes a Match field.
      *
      * @return Response
+     * @throws MethodNotAllowedHttpException
+     * @throws BadRequestHttpException
+     * @throws InvalidConfigException
      */
     public function actionDeleteMatchField(): Response
     {

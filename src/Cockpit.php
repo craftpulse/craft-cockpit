@@ -47,7 +47,8 @@ use yii\log\Logger;
  * @package     Cockpit
  * @since       5.0.0
  *
- * @method Settings getSettings()
+ * @method SettingsModel getSettings()
+ * @property-read SettingsModel $settings
  */
 class Cockpit extends Plugin
 {
@@ -297,6 +298,7 @@ class Cockpit extends Plugin
                 // General Settings
                 $event->rules['cockpit'] = 'cockpit/settings/edit';
                 $event->rules['cockpit/settings'] = 'cockpit/settings/edit';
+                $event->rules['cockpit/settings/general'] = 'cockpit/settings/edit';
                 $event->rules['cockpit/plugins/cockpit'] = 'cockpit/settings/edit';
 
                 // Match Field Types

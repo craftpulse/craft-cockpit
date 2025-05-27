@@ -100,7 +100,7 @@
                     heading: site.name|t('site')|e,
                     enabled: include('_includes/forms/lightswitch.twig', {
                         name: 'sites['~site.handle~'][enabled]',
-                        on: brandNewMatchfield or siteSettings,
+                        on: brandNewMatchField or siteSettings,
                         value: site.id,
                         small: true,
                         disabled: readOnly,
@@ -246,7 +246,7 @@
     </div>
 {% endblock %}
 
-{% if brandNewMatchfield %}
+{% if brandNewMatchField %}
     {% js %}
         new Craft.HandleGenerator('#name', '#handle');
 

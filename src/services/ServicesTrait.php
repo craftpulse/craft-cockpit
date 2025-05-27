@@ -17,6 +17,7 @@ use yii\base\InvalidConfigException;
  * @package   Cockpit
  * @since     5.0.0
  *
+ * @property Api $api
  * @property CleanupService $cleanup
  * @property JobService $jobs
  * @property OfficeService $offices
@@ -29,9 +30,10 @@ trait ServicesTrait
     {
         return [
             'components' => [
-                'matchFields' => MatchField::class,
+                'api' => Api::class,
                 'cleanup' => CleanupService::class,
                 'jobs' => JobService::class,
+                'matchFields' => MatchField::class,
                 'offices' => OfficeService::class,
             ],
         ];
@@ -39,6 +41,17 @@ trait ServicesTrait
 
     // Public Methods
     // =========================================================================
+
+    /**
+     * Returns the api service
+     *
+     * @return Api The api service
+     * @throws InvalidConfigException
+     */
+    public function getApi(): Api
+    {
+        return $this->get('api');
+    }
 
     /**
      * Returns the cleanup service
@@ -57,7 +70,7 @@ trait ServicesTrait
      * @return JobService The jobs service
      * @throws InvalidConfigException
      */
-    public function getJobs(): JobsService
+    public function getJobs(): JobService
     {
         return $this->get('jobs');
     }

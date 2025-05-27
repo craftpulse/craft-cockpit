@@ -649,7 +649,6 @@ class MatchField extends Component
      * @param string $orderBy
      * @param int $sortDir
      * @return array
-     * @since 5.5.0
      */
     private function prepTableData(
         Query $query,
