@@ -1,0 +1,159 @@
+{% import '_includes/forms' as forms %}
+
+<fieldset class="fieldset">
+
+    <legend class="h6">{{ 'Company Info'|t('cockpit') }}</legend>
+    <div class="meta">
+        <div class="field">
+            <legend class="heading">
+                {{ 'Company Name'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {{ forms.text({
+                    id: 'companyName',
+                    name: 'companyName',
+                    value: element.companyName,
+                }) }}
+            </div>
+        </div>
+
+        <div class="field">
+            <legend class="heading">
+                {{ 'Street'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {{ forms.text({
+                    id: 'street',
+                    name: 'street',
+                    value: element.street,
+                }) }}
+            </div>
+        </div>
+
+        <div class="field">
+            <legend class="heading">
+                {{ 'Post Code'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {{ forms.text({
+                    id: 'postCode',
+                    name: 'postCode',
+                    value: element.postCode,
+                }) }}
+            </div>
+        </div>
+
+        <div class="field">
+            <legend class="heading">
+                {{ 'City'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {{ forms.text({
+                    id: 'city',
+                    name: 'city',
+                    value: element.city,
+                }) }}
+            </div>
+        </div>
+
+        <div class="field">
+            <legend class="heading">
+                {{ 'Latitude'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {{ forms.text({
+                    id: 'latitude',
+                    name: 'latitude',
+                    value: element.latitude,
+                }) }}
+            </div>
+        </div>
+
+
+        <div class="field">
+            <legend class="heading">
+                {{ 'Longitude'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {{ forms.text({
+                    id: 'longitude',
+                    name: 'longitude',
+                    value: element.longitude,
+                }) }}
+            </div>
+        </div>
+    </div>
+
+    <legend class="h6">{{ 'Cockpit'|t('cockpit') }}</legend>
+    <div class="meta">
+        <div class="field">
+            <legend class="heading">
+                {{ 'ID'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {{ forms.text({
+                    id: 'cockpitId',
+                    name: 'cockpitId',
+                    value: element.cockpitId,
+                }) }}
+            </div>
+        </div>
+        <div class="field">
+            <legend class="heading">
+                {{ 'Company ID'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {{ forms.text({
+                    id: 'cockpitCompanyId',
+                    name: 'cockpitCompanyId',
+                    value: element.cockpitCompanyId,
+                }) }}
+            </div>
+        </div>
+        <div class="field">
+            <legend class="heading">
+                {{ 'Job Request ID'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {{ forms.text({
+                    id: 'cockpitJobRequestId',
+                    name: 'cockpitJobRequestId',
+                    value: element.cockpitJobRequestId,
+                }) }}
+            </div>
+        </div>
+        <div class="field">
+            <legend class="heading">
+                {{ 'Office ID'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {{ forms.text({
+                    id: 'cockpitOfficeId',
+                    name: 'cockpitOfficeId',
+                    value: element.cockpitOfficeId,
+                }) }}
+            </div>
+        </div>
+    </div>
+</fieldset>
+
+<dl class="meta read-only">
+    <div class="data">
+        <dt class="heading">Application count</dt>
+        <dd class="value">{{ element.applicationCount }}</dd>
+    </div>
+    <div class="data">
+        <dt class="heading">Job open positions</dt>
+        <dd class="value">{{ element.openPositions }}</dd>
+    </div>
+</dl>

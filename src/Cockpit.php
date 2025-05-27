@@ -11,7 +11,9 @@
 namespace craftpulse\cockpit;
 
 use Craft;
+use craft\base\Element;
 use craft\events\DefineFieldLayoutFieldsEvent;
+use craft\events\DefineHtmlEvent;
 use craft\models\FieldLayout;
 use Monolog\Formatter\LineFormatter;
 use Psr\Log\LogLevel;
@@ -121,6 +123,7 @@ class Cockpit extends Plugin
             $this->_registerCpUrlRules();
             $this->_registerElements();
             $this->_registerFieldLayouts();
+            $this->_registerSidebarPanels();
         }
 
 
@@ -358,6 +361,27 @@ class Cockpit extends Plugin
                 }
             }
         );
+    }
+
+    private function _registerSidebarPanels(): void
+    {
+        Event::on(
+            Job::class,
+            Element::EVENT_DEFINE_SIDEBAR_HTML,
+            function (DefineHtmlEvent $event) {
+                /** @var Element $element */
+                $element = $event->sender;
+
+                $html = Craft::$app->getView()->renderTemplate('cockpit/_components/_job-sidebar', [
+                    'variable' => true,
+                    'element' => $element,
+                ]);
+
+                $event->html .= $html;
+            },
+        );
+
+
     }
 
     /**

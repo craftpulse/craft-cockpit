@@ -40,7 +40,7 @@ class JobsService extends Component
                 'mandatory' => true,
                 'required' => true,
                 'width' => '100%',
-            ]
+            ],
         ];
     }
 
@@ -67,5 +67,11 @@ class JobsService extends Component
 
         // Invalidate job caches
         Craft::$app->getElements()->invalidateCachesForElementType(Job::class);
+    }
+
+    public function handleDeletedFieldLayout(ConfigEvent $event): void
+    {
+        $fieldsService = Craft::$app->getFields();
+        $fieldsService->deleteLayoutsByType(Job::class);
     }
 }

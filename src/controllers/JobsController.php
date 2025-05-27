@@ -133,14 +133,14 @@ class JobsController extends Controller
 
         // Resave all products if the URI format changed
         if ($originalUriFormat != $settings['jobUriFormat']) {
-//            Craft::$app->getQueue()->push(new ResaveElements([
-//                'elementType' => Job::class,
-//                'criteria' => [
-//                    'siteId' => '*',
-//                    'unique' => true,
-//                    'status' => null,
-//                ],
-//            ]));
+            Craft::$app->getQueue()->push(new ResaveElements([
+                'elementType' => Job::class,
+                'criteria' => [
+                    'siteId' => '*',
+                    'unique' => true,
+                    'status' => null,
+                ],
+            ]));
         }
 
         Craft::$app->getSession()->setNotice(Craft::t('app', 'Plugin settings saved.'));
