@@ -300,9 +300,9 @@ class Cockpit extends Plugin
                 $event->rules['cockpit/plugins/cockpit'] = 'cockpit/settings/edit';
 
                 // Match Field Types
-                $event->rules['cockpit/settings/matchfields'] = 'cockpit/matchfields/matchfield-index';
-                $event->rules['cockpit/settings/matchfields/<matchFieldId:\d+>'] = 'cockpit/matchfields/edit-matchfield';
-                $event->rules['cockpit/settings/matchfields/new'] = 'cockpit/matchfields/edit-matchfield';
+                $event->rules['cockpit/settings/matchfields'] = 'cockpit/matchfields/match-field-index';
+                $event->rules['cockpit/settings/matchfields/<matchFieldId:\d+>'] = 'cockpit/matchfields/edit-match-field';
+                $event->rules['cockpit/settings/matchfields/new'] = 'cockpit/matchfields/edit-match-field';
 
                 // Contact Elements
                 $event->rules['cockpit/contacts'] = ['template' => 'cockpit/contacts/_index.twig'];
