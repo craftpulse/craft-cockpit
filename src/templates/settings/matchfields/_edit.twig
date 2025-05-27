@@ -1,5 +1,5 @@
 {% extends "cockpit/_layouts/cockpit-cp" %}
-{% set title = matchField.id ? matchField.name : 'Create a new matchfield'|t('cockpit') %}
+{% set title = matchField.id ? matchField.name : 'Create a new match field'|t('cockpit') %}
 
 {% set crumbs = [
     { label: 'Cockpit'|t('cockpit'), url: url('cockpit') },
@@ -14,6 +14,7 @@
 {% endif %}
 
 {% import "_includes/forms" as forms %}
+{% set headlessMode = craft.app.config.general.headlessMode %}
 
 {% set formActions = [
     {
@@ -37,7 +38,7 @@
         {{ forms.textField({
             first: true,
             label: "Name"|t('cockpit'),
-            instructions: "What this match field type will be called in the control panel."|t('cockpit'),
+            instructions: "What this match field will be called in the control panel."|t('cockpit'),
             id: 'name',
             name: 'name',
             value: matchField.name,
@@ -60,7 +61,7 @@
         }) }}
 
         {{ forms.lightswitchField({
-            label: 'Enable versioning for this match field type.'|t('cockpit'),
+            label: 'Enable versioning for this match field.'|t('cockpit'),
             id: 'enableVersioning',
             name: 'enableVersioning',
             on: matchField.enableVersioning,
@@ -105,7 +106,7 @@
                     }),
                     uriFormat: {
                         value: siteSettings ? siteSettings.uriFormat,
-                        hasErrors: siteSettings.hasErrors('uriFormat'),
+                        hasErrors: siteSettings ? siteSettings.hasErrors('uriFormat'),
                     },
                     template: not headlessMode ? {
                         value: siteSettings ? siteSettings.template,
@@ -200,8 +201,8 @@
                 id: 'default-placement',
                 name: 'defaultPlacement',
                 options: [
-                    {label: 'Before other {type}'|t('app', {type: 'matchfields'|t('cockpit')}), value: 'beginning'},
-                    {label: 'After other {type}'|t('app', {type: 'matchfields'|t('cockpit')}), value: 'end'},
+                    {label: 'Before other {type}'|t('app', {type: 'match fields'|t('cockpit')}), value: 'beginning'},
+                    {label: 'After other {type}'|t('app', {type: 'match fields'|t('cockpit')}), value: 'end'},
                 ],
                 value: matchField.defaultPlacement,
                 disabled: readOnly,

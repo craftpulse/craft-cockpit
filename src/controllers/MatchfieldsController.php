@@ -22,6 +22,7 @@ use craftpulse\cockpit\models\MatchField as MatchFieldModel;
 use craftpulse\cockpit\models\MatchField_SiteSettings as MatchField_SiteSettingsModel;
 
 use Throwable;
+use yii\base\ExitException;
 use yii\base\InvalidConfigException;
 use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;
@@ -61,6 +62,7 @@ class MatchfieldsController extends Controller
      *
      * @param array $variables
      * @return Response The rendering result
+     * @throws InvalidConfigException
      */
     public function actionMatchFieldIndex(): Response
     {
@@ -107,7 +109,7 @@ class MatchfieldsController extends Controller
      * @return Response
      * @throws ForbiddenHttpException
      * @throws NotFoundHttpException if the requested match field cannot be found
-     * @throws InvalidConfigException
+     * @throws InvalidConfigException|ExitException
      */
     public function actionEditMatchField(?int $matchFieldId = null, ?MatchfieldModel $matchField = null): Response
     {
@@ -127,11 +129,11 @@ class MatchfieldsController extends Controller
                 $matchField = $matchFieldService->getMatchfieldById($matchFieldId);
 
                 if (!$matchField) {
-                    throw new NotFoundHttpException('Matchfield not found');
+                    throw new NotFoundHttpException('match field not found');
                 }
             }
 
-            $variables['title'] = trim($matchField->name) ?: Craft::t('cockpit', 'Edit Matchfield');
+            $variables['title'] = trim($matchField->name) ?: Craft::t('cockpit', 'Edit match field');
         } else {
             if ($matchField === null) {
                 $matchField = new MatchfieldModel();
@@ -154,6 +156,8 @@ class MatchfieldsController extends Controller
         $variables['matchField'] = $matchField;
         $variables['typeOptions'] = $typeOptions;
         $variables['readOnly'] = $this->readOnly;
+
+        //Craft::dd($matchField);
 
         //$this->getView()->registerAssetBundle(EditMatchfieldAsset::class);
 
@@ -207,7 +211,7 @@ class MatchfieldsController extends Controller
                 continue;
             }
 
-            $siteSettings = new Matchfield_SiteSettings();
+            $siteSettings = new MatchField_SiteSettingsModel();
             $siteSettings->siteId = $site->id;
             $siteSettings->uriFormat = $postedSettings['uriFormat'] ?? null;
             $siteSettings->enabledByDefault = (bool)$postedSettings['enabledByDefault'];
