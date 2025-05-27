@@ -62,7 +62,7 @@ class MatchfieldsController extends Controller
      * @param array $variables
      * @return Response The rendering result
      */
-    public function actionMatchfieldIndex(): Response
+    public function actionMatchFieldIndex(): Response
     {
         // Ensure they have permission to edit the plugin settings
         $currentUser = Craft::$app->getUser()->getIdentity();
@@ -72,15 +72,15 @@ class MatchfieldsController extends Controller
 
         $general = Craft::$app->getConfig()->getGeneral();
         if (!$general->allowAdminChanges) {
-            throw new ForbiddenHttpException('Unable to edit matchfield settings because admin changes are disabled in this environment.');
+            throw new ForbiddenHttpException('Unable to edit match field settings because admin changes are disabled in this environment.');
         }
 
         $matchFields = Cockpit::$plugin->getMatchFields()->getAllMatchFields();
 
-        // View the matchfield settings
+        // View the match field settings
         $pluginName = 'Cockpit';
         $variables = [];
-        $templateTitle = Craft::t('cockpit', 'Matchfields overview');
+        $templateTitle = Craft::t('cockpit', 'Match fields overview');
         $variables['title'] = $templateTitle;
         $variables['readOnly'] = $this->readOnly;
         $variables['docTitle'] = "{$pluginName} - {$templateTitle}";
@@ -94,22 +94,22 @@ class MatchfieldsController extends Controller
                 'url' => UrlHelper::cpUrl('cockpit/plugin'),
             ],
         ];
-        $variables['matchfields'] = $matchFields;
+        $variables['matchFields'] = $matchFields;
 
         return $this->renderTemplate('cockpit/settings/matchfields/index', $variables);
     }
 
     /**
-     * Edit a matchfield.
+     * Edit a match field.
      *
-     * @param int|null $matchFieldId The matchfields’ ID, if any.
+     * @param int|null $matchFieldId The match fields’ ID, if any.
      * @param MatchFieldModel|null $matchField
      * @return Response
      * @throws ForbiddenHttpException
      * @throws NotFoundHttpException if the requested match field cannot be found
      * @throws InvalidConfigException
      */
-    public function actionEditMatchfield(?int $matchFieldId = null, ?MatchfieldModel $matchField = null): Response
+    public function actionEditMatchField(?int $matchFieldId = null, ?MatchfieldModel $matchField = null): Response
     {
         if ($matchFieldId === null && $this->readOnly) {
             throw new ForbiddenHttpException('Administrative changes are disallowed in this environment.');
@@ -118,8 +118,8 @@ class MatchfieldsController extends Controller
         $matchFieldService = Cockpit::$plugin->getMatchfields();
 
         $variables = [
-            'matchfieldId' => $matchFieldId,
-            'brandNewMatchfield' => false,
+            'matchFieldId' => $matchFieldId,
+            'brandNewMatchField' => false,
         ];
 
         if ($matchFieldId !== null) {
@@ -138,7 +138,7 @@ class MatchfieldsController extends Controller
                 $variables['brandNewMatchfield'] = true;
             }
 
-            $variables['title'] = Craft::t('cockpit', 'Create a new matchfield');
+            $variables['title'] = Craft::t('cockpit', 'Create a new match field');
         }
 
         // This needs to fetch data from the API
@@ -151,7 +151,7 @@ class MatchfieldsController extends Controller
             $matchField->type = 'type1';
         }
 
-        $variables['matchfield'] = $matchField;
+        $variables['matchField'] = $matchField;
         $variables['typeOptions'] = $typeOptions;
         $variables['readOnly'] = $this->readOnly;
 
@@ -170,16 +170,16 @@ class MatchfieldsController extends Controller
      * @throws MatchFieldNotFoundException
      * @throws MethodNotAllowedHttpException
      */
-    public function actionSaveMatchfield(): ?Response
+    public function actionSaveMatchField(): ?Response
     {
         $this->requirePostRequest();
 
         $matchFieldService = Cockpit::$plugin->getMatchfields();
-        $matchFieldId = $this->request->getBodyParam('matchfieldId');
+        $matchFieldId = $this->request->getBodyParam('matchFieldId');
         if ($matchFieldId) {
             $matchField = $matchFieldService->getMatchFieldById($matchFieldId);
             if (!$matchField) {
-                throw new BadRequestHttpException("Invalid matchfield ID: $matchFieldId");
+                throw new BadRequestHttpException("Invalid match field ID: $matchFieldId");
             }
         } else {
             $matchField = new MatchfieldModel();
@@ -223,11 +223,11 @@ class MatchfieldsController extends Controller
 
         // Save it
         if (!$matchFieldService->saveMatchField($matchField)) {
-            $this->setFailFlash(Craft::t('cockpit', 'Couldn’t save matchfield.'));
+            $this->setFailFlash(Craft::t('cockpit', 'Couldn’t save match field.'));
 
             // Send the match field back to the template
             Craft::$app->getUrlManager()->setRouteParams([
-                'matchfield' => $matchField,
+                'matchField' => $matchField,
             ]);
 
             return null;
@@ -242,7 +242,7 @@ class MatchfieldsController extends Controller
      *
      * @return Response
      */
-    public function actionDeleteMatchfield(): Response
+    public function actionDeleteMatchField(): Response
     {
         $this->requirePostRequest();
         $this->requireAcceptsJson();
@@ -259,12 +259,13 @@ class MatchfieldsController extends Controller
      *
      * @return Response
      * @throws BadRequestHttpException
+     * @throws InvalidConfigException
      */
     public function actionTableData(): Response
     {
         $this->requireAcceptsJson();
 
-        $matchFieldService = Cockpit::$plugin->getMatchfields();
+        $matchFieldService = Cockpit::$plugin->getMatchFields();
 
         $page = (int)$this->request->getParam('page', 1);
         $limit = (int)$this->request->getParam('per_page', 100);
@@ -279,7 +280,7 @@ class MatchfieldsController extends Controller
             default => SORT_ASC,
         };
 
-        [$pagination, $tableData] = $matchFieldService->getMatchfieldTableData($page, $limit, $searchTerm, $orderBy, $sortDir);
+        [$pagination, $tableData] = $matchFieldService->getMatchFieldTableData($page, $limit, $searchTerm, $orderBy, $sortDir);
 
         return $this->asSuccess(data: [
             'pagination' => $pagination,

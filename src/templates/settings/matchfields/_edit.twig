@@ -1,5 +1,5 @@
 {% extends "cockpit/_layouts/cockpit-cp" %}
-{% set title = matchfieldType.id ? matchfieldType.name : 'Create a new matchfield'|t('cockpit') %}
+{% set title = matchField.id ? matchField.name : 'Create a new matchfield'|t('cockpit') %}
 
 {% set crumbs = [
     { label: 'Cockpit'|t('cockpit'), url: url('cockpit') },
@@ -27,21 +27,21 @@
 {% block content %}
 
     {% if not readOnly %}
-        {{ actionInput('cockpit/matchfield-types/save-matchfield') }}
+        {{ actionInput('cockpit/matchfields/save-match-field') }}
         {{ redirectInput('cockpit/settings/matchfields') }}
 
-        {% if matchfield.id %}{{ hiddenInput('matchfieldId', matchfield.id) }}{% endif %}
+        {% if matchField.id %}{{ hiddenInput('matchFieldId', matchField.id) }}{% endif %}
     {% endif %}
 
-    <div id="matchfield-type-settings">
+    <div id="matchfield-settings">
         {{ forms.textField({
             first: true,
             label: "Name"|t('cockpit'),
-            instructions: "What this matchfield type will be called in the control panel."|t('cockpit'),
+            instructions: "What this match field type will be called in the control panel."|t('cockpit'),
             id: 'name',
             name: 'name',
-            value: matchfield.name,
-            errors: matchfield.getErrors('name'),
+            value: matchField.name,
+            errors: matchField.getErrors('name'),
             autofocus: true,
             required: true,
             disabled: readOnly,
@@ -49,45 +49,45 @@
 
         {{ forms.textField({
             label: "Handle"|t('cockpit'),
-            instructions: "How you’ll refer to this matchfield type in the templates."|t('cockpit'),
+            instructions: "How you’ll refer to this match field type in the templates."|t('cockpit'),
             id: 'handle',
             class: 'code',
             name: 'handle',
-            value: matchfield.handle,
-            errors: matchfield.getErrors('handle'),
+            value: matchField.handle,
+            errors: matchField.getErrors('handle'),
             required: true,
             disabled: readOnly,
         }) }}
 
         {{ forms.lightswitchField({
-            label: 'Enable versioning for this matchfield type.'|t('cockpit'),
+            label: 'Enable versioning for this match field type.'|t('cockpit'),
             id: 'enableVersioning',
             name: 'enableVersioning',
-            on: matchfieldType.enableVersioning,
+            on: matchField.enableVersioning,
             disabled: readOnly,
         }) }}
 
         {{ forms.selectField({
             label: "Matchfield Type"|t('app'),
-            instructions: "What type of matchfield is this?"|t('cockpit'),
+            instructions: "What type of match field is this?"|t('cockpit'),
             warning: 'Changing this may result in data loss.'|t('cockpit'),
             id: 'type',
             name: 'type',
             options: typeOptions,
-            value: matchfield.type,
+            value: matchField.type,
             toggle: true,
             targetPrefix: '.type-',
-            errors: matchfield.getErrors('type'),
+            errors: matchField.getErrors('type'),
             disabled: readOnly,
         }) }}
 
         <hr>
 
         {% set siteRows = [] %}
-        {% set siteErrors = matchfield.getErrors('siteSettings') %}
+        {% set siteErrors = matchField.getErrors('siteSettings') %}
 
         {% for site in craft.app.sites.getAllSites() %}
-            {% set siteSettings = matchfield.siteSettings[site.id] ?? null %}
+            {% set siteSettings = matchField.siteSettings[site.id] ?? null %}
             {% if siteSettings %}
                 {% for attribute, errors in siteSettings.getErrors() %}
                     {% set siteErrors = siteErrors|merge(errors) %}
@@ -118,7 +118,7 @@
 
         {{ forms.editableTableField({
             label: "Site Settings"|t('app'),
-            instructions: "Choose which sites this matchfield should be available in, and configure the site-specific settings."|t('cockpit'),
+            instructions: "Choose which sites this match field should be available in, and configure the site-specific settings."|t('cockpit'),
             id: 'sites',
             name: 'sites',
             cols: {
@@ -135,15 +135,15 @@
                 uriFormat: {
                     type: 'singleline',
                     heading: "Matchfield URI Format"|t('cockpit'),
-                    info: "What entry URIs should look like for the site. Leave blank if matchfields don’t have URLs."|t('cockpit'),
-                    placeholder: 'Leave blank if matchfields don’t have URLs'|t('cockpit'),
+                    info: "What entry URIs should look like for the site. Leave blank if match fields don’t have URLs."|t('cockpit'),
+                    placeholder: 'Leave blank if match fields don’t have URLs'|t('cockpit'),
                     code: true,
                     width: headlessMode ? 500,
                 },
                 template: not headlessMode ? {
                     type: 'template',
                     heading: "Template"|t('app'),
-                    info: "Which template should be loaded when an matchfields’ URL is requested."|t('cockpit'),
+                    info: "Which template should be loaded when an match fields’ URL is requested."|t('cockpit'),
                     code: true
                 },
                 enabledByDefault: {
@@ -166,7 +166,7 @@
                 {{ forms.selectField({
                     label: 'Propagation Method'|t('app'),
                     instructions: 'Of the enabled sites above, which sites should match fields in this match field be saved to?'|t('cockpit'),
-                    warning: matchfield.id and matchfield.propagationMethod.value != 'none' and matchfield.siteSettings|length > 1 ? 'Changing this may result in data loss.'|t('app'),
+                    warning: matchField.id and matchField.propagationMethod.value != 'none' and matchField.siteSettings|length > 1 ? 'Changing this may result in data loss.'|t('app'),
                     id: 'propagationMethod',
                     name: 'propagationMethod',
                     options: [
@@ -176,7 +176,7 @@
                         { value: 'all', label: 'Save entries to all sites enabled for this match field'|t('cockpit') },
                         { value: 'custom', label: 'Let each entry choose which sites it should be saved to'|t('app') },
                     ],
-                    value: matchfield.propagationMethod.value,
+                    value: matchField.propagationMethod.value,
                     disabled: readOnly,
                 }) }}
             </div>
@@ -185,12 +185,12 @@
         <div class="field type-structure">
             {{ forms.textField({
                 label: "Max Levels"|t('app'),
-                instructions: 'The maximum number of levels this matchfield can have.'|t('cockpit'),
+                instructions: 'The maximum number of levels this match field can have.'|t('cockpit'),
                 id: 'maxLevels',
                 name: 'maxLevels',
-                value: matchfield.maxLevels,
+                value: matchField.maxLevels,
                 size: 5,
-                errors: matchfield.getErrors('maxLevels'),
+                errors: matchField.getErrors('maxLevels'),
                 disabled: readOnly,
             }) }}
 
@@ -203,7 +203,7 @@
                     {label: 'Before other {type}'|t('app', {type: 'matchfields'|t('cockpit')}), value: 'beginning'},
                     {label: 'After other {type}'|t('app', {type: 'matchfields'|t('cockpit')}), value: 'end'},
                 ],
-                value: matchfield.defaultPlacement,
+                value: matchField.defaultPlacement,
                 disabled: readOnly,
             }) }}
         </div>
@@ -237,8 +237,8 @@
             allowAdd: true,
             allowReorder: true,
             allowDelete: true,
-            rows: matchfield.previewTargets,
-            errors: matchfield.getErrors('previewTargets'),
+            rows: matchField.previewTargets,
+            errors: matchField.getErrors('previewTargets'),
             static: readOnly,
         }) }}
     </div>
