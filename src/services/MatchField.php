@@ -592,4 +592,113 @@ class MatchField extends Component
         // Invalidate entry caches
         Craft::$app->getElements()->invalidateCachesForElementType(MatchFieldEntry::class);
     }
+
+    /**
+     * Returns data for the Match field index page in the control panel.
+     *
+     * @param int $page
+     * @param int $limit
+     * @param string|null $searchTerm
+     * @param string $orderBy
+     * @param int $sortDir
+     * @return array
+     */
+    public function getMatchFieldTableData(
+        int $page,
+        int $limit,
+        ?string $searchTerm,
+        string $orderBy = 'name',
+        int $sortDir = SORT_ASC,
+    ): array {
+        [$results, $total] = $this->prepTableData($this->_createMatchFieldQuery(), $page, $limit, $searchTerm, $orderBy, $sortDir);
+
+        /** @var MatchField[] $matchFields */
+        $sections = array_values(array_filter(
+            array_map(fn(array $result) => $this->_matchFields()->firstWhere('id', $result['id']), $results)
+        ));
+
+        $tableData = [];
+
+        foreach ($sections as $section) {
+            $label = $section->getUiLabel();
+            $tableData[] = [
+                'id' => $section->id,
+                'title' => $label,
+                'name' => $label,
+                'url' => $section->getCpEditUrl(),
+                'handle' => $section->handle,
+                // @TODO: add type data from API
+                'type' => '',
+            ];
+        }
+
+        $pagination = AdminTable::paginationLinks($page, $total, $limit);
+
+        return [$pagination, $tableData];
+    }
+
+    /**
+     * Returns query results needed for the VueAdminTable accounting for the pagination, search terms and sorting options.
+     *
+     * @param Query $query
+     * @param int $page
+     * @param int $limit
+     * @param string|null $searchTerm
+     * @param string $orderBy
+     * @param int $sortDir
+     * @return array
+     * @since 5.5.0
+     */
+    private function prepTableData(
+        Query $query,
+        int $page,
+        int $limit,
+        ?string $searchTerm,
+        string $orderBy = 'name',
+        int $sortDir = SORT_ASC,
+    ): array {
+        $searchTerm = $searchTerm ? trim($searchTerm) : $searchTerm;
+
+        $offset = ($page - 1) * $limit;
+        $query = $query
+            ->orderBy([$orderBy => $sortDir]);
+
+        if ($orderBy === 'name') {
+            $query->addOrderBy(['name' => $sortDir]);
+        }
+
+        if ($searchTerm !== null && $searchTerm !== '') {
+            $searchParams = $this->_getSearchParams($searchTerm);
+            if (!empty($searchParams)) {
+                $query->andWhere(['or', ...$searchParams]);
+            }
+        }
+
+        $total = $query->count();
+
+        $query->limit($limit);
+        $query->offset($offset);
+
+        return [$query->all(), $total];
+    }
+
+    /**
+     * Returns the sql expression to be used in the 'where' param for the query.
+     *
+     * @param string $term
+     * @return array
+     */
+    private function _getSearchParams(string $term): array
+    {
+        $searchParams = ['name', 'handle'];
+        $searchQueries = [];
+
+        if ($term !== '') {
+            foreach ($searchParams as $param) {
+                $searchQueries[] = ['like', $param, '%' . $term . '%', false];
+            }
+        }
+
+        return $searchQueries;
+    }
 }
