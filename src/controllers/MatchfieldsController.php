@@ -148,8 +148,6 @@ class MatchfieldsController extends Controller
         // This needs to fetch data from the API
         $typeOptions = Cockpit::$plugin->getApi()->getMatchFieldTypes();
 
-        Craft::dd(Cockpit::$plugin->getApi()->getWebhooks());
-
         if (!$matchField->type) {
             $matchField->type = $typeOptions->keys()->first();
         }
