@@ -35,7 +35,7 @@
 
     {% if not readOnly %}
         config['deleteAction'] = 'cockpit/matchfields/delete-matchfield';
-        config['deleteConfirmationMessage'] = Craft.t('cockpit', 'Are you sure you want to delete “{name}” and all its matchfields? Please make sure you have a backup of your database before performing this destructive action.');
+        config['deleteConfirmationMessage'] = Craft.t('cockpit', 'Are you sure you want to delete “{name}” and all its match fields? Please make sure you have a backup of your database before performing this destructive action.');
     {% endif %}
 
     new Craft.VueAdminTable(config);

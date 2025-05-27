@@ -75,6 +75,8 @@ class MatchField extends Component
      */
     public const EVENT_AFTER_DELETE_MATCHFIELD = 'afterDeleteMatchField';
 
+    public const CONFIG_MATCHFIELDS_KEY = 'cockpit.matchFields';
+
 
     // Properties
     // =========================================================================
@@ -349,7 +351,7 @@ class MatchField extends Component
             // Save the match field config
             // -----------------------------------------------------------------
 
-            $configPath = ProjectConfig::PATH_SECTIONS . '.' . $matchField->uid;
+            $configPath = self::CONFIG_MATCHFIELDS_KEY . '.' . $matchField->uid;
             $configData = $matchField->getConfig();
             Craft::$app->getProjectConfig()->set($configPath, $configData, "Save match field “{$matchField->handle}”");
 
@@ -613,22 +615,22 @@ class MatchField extends Component
         [$results, $total] = $this->prepTableData($this->_createMatchFieldQuery(), $page, $limit, $searchTerm, $orderBy, $sortDir);
 
         /** @var MatchField[] $matchFields */
-        $sections = array_values(array_filter(
+        $matchFields = array_values(array_filter(
             array_map(fn(array $result) => $this->_matchFields()->firstWhere('id', $result['id']), $results)
         ));
 
         $tableData = [];
 
-        foreach ($sections as $section) {
-            $label = $section->getUiLabel();
+        foreach ($matchFields as $matchField) {
+            $label = $matchField->getUiLabel();
             $tableData[] = [
-                'id' => $section->id,
+                'id' => $matchField->id,
                 'title' => $label,
                 'name' => $label,
-                'url' => $section->getCpEditUrl(),
-                'handle' => $section->handle,
+                'url' => $matchField->getCpEditUrl(),
+                'handle' => $matchField->handle,
                 // @TODO: add type data from API
-                'type' => '',
+                'type' => '1',
             ];
         }
 
@@ -647,7 +649,6 @@ class MatchField extends Component
      * @param string $orderBy
      * @param int $sortDir
      * @return array
-     * @since 5.5.0
      */
     private function prepTableData(
         Query $query,
@@ -700,5 +701,21 @@ class MatchField extends Component
         }
 
         return $searchQueries;
+    }
+
+    /**
+     * Gets a match field' record by uid.
+     *
+     * @param string $uid
+     * @param bool $withTrashed Whether to include trashed sections in search
+     * @return MatchFieldRecord
+     */
+    private function _getMatchFieldRecord(string $uid, bool $withTrashed = false): MatchFieldRecord
+    {
+        $query = $withTrashed ? MatchFieldRecord::findWithTrashed() : MatchFieldRecord::find();
+        $query->andWhere(['uid' => $uid]);
+        /** @noinspection PhpIncompatibleReturnTypeInspection */
+        /** @var MatchFieldRecord */
+        return $query->one() ?? new MatchFieldRecord();
     }
 }

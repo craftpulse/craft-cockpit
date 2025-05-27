@@ -51,7 +51,8 @@ use yii\log\Logger;
  * @package     Cockpit
  * @since       5.0.0
  *
- * @method Settings getSettings()
+ * @method SettingsModel getSettings()
+ * @property-read SettingsModel $settings
  */
 class Cockpit extends Plugin
 {
@@ -288,10 +289,10 @@ class Cockpit extends Plugin
             ->onUpdate(self::CONFIG_JOBFIELD_LAYOUT_KEY, [$jobsService, 'handleChangedFieldLayout'])
             ->onRemove(self::CONFIG_JOBFIELD_LAYOUT_KEY, [$jobsService, 'handleDeletedFieldLayout']);
 
-        /*$matchFieldsService = $this->getMatchFields();
+        $matchFieldsService = $this->getMatchFields();
         $projectConfigService->onAdd(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleChangedMatchField'])
             ->onUpdate(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleChangedMatchField'])
-            ->onRemove(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleDeletedMatchField']);*/
+            ->onRemove(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleDeletedMatchField']);
     }
 
     /**
@@ -304,6 +305,7 @@ class Cockpit extends Plugin
                 // General Settings
                 $event->rules['cockpit'] = 'cockpit/settings/edit';
                 $event->rules['cockpit/settings'] = 'cockpit/settings/edit';
+                $event->rules['cockpit/settings/general'] = 'cockpit/settings/edit';
                 $event->rules['cockpit/plugins/cockpit'] = 'cockpit/settings/edit';
 
                 // Match Field Types

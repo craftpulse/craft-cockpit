@@ -19,7 +19,7 @@ use craft\models\FieldLayout;
 use craftpulse\cockpit\elements\Job;
 
 /**
- * Class JobService
+ * Class JobsService
  *
  * @author      CraftPulse
  * @package     Cockpit

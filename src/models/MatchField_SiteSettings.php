@@ -33,7 +33,7 @@ class MatchField_SiteSettings extends Model
     /**
      * @var int|null Matchfield ID
      */
-    public ?int $matchfieldId = null;
+    public ?int $matchFieldId = null;
 
     /**
      * @var int|null Site ID
@@ -77,12 +77,12 @@ class MatchField_SiteSettings extends Model
             return $this->_matchfield;
         }
 
-        if (!$this->matchfieldId) {
+        if (!$this->matchFieldId) {
             throw new InvalidConfigException('Match field site settings model is missing its match field ID');
         }
 
-        if (($this->_matchfield = Cockpit::$plugin->getMatchFields()->getMatchFieldById($this->matchfieldId)) === null) {
-            throw new InvalidConfigException('Invalid match field ID: ' . $this->matchfieldId);
+        if (($this->_matchfield = Cockpit::$plugin->getMatchFields()->getMatchFieldById($this->matchFieldId)) === null) {
+            throw new InvalidConfigException('Invalid match field ID: ' . $this->matchFieldId);
         }
 
         return $this->_matchfield;

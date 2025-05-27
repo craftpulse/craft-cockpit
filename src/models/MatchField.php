@@ -31,6 +31,7 @@ use craftpulse\cockpit\records\MatchField as MatchFieldRecord;
 use craft\validators\HandleValidator;
 use craft\validators\UniqueValidator;
 use Exception;
+use yii\base\ExitException;
 use yii\base\InvalidConfigException;
 
 /**
@@ -51,6 +52,7 @@ class MatchField extends Model implements Chippable, CpEditable, Iconic
 
     /**
      * @inheritdoc
+     * @throws InvalidConfigException
      */
     public static function get(int|string $id): ?static
     {
@@ -193,6 +195,8 @@ class MatchField extends Model implements Chippable, CpEditable, Iconic
 
     /**
      * Validates the site settings.
+     * @throws InvalidConfigException
+     * @throws ExitException
      */
     public function validateSiteSettings(): void
     {
@@ -202,7 +206,7 @@ class MatchField extends Model implements Chippable, CpEditable, Iconic
             $currentSiteIds = (new Query())
                 ->select(['siteId'])
                 ->from([Table::MATCHFIELDS_SITES])
-                ->where(['matchfieldId' => $this->id])
+                ->where(['matchFieldId' => $this->id])
                 ->column();
 
             if (empty(array_intersect($currentSiteIds, array_keys($this->getSiteSettings())))) {
@@ -254,7 +258,7 @@ class MatchField extends Model implements Chippable, CpEditable, Iconic
      * Returns the matchfields' site-specific settings, indexed by site ID.
      *
      * @return MatchField_SiteSettings[]
-     * @throws InvalidConfigException
+     * @throws InvalidConfigException|ExitException
      */
     public function getSiteSettings(): array
     {
@@ -294,6 +298,7 @@ class MatchField extends Model implements Chippable, CpEditable, Iconic
      *
      * @return int[]
      * @throws InvalidConfigException
+     * @throws ExitException
      */
     public function getSiteIds(): array
     {
@@ -321,6 +326,7 @@ class MatchField extends Model implements Chippable, CpEditable, Iconic
      *
      * @return bool
      * @throws InvalidConfigException
+     * @throws ExitException
      */
     public function getHasMultiSiteEntries(): bool
     {
