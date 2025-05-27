@@ -281,10 +281,10 @@ class Cockpit extends Plugin
     {
         $projectConfigService = Craft::$app->getProjectConfig();
 
-        /*$matchFieldsService = $this->getMatchFields();
+        $matchFieldsService = $this->getMatchFields();
         $projectConfigService->onAdd(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleChangedMatchField'])
             ->onUpdate(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleChangedMatchField'])
-            ->onRemove(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleDeletedMatchField']);*/
+            ->onRemove(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleDeletedMatchField']);
     }
 
     /**
