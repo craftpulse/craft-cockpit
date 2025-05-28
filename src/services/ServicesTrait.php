@@ -32,6 +32,7 @@ trait ServicesTrait
                 'api' => Api::class,
                 'cleanup' => CleanupService::class,
                 'jobs' => JobsService::class,
+                'map' => MapboxService::class,
                 'matchFields' => MatchField::class,
                 'offices' => OfficeService::class,
             ],
@@ -83,6 +84,17 @@ trait ServicesTrait
     public function getOffices(): OfficeService
     {
         return $this->get('offices');
+    }
+
+    /**
+     * Returns the matchField service
+     *
+     * @return MapboxService
+     * @throws InvalidConfigException
+     */
+    public function getMap(): MapboxService
+    {
+        return $this->get('map');
     }
 
     /**

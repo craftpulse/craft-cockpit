@@ -40,8 +40,25 @@ class JobsController extends Controller
      */
     public function actionPublications(): int
     {
+        Console::stdout('Start publications fetch '. PHP_EOL, Console::FG_CYAN);
+
         try {
             $publications = Cockpit::$plugin->getApi()->getPublications()['results'] ?? collect([]);
+
+            if ($publications->isEmpty()) {
+                Craft::error('No publications found');
+                Console::stderr('No publications found' . PHP_EOL, Console::FG_RED);
+                return ExitCode::DATAERR;
+            } else {
+                $count = $publications->count();
+                Console::stdout("   > ${count} Publications found". PHP_EOL);
+
+                foreach($publications as $publication) {
+                    $title = $publication->get('name');
+                    $id = $publication->get('id');
+                    Console::stdout("       > ${title} (${id})". PHP_EOL);
+                }
+            }
 
             return ExitCode::OK;
 
@@ -63,37 +80,15 @@ class JobsController extends Controller
 
             if (!$id) {
                 Craft::error('Publication ID (as --id=x) is required');
-                Console::stderr('Error on fetching publication: Publication ID is required' . PHP_EOL);
+                Console::stderr('Error on fetching publication: Publication ID is required' . PHP_EOL, Console::FG_RED);
                 return ExitCode::DATAERR;
             }
 
             Console::stdout('Start publication fetch ' . $id . PHP_EOL, Console::FG_CYAN);
 
-            // Get publication by ID
-            $publication = Cockpit::$plugin->getApi()->getPublicationById($id);
-
-            if (!$publication) {
-                Craft::error('Publication not found');
-                Console::stderr('   > Error on fetching publication: Publication not found' . PHP_EOL, Console::FG_RED);
+            if (!Cockpit::$plugin->getJobs()->fetchPublicationById($id)) {
                 return ExitCode::DATAERR;
             }
-
-            Console::stdout('   > Publication ' . $publication->get('title') . ' found ' . PHP_EOL, Console::FG_GREEN);
-
-            $jobRequestId = $publication->get('jobRequest')['id'] ?? null;
-
-            if (!$jobRequestId) {
-                Craft::error('Job request ID not found');
-                Console::stderr('   > Error on fetching publication: Job request ID not found' . PHP_EOL, Console::FG_RED);
-                return ExitCode::DATAERR;
-            }
-
-            Console::stdout('   > Job request for ' . $publication['title'] . ' found ' . PHP_EOL, Console::FG_GREEN);
-
-            $jobRequest = Cockpit::$plugin->getApi()->getJobRequestById($jobRequestId);
-            $publication->get('jobRequest')['data'] = $jobRequest;
-
-            Cockpit::$plugin->getJobs()->createJob($publication);
 
             return ExitCode::OK;
 

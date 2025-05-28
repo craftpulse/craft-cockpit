@@ -10,16 +10,22 @@
 
 namespace craftpulse\cockpit\services;
 
+use Carbon\Carbon;
 use Craft;
 use craft\base\Component;
+use craft\elements\Address;
 use craft\events\ConfigEvent;
 use craft\fieldlayoutelements\TextField;
 use craft\helpers\Console;
 use craft\helpers\ProjectConfig;
+use craft\helpers\StringHelper;
 use craft\models\FieldLayout;
+use craftpulse\cockpit\Cockpit;
 use craftpulse\cockpit\elements\Job;
 use craftpulse\cockpit\fieldlayoutelements\AddressField;
+use DateTime;
 use Illuminate\Support\Collection;
+use yii\console\ExitCode;
 
 /**
  * Class JobsService
@@ -31,33 +37,104 @@ use Illuminate\Support\Collection;
  */
 class JobsService extends Component
 {
-    public function createJob(Collection $publication): void
+    public function fetchPublicationById(string $id): bool
     {
-        // @TODO: create a layer in between for mapping data between field layout and publication
+        if (!$id) {
+            Craft::error('Publication ID is required');
+            Console::stderr('Error on fetching publication: Publication ID is required' . PHP_EOL);
+            return false;
+        }
 
+        // Get publication by ID
+        $publication = Cockpit::$plugin->getApi()->getPublicationById($id);
+
+        if (!$publication) {
+            Craft::error('Publication not found');
+            Console::stderr('   > Error on fetching publication: Publication not found' . PHP_EOL, Console::FG_RED);
+            return false;
+        }
+
+        Console::stdout('   > Publication ' . $publication->get('title') . ' found ' . PHP_EOL, Console::FG_GREEN);
+
+        $jobRequestId = $publication->get('jobRequest')['id'] ?? null;
+
+        if (!$jobRequestId) {
+            Craft::error('Job request ID not found');
+            Console::stderr('   > Error on fetching publication: Job request ID not found' . PHP_EOL, Console::FG_RED);
+            return false;
+        }
+
+        Console::stdout('   > Job request for ' . $publication['title'] . ' found ' . PHP_EOL, Console::FG_GREEN);
+
+        $jobRequest = Cockpit::$plugin->getApi()->getJobRequestById($jobRequestId);
+        $publication->get('jobRequest')['data'] = $jobRequest;
+
+        return $this->upsertJob($publication);
+    }
+
+    public function upsertJob(Collection $publication): bool
+    {
         $job = Job::find()->cockpitId($publication->get('id'))->one();
 
         if (!$job) {
             $job = new Job();
         }
 
-        $job->city = $publication->get('jobRequest')['data']['location']['city'] ?? null;
+        $startDate = $publication->get('publicationDate')['start'] ?? null;
+        $endDate = $publication->get('publicationDate')['end'] ?? null;
+
+        // save native fields
         $job->cockpitCompanyId = $publication->get('jobRequest')['data']['company']['id'] ?? null;
         $job->cockpitId = $publication->get('id');
         $job->cockpitJobRequestId = $publication->get('jobRequest')['id'] ?? null;
         $job->cockpitOfficeId = $publication->get('owner')['departmentId'] ?? null;
         $job->companyName = $publication->get('jobRequest')['data']['company']['name'] ?? null;
         $job->title = $publication->get('title');
+        $job->slug = StringHelper::slugify($publication->get('title') . '-' . $publication->get('id'));
+        $job->postDate = $startDate ? Carbon::parse($startDate)->setTimezone('Europe/Brussels') : Carbon::now();
+        $job->expiryDate = $endDate ? Carbon::parse($endDate)->setTimezone('Europe/Brussels') : null;
+
+        $this->_saveLocation($publication, $job);
+
+        // save field layout fields
+        // @TODO: create a layer in between for mapping data between field layout and publication
+        $mappings = collect([
+            'offer' => $publication->get('descriptions')['offerDescription'] ?? null,
+            'taskAndProfiles' => $publication->get('descriptions')['functionDescription'] ?? null,
+            'summary' => $publication->get('descriptions')['summary'] ?? null,
+            'skills' => $publication->get('descriptions')['requirementsDescriptions'] ?? null,
+            'extra' => $publication->get('descriptions')['extra'] ?? null,
+            'fulltimeHours' => $publication->get('preferences')['hoursPerWeek']['max'] ?? null,
+            'parttimeHours' => $publication->get('preferences')['hoursPerWeek']['min'] ?? null,
+            'employmentTypes' => null, // @TODO: match fields -> $publication->get('preferences')['employmentTypes']
+            'contractTypes' => null, // @TODO: match fields-> $publication->get('preferences')['contactTypes']
+            'shift' => null, // @TODO: match fields -> $publication->get('preferences')['shiftServices']
+            'educationLevels' => null, // @TODO: match fields -> $publication->get('preferences')['educationLevels']
+            'experienceLevels' => null, // @TODO: match fields -> $publication->get('preferences')['experienceLevels']
+            'salaryPeriod' => $publication->get('preferences')['salaryPeriod'] ?? null,
+            'salaryMax' => $publication->get('preferences')['salary']['max'] ?? null,
+            'salaryMin' => $publication->get('preferences')['salary']['min'] ?? null,
+            'description' => $publication->get('descriptions')['summary'] ?? null,
+        ]);
+
+        foreach($job->getFieldValues() as $field => $value) {
+            $mapping = $mappings->get($field) ?? $value;
+            $job->setFieldValue($field, $mapping);
+        }
 
         if (!$job->validate()) {
-            Console::stderr('   > Error on save job: ' . print_r($job->getErrors(), true) . PHP_EOL, Console::FG_RED);
-            Craft::error('Unable to save job', __METHOD__);
-            return;
+            Console::stderr('   > Validation errors: ' . print_r($job->getErrors(), true) . PHP_EOL, Console::FG_RED);
+            Craft::error('Job element invalid', __METHOD__);
+            return false;
         }
 
         if (!Craft::$app->elements->saveElement($job)) {
+            Console::stderr('   > Error unable to save job: ' . print_r($job->getErrors(), true) . PHP_EOL, Console::FG_RED);
             Craft::error('Unable to save job', __METHOD__);
+            return false;
         }
+
+        return true;
     }
 
     /**
@@ -125,5 +202,48 @@ class JobsService extends Component
     {
         $fieldsService = Craft::$app->getFields();
         $fieldsService->deleteLayoutsByType(Job::class);
+    }
+
+    /**
+     * Save the location of the job and attach to the job
+     * @param Job $job
+     * @return void
+     */
+    private function _saveLocation(Collection $publication, Job $job): void
+    {
+        // gets address as a collection
+        $address = $job->getAddress();
+
+        // if collection is empty, create new. otherwise take first address (as we will only provide one)
+        if ($address->isEmpty()) {
+            $address = new Address();
+            $address->setOwner($job);
+            $address->setPrimaryOwner($job);
+        } else {
+            $address = $address->first();
+        }
+
+        $address->title = $publication->get('title') . ' - ' . $publication->get('jobRequest')['data']['company']['name'];
+        $address->addressLine1 = ($publication->get('jobRequest')['data']['location']['street'] ?? null) . ' ' . ($publication->get('jobRequest')['data']['location']['housenumber'] ?? null);
+        $address->addressLine2 = ($publication->get('jobRequest')['data']['location']['housenumberSuffix'] ?? null);
+        $address->postalCode = ($publication->get('jobRequest')['data']['location']['zipcode'] ?? null);
+        $address->locality = ($publication->get('jobRequest')['data']['location']['city'] ?? null);
+        $address->countryCode = 'BE';
+
+        if (Cockpit::$plugin->getSettings()->enableMapbox) {
+            $addressString = "{$address->addressLine1} {$address->addressLine2} {$address->locality}, Belgium";
+            $coords = Cockpit::$plugin->getMap()->getGeoPoints($addressString);
+
+            if ($coords) {
+                $address->latitude = $coords[1] ?? null;
+                $address->longitude = $coords[0] ?? null;
+            }
+        }
+
+        // save the address
+        if (!Craft::$app->elements->saveElement($address)) {
+            Console::stderr('   > Error unable to save address: ' . print_r($address->getErrors(), true) . PHP_EOL, Console::FG_RED);
+            Craft::error('Unable to save address', __METHOD__);
+        }
     }
 }

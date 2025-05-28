@@ -66,30 +66,37 @@ class JobCoordindates extends BaseField
             return null;
         }
 
+        // Normalize input (e.g. convert comma to dot)
+        $element->latitude = $this->normalizeDecimal($element->latitude);
+        $element->longitude = $this->normalizeDecimal($element->longitude);
+
         return
-            '<span>'.Craft::t('cockpit', 'Latitude').'</span>'.
             Cp::textHtml([
                 'name' => 'latitude',
                 'value' => $element->latitude,
-                'placeholder' => 'Latitude',
-                'type' => 'number',
-                'step' => 'any',
-                'min' => -90,
-                'max' => 90,
-                'pattern' => '^-?([0-8]?[0-9]|90)(\.[0-9]*)?$',
-                'width' => '50%'
+                'type' => 'text',
+                'suffix' => Craft::t('cockpit', 'Latitude'),
+                'size' => '50%',
             ]) .
-            '<span style="display:block;padding-top:4px;">'.Craft::t('cockpit', 'Longitude').'</span>'.
             Cp::textHtml([
                 'name' => 'longitude',
                 'value' => $element->longitude,
                 'placeholder' => 'Longitude',
-                'type' => 'number',
-                'step' => 'any',
-                'min' => -180,
-                'max' => 180,
-                'pattern' => '^-?([0-9]|[1-9][0-9]|1[0-7][0-9]|180)(\.[0-9]*)?$',
-                'width' => '50%'
+                'type' => 'text',
+                'suffix' => Craft::t('cockpit', 'Longitude'),
+                'size' => '50%',
             ]);
+    }
+
+    /**
+     * Ensures the coordinate uses a dot as the decimal separator.
+     */
+    private function normalizeDecimal($value): ?float
+    {
+        if (is_string($value)) {
+            $value = str_replace([' ', ','], ['', '.'], $value);
+        }
+
+        return is_numeric($value) ? (float)$value : null;
     }
 }
