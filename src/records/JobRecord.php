@@ -27,7 +27,7 @@ use craftpulse\cockpit\db\Table;
  * @property string $cockpitOfficeId
  * @property string $companyName
  * @property string|null $fieldLayoutId
- * @property string $id
+ * @property string|int|null $id
  * @property float|null $latitude
  * @property float|null $longitude
  * @property int|null $openPositions
