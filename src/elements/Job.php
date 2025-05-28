@@ -622,6 +622,8 @@ class Job extends Element
         }
 
         $this->getAddressManager()->deleteNestedElements($this, $this->hardDelete);
+
+        return true;
     }
 
     /**

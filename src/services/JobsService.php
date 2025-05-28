@@ -54,7 +54,7 @@ class JobsService extends Component
             return false;
         }
 
-        Console::stdout('   > Publication ' . $publication->get('title') . ' found ' . PHP_EOL, Console::FG_GREEN);
+        Console::stdout('   > Publication ' . $publication->get('title') . ' found ' . PHP_EOL);
 
         $jobRequestId = $publication->get('jobRequest')['id'] ?? null;
 
@@ -64,12 +64,20 @@ class JobsService extends Component
             return false;
         }
 
-        Console::stdout('   > Job request for ' . $publication['title'] . ' found ' . PHP_EOL, Console::FG_GREEN);
+        Console::stdout('   > Job request found ' . PHP_EOL);
 
         $jobRequest = Cockpit::$plugin->getApi()->getJobRequestById($jobRequestId);
         $publication->get('jobRequest')['data'] = $jobRequest;
 
-        return $this->upsertJob($publication);
+        $success = $this->upsertJob($publication);
+
+        if ($success) {
+            Console::stdout('   > Job added in our system ' . PHP_EOL, Console::FG_GREEN);
+        } else {
+            Console::stderr('   > Couldn\'t add job in our system ' . PHP_EOL, Console::FG_RED);
+        }
+
+        return $success;
     }
 
     public function upsertJob(Collection $publication): bool
@@ -81,7 +89,11 @@ class JobsService extends Component
         }
 
         $startDate = $publication->get('publicationDate')['start'] ?? null;
-        $endDate = $publication->get('publicationDate')['end'] ?? null;
+        $endDate = ($publication->get('publicationDate')['end'] ?? null) ? Carbon::parse($publication->get('publicationDate')['end']) : null;
+
+        if ($endDate && $endDate->isPast()) {
+            return true;
+        }
 
         // save native fields
         $job->cockpitCompanyId = $publication->get('jobRequest')['data']['company']['id'] ?? null;
@@ -91,10 +103,8 @@ class JobsService extends Component
         $job->companyName = $publication->get('jobRequest')['data']['company']['name'] ?? null;
         $job->title = $publication->get('title');
         $job->slug = StringHelper::slugify($publication->get('title') . '-' . $publication->get('id'));
-        $job->postDate = $startDate ? Carbon::parse($startDate)->setTimezone('Europe/Brussels') : Carbon::now();
-        $job->expiryDate = $endDate ? Carbon::parse($endDate)->setTimezone('Europe/Brussels') : null;
-
-        $this->_saveLocation($publication, $job);
+        $job->postDate = $startDate ? Carbon::parse($startDate) : Carbon::now();
+        $job->expiryDate = $endDate;
 
         // save field layout fields
         // @TODO: create a layer in between for mapping data between field layout and publication
@@ -117,22 +127,28 @@ class JobsService extends Component
             'description' => $publication->get('descriptions')['summary'] ?? null,
         ]);
 
+        // loop through mappings to add the Cockpit data
         foreach($job->getFieldValues() as $field => $value) {
             $mapping = $mappings->get($field) ?? $value;
             $job->setFieldValue($field, $mapping);
         }
 
+        // validate if the data matches our model
         if (!$job->validate()) {
             Console::stderr('   > Validation errors: ' . print_r($job->getErrors(), true) . PHP_EOL, Console::FG_RED);
             Craft::error('Job element invalid', __METHOD__);
             return false;
         }
 
+        // save the job
         if (!Craft::$app->elements->saveElement($job)) {
             Console::stderr('   > Error unable to save job: ' . print_r($job->getErrors(), true) . PHP_EOL, Console::FG_RED);
             Craft::error('Unable to save job', __METHOD__);
             return false;
         }
+
+        // add address after a succesful save
+        $this->_saveLocation($publication, $job);
 
         return true;
     }
@@ -217,21 +233,23 @@ class JobsService extends Component
         // if collection is empty, create new. otherwise take first address (as we will only provide one)
         if ($address->isEmpty()) {
             $address = new Address();
-            $address->setOwner($job);
-            $address->setPrimaryOwner($job);
         } else {
             $address = $address->first();
         }
+
+        $address->setOwner($job);
+        $address->setPrimaryOwner($job);
 
         $address->title = $publication->get('title') . ' - ' . $publication->get('jobRequest')['data']['company']['name'];
         $address->addressLine1 = ($publication->get('jobRequest')['data']['location']['street'] ?? null) . ' ' . ($publication->get('jobRequest')['data']['location']['housenumber'] ?? null);
         $address->addressLine2 = ($publication->get('jobRequest')['data']['location']['housenumberSuffix'] ?? null);
         $address->postalCode = ($publication->get('jobRequest')['data']['location']['zipcode'] ?? null);
         $address->locality = ($publication->get('jobRequest')['data']['location']['city'] ?? null);
-        $address->countryCode = 'BE';
+        $address->countryCode = $publication->get('jobRequest')['data']['location']['countryCode'] ?? null;
 
         if (Cockpit::$plugin->getSettings()->enableMapbox) {
-            $addressString = "{$address->addressLine1} {$address->addressLine2} {$address->locality}, Belgium";
+            $addressString = "{$address->addressLine1} {$address->addressLine2} {$address->locality}, {$address->countryCode}";
+            Console::stdout('   > Add address: ' . $addressString.PHP_EOL);
             $coords = Cockpit::$plugin->getMap()->getGeoPoints($addressString);
 
             if ($coords) {

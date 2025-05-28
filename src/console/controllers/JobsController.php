@@ -5,7 +5,10 @@ namespace craftpulse\cockpit\console\controllers;
 use Craft;
 use craft\console\Controller;
 use craft\helpers\Console;
+use craft\helpers\Queue;
 use craftpulse\cockpit\Cockpit;
+use craftpulse\cockpit\jobs\BatchFetchPublicationsJob;
+use craftpulse\cockpit\jobs\FetchPublicationFromCockpitJob;
 use yii\console\ExitCode;
 
 /**
@@ -40,33 +43,22 @@ class JobsController extends Controller
      */
     public function actionPublications(): int
     {
-        Console::stdout('Start publications fetch '. PHP_EOL, Console::FG_CYAN);
+        Console::stdout('Queueing batched publication fetch...'.PHP_EOL, Console::FG_CYAN);
 
         try {
-            $publications = Cockpit::$plugin->getApi()->getPublications()['results'] ?? collect([]);
-
-            if ($publications->isEmpty()) {
-                Craft::error('No publications found');
-                Console::stderr('No publications found' . PHP_EOL, Console::FG_RED);
-                return ExitCode::DATAERR;
-            } else {
-                $count = $publications->count();
-                Console::stdout("   > ${count} Publications found". PHP_EOL);
-
-                foreach($publications as $publication) {
-                    $title = $publication->get('name');
-                    $id = $publication->get('id');
-                    Console::stdout("       > ${title} (${id})". PHP_EOL);
-                }
-            }
-
-            return ExitCode::OK;
-
-        } catch (\Exception $e) {
-            Craft::error($e->getMessage());
+            Queue::push(
+                job: new BatchFetchPublicationsJob(),
+                priority: 2,
+                ttr: 1000,
+                queue: Cockpit::$plugin->queue
+            );
+        } catch (\Throwable $e) {
+            Craft::error($e->getMessage(), __METHOD__);
+            Console::stderr("Error: {$e->getMessage()}".PHP_EOL, Console::FG_RED);
+            return ExitCode::UNSPECIFIED_ERROR;
         }
 
-        return ExitCode::DATAERR;
+        return ExitCode::OK;
     }
 
     /**
@@ -78,13 +70,13 @@ class JobsController extends Controller
             // Get the ID from command line options
             $id = $this->id;
 
+            Console::stdout('Start publication fetch ' . $id . PHP_EOL, Console::FG_CYAN);
+
             if (!$id) {
                 Craft::error('Publication ID (as --id=x) is required');
-                Console::stderr('Error on fetching publication: Publication ID is required' . PHP_EOL, Console::FG_RED);
+                Console::stderr('   > Error on fetching publication: Publication ID is required' . PHP_EOL, Console::FG_RED);
                 return ExitCode::DATAERR;
             }
-
-            Console::stdout('Start publication fetch ' . $id . PHP_EOL, Console::FG_CYAN);
 
             if (!Cockpit::$plugin->getJobs()->fetchPublicationById($id)) {
                 return ExitCode::DATAERR;
@@ -93,7 +85,7 @@ class JobsController extends Controller
             return ExitCode::OK;
 
         } catch (\Exception $e) {
-            Console::stderr('Error on fetching publication: '.$e->getMessage() . PHP_EOL);
+            Console::stderr('   > Error on fetching publication: '.$e->getMessage() . PHP_EOL);
             Craft::error($e->getMessage());
         }
 
