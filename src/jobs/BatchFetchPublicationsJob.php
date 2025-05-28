@@ -17,6 +17,11 @@ class BatchFetchPublicationsJob extends BaseBatchedJob
         parent::init();
     }
 
+    public function batchSize(): int
+    {
+        return 50;
+    }
+
     public function loadData(): Batchable
     {
         try {
@@ -41,7 +46,6 @@ class BatchFetchPublicationsJob extends BaseBatchedJob
             return new PublicationBatch([]);
         }
     }
-
 
     public function processItem(mixed $item): void
     {
