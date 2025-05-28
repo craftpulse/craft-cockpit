@@ -28,6 +28,9 @@ use craftpulse\cockpit\elements\Job;
  */
 class JobsService extends Component
 {
+    /**
+     * @return array[]|null
+     */
     public function createFields(): ?array
     {
         return [
@@ -44,6 +47,11 @@ class JobsService extends Component
         ];
     }
 
+    /**
+     * @param ConfigEvent $event
+     * @return void
+     * @throws \yii\base\Exception
+     */
     public function handleChangedFieldLayout(ConfigEvent $event): void
     {
         $data = $event->newValue;
@@ -64,11 +72,14 @@ class JobsService extends Component
         $layout->uid = key($data);
         $fieldsService->saveLayout($layout, false);
 
-
         // Invalidate job caches
         Craft::$app->getElements()->invalidateCachesForElementType(Job::class);
     }
 
+    /**
+     * @param ConfigEvent $event
+     * @return void
+     */
     public function handleDeletedFieldLayout(ConfigEvent $event): void
     {
         $fieldsService = Craft::$app->getFields();

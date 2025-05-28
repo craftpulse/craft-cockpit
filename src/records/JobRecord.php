@@ -10,6 +10,7 @@
 
 namespace craftpulse\cockpit\records;
 
+use DateTime;
 use craft\db\ActiveRecord;
 use craftpulse\cockpit\db\Table;
 
@@ -18,12 +19,15 @@ use craftpulse\cockpit\db\Table;
  *
  * @property string|null $applicationCount
  * @property string $city
+ * @property DateTime $postDate
+ * @property DateTime $expiryDate
  * @property string $cockpitCompanyId
  * @property string $cockpitId
  * @property string $cockpitJobRequestId
  * @property string $cockpitOfficeId
  * @property string $companyName
  * @property string|null $fieldLayoutId
+ * @property string|int|null $id
  * @property float|null $latitude
  * @property float|null $longitude
  * @property int|null $openPositions

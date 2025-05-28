@@ -10,10 +10,10 @@ use craft\elements\conditions\ElementCondition;
  */
 class JobCondition extends ElementCondition
 {
-    protected function selectableConditionRules(): array
-    {
-        return array_merge(parent::conditionRuleTypes(), [
-            // ...
-        ]);
-    }
+//    protected function selectableConditionRules(): array
+//    {
+//        return array_merge(parent::conditionRuleTypes(), [
+//            // ...
+//        ]);
+//    }
 }

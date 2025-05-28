@@ -23,6 +23,9 @@ use craftpulse\cockpit\elements\Office as OfficeElement;
 use craftpulse\cockpit\models\MatchField;
 use yii\base\Exception;
 
+/**
+ *
+ */
 class Install extends Migration
 {
     // Public Properties
@@ -106,6 +109,8 @@ class Install extends Migration
                     'dateCreated' => $this->dateTime()->notNull(),
                     'dateUpdated' => $this->dateTime()->notNull(),
                     'uid' => $this->uid(),
+                    'postDate' => $this->dateTime(),
+                    'expiryDate' => $this->dateTime(),
                     'fieldLayoutId' => $this->integer(),
 
                     // Job specific fields
@@ -116,6 +121,7 @@ class Install extends Migration
                     'cockpitJobRequestId' => $this->string()->notNull(),
                     'cockpitOfficeId' => $this->string()->notNull(),
                     'companyName' => $this->string()->notNull(),
+                    'expiryDate' => $this->dateTime(),
                     'latitude' => $this->decimal(10, 8),
                     'longitude' => $this->decimal(11, 8),
                     'openPositions' => $this->integer(),

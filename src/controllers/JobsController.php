@@ -22,12 +22,18 @@ use yii\web\Response;
  */
 class JobsController extends Controller
 {
+    /**
+     * @var string
+     */
     public $defaultAction = 'edit';
-    protected array|int|bool $allowAnonymous = self::ALLOW_ANONYMOUS_NEVER;
+
+    /**
+     * @var array<int|string>|bool|int
+     */
+    protected array|int|bool $allowAnonymous = parent::ALLOW_ANONYMOUS_NEVER;
 
     /**
      * @return Response|null
-     * @throws ForbiddenHttpException|Throwable
      */
     public function actionEditSettings(): ?Response
     {
