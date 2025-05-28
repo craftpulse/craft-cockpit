@@ -28,23 +28,66 @@ class Job extends Element
 
     // Properties
     // =========================================================================
+
     public const STATUS_EXPIRED = 'expired';
     public const STATUS_PENDING = 'pending';
 
+    /**
+     * @var FieldLayout|null
+     */
     private ?FieldLayout $fieldLayout = null;
 
+    /**
+     * @var string|null
+     */
     public ?string $type = 'job';
+    /**
+     * @var int
+     */
     public int $applicationCount = 1;
+    /**
+     * @var string
+     */
     public string $city = '';
+    /**
+     * @var string
+     */
     public string $cockpitCompanyId ='';
+    /**
+     * @var string
+     */
     public string $cockpitId = '';
+    /**
+     * @var string
+     */
     public string $cockpitJobRequestId = '';
+    /**
+     * @var string
+     */
     public string $cockpitOfficeId = '';
+    /**
+     * @var string
+     */
     public string $companyName = '';
+    /**
+     * @var float|null
+     */
     public ?float $latitude = null;
+    /**
+     * @var float|null
+     */
     public ?float $longitude = null;
+    /**
+     * @var int
+     */
     public int $openPositions = 1;
+    /**
+     * @var string|null
+     */
     public ?string $postCode = null;
+    /**
+     * @var string|null
+     */
     public ?string $street = null;
 
     /**
@@ -59,51 +102,81 @@ class Job extends Element
 
     // Methods
     // =========================================================================
+    /**
+     * @return string
+     */
     public static function displayName(): string
     {
         return Craft::t('cockpit', 'Job');
     }
 
+    /**
+     * @return string
+     */
     public static function lowerDisplayName(): string
     {
         return Craft::t('cockpit', 'job');
     }
 
+    /**
+     * @return string
+     */
     public static function pluralDisplayName(): string
     {
         return Craft::t('cockpit', 'Jobs');
     }
 
+    /**
+     * @return string
+     */
     public static function pluralLowerDisplayName(): string
     {
         return Craft::t('cockpit', 'jobs');
     }
 
+    /**
+     * @return string|null
+     */
     public static function refHandle(): ?string
     {
         return 'job';
     }
 
+    /**
+     * @return bool
+     */
     public static function trackChanges(): bool
     {
         return true;
     }
 
+    /**
+     * @return bool
+     */
     public static function hasTitles(): bool
     {
         return true;
     }
 
+    /**
+     * @return bool
+     */
     public static function hasUris(): bool
     {
         return true;
     }
 
+    /**
+     * @return bool
+     */
     public static function isLocalized(): bool
     {
         return false;
     }
 
+    /**
+     * @return bool
+     */
     public static function hasStatuses(): bool
     {
         return true;
@@ -122,11 +195,19 @@ class Job extends Element
         ];
     }
 
+    /**
+     * @return ElementQueryInterface
+     * @throws \yii\base\InvalidConfigException
+     */
     public static function find(): ElementQueryInterface
     {
         return Craft::createObject(JobQuery::class, [static::class]);
     }
 
+    /**
+     * @return ElementConditionInterface
+     * @throws \yii\base\InvalidConfigException
+     */
     public static function createCondition(): ElementConditionInterface
     {
         return Craft::createObject(JobCondition::class, [static::class]);
@@ -143,6 +224,10 @@ class Job extends Element
         ]);
     }
 
+    /**
+     * @param string $context
+     * @return array[]
+     */
     protected static function defineSources(string $context): array
     {
         return [
@@ -153,17 +238,27 @@ class Job extends Element
         ];
     }
 
+    /**
+     * @param string $source
+     * @return array
+     */
     protected static function defineActions(string $source): array
     {
         // List any bulk element actions here
         return [];
     }
 
+    /**
+     * @return bool
+     */
     protected static function includeSetStatusAction(): bool
     {
         return true;
     }
 
+    /**
+     * @return array
+     */
     protected static function defineSortOptions(): array
     {
         return [
@@ -196,6 +291,9 @@ class Job extends Element
         ];
     }
 
+    /**
+     * @return array[]
+     */
     protected static function defineTableAttributes(): array
     {
         return [
@@ -212,6 +310,10 @@ class Job extends Element
         ];
     }
 
+    /**
+     * @param string $source
+     * @return array|string[]
+     */
     protected static function defineDefaultTableAttributes(string $source): array
     {
         $attributes = [];
@@ -224,6 +326,9 @@ class Job extends Element
         return $attributes;
     }
 
+    /**
+     * @return array
+     */
     protected function defineRules(): array
     {
         $rules = parent::defineRules();
@@ -266,12 +371,18 @@ class Job extends Element
         return $rules;
     }
 
+    /**
+     * @return string|null
+     */
     public function getUriFormat(): ?string
     {
         // If jobs should have URLs, define their URI format here
         return Cockpit::getInstance()->getSettings()->jobUriFormat;
     }
 
+    /**
+     * @return array|array[]
+     */
     protected function previewTargets(): array
     {
         if ($uriFormat = $this->getUriFormat()) {
@@ -283,6 +394,9 @@ class Job extends Element
         return [];
     }
 
+    /**
+     * @return string|null
+     */
     public function getStatus(): ?string
     {
         $status = parent::getStatus();
@@ -306,6 +420,9 @@ class Job extends Element
         return $status;
     }
 
+    /**
+     * @return array|string|null
+     */
     protected function route(): array|string|null
     {
         if (!$this->previewing && $this->getStatus() != self::STATUS_ENABLED) {
@@ -328,6 +445,10 @@ class Job extends Element
         return null;
     }
 
+    /**
+     * @param User $user
+     * @return bool
+     */
     public function canView(User $user): bool
     {
         if (parent::canView($user)) {
@@ -337,6 +458,10 @@ class Job extends Element
         return $user->can('cockpit:jobs');
     }
 
+    /**
+     * @param User $user
+     * @return bool
+     */
     public function canSave(User $user): bool
     {
         if (parent::canSave($user)) {
@@ -346,6 +471,10 @@ class Job extends Element
         return $user->can('cockpit:save-jobs');
     }
 
+    /**
+     * @param User $user
+     * @return bool
+     */
     public function canDuplicate(User $user): bool
     {
         if (parent::canDuplicate($user)) {
@@ -355,6 +484,10 @@ class Job extends Element
         return $user->can('cockpit:save-jobs');
     }
 
+    /**
+     * @param User $user
+     * @return bool
+     */
     public function canDelete(User $user): bool
     {
         if (parent::canSave($user)) {
@@ -364,16 +497,26 @@ class Job extends Element
         return $user->can('cockpit:delete-jobs');
     }
 
+    /**
+     * @param User $user
+     * @return bool
+     */
     public function canCreateDrafts(User $user): bool
     {
         return false;
     }
 
+    /**
+     * @return string|null
+     */
     protected function cpEditUrl(): ?string
     {
         return sprintf('cockpit/jobs/%s', $this->getCanonicalId());
     }
 
+    /**
+     * @return string|null
+     */
     public function getPostEditUrl(): ?string
     {
         return UrlHelper::cpUrl('cockpit/jobs');
@@ -394,6 +537,11 @@ class Job extends Element
         return $this->fieldLayout;
     }
 
+    /**
+     * @param Response $response
+     * @param string $containerId
+     * @return void
+     */
     public function prepareEditScreen(Response $response, string $containerId): void
     {
         /** @var Response|CpScreenResponseBehavior $response */
@@ -405,6 +553,10 @@ class Job extends Element
         ]);
     }
 
+    /**
+     * @param bool $isNew
+     * @return bool
+     */
     public function beforeSave(bool $isNew): bool
     {
         return parent::beforeSave($isNew); // TODO: Change the autogenerated stub

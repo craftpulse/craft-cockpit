@@ -46,12 +46,21 @@ class SettingsModel extends Model
      */
     public ?string $mapboxApiKey = null;
 
+    /**
+     * @var string|null
+     */
     public ?string $jobUriFormat = '';
+    /**
+     * @var string|null
+     */
     public ?string $jobTemplate = '';
 
     // Private Properties
     // =========================================================================
 
+    /**
+     * @var mixed
+     */
     private mixed $_jobFieldLayout;
 
     /**

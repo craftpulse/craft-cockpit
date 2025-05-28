@@ -11,6 +11,10 @@ use craftpulse\cockpit\db\Table;
  */
 class JobQuery extends ElementQuery
 {
+    /**
+     * @return bool
+     * @throws \craft\db\QueryAbortedException
+     */
     protected function beforePrepare(): bool
     {
         // todo: join the `companies` table

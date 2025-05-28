@@ -23,6 +23,9 @@ use craftpulse\cockpit\elements\Office as OfficeElement;
 use craftpulse\cockpit\models\MatchField;
 use yii\base\Exception;
 
+/**
+ *
+ */
 class Install extends Migration
 {
     // Public Properties
