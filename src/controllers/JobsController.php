@@ -26,14 +26,14 @@ class JobsController extends Controller
      * @var string
      */
     public $defaultAction = 'edit';
+
     /**
-     * @var array|int|bool
+     * @var array<int|string>|bool|int
      */
-    protected array|int|bool $allowAnonymous = self::ALLOW_ANONYMOUS_NEVER;
+    protected array|int|bool $allowAnonymous = parent::ALLOW_ANONYMOUS_NEVER;
 
     /**
      * @return Response|null
-     * @throws ForbiddenHttpException|Throwable
      */
     public function actionEditSettings(): ?Response
     {

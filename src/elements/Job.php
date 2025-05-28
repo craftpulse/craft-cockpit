@@ -564,7 +564,6 @@ class Job extends Element
 
     /**
      * @inheritdoc
-     * @throws Exception
      */
     public function afterSave(bool $isNew): void
     {
