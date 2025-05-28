@@ -18,6 +18,7 @@ use craft\helpers\Console;
 use craft\helpers\ProjectConfig;
 use craft\models\FieldLayout;
 use craftpulse\cockpit\elements\Job;
+use craftpulse\cockpit\fieldlayoutelements\AddressField;
 use Illuminate\Support\Collection;
 
 /**
@@ -74,6 +75,14 @@ class JobsService extends Component
                 'inputType' => 'text',
                 'mandatory' => true,
                 'required' => true,
+                'width' => '100%',
+            ],
+            [
+                'class' => AddressField::class,
+                'attribute' => 'address',
+                'name' => 'address',
+                'mandatory' => true,
+                'label' => Craft::t('cockpit', 'Address'),
                 'width' => '100%',
             ],
         ];

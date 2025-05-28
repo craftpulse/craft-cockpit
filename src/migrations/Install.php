@@ -122,8 +122,6 @@ class Install extends Migration
                     'cockpitOfficeId' => $this->string()->notNull(),
                     'companyName' => $this->string()->notNull(),
                     'expiryDate' => $this->dateTime(),
-                    'latitude' => $this->decimal(10, 8),
-                    'longitude' => $this->decimal(11, 8),
                     'openPositions' => $this->integer(),
                     'postCode' => $this->string(),
                     'street' => $this->string(),

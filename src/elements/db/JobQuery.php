@@ -40,8 +40,6 @@ class JobQuery extends ElementQuery
             'cockpit_jobs.companyName',
             'cockpit_jobs.expiryDate',
             'cockpit_jobs.fieldLayoutId',
-            'cockpit_jobs.latitude',
-            'cockpit_jobs.longitude',
             'cockpit_jobs.openPositions',
             'cockpit_jobs.postCode',
             'cockpit_jobs.postDate',

@@ -20,45 +20,60 @@
 
         <div class="field">
             <legend class="heading">
-                {{ 'Street'|t('cockpit') }}
+                {{ 'Address'|t('cockpit') }}
             </legend>
 
             <div class="input ltr">
-                {{ forms.text({
-                    id: 'street',
-                    name: 'street',
-                    value: element.street,
-                }) }}
+                {%- if (element.address[0] ?? null) -%}
+                    {{ element.address[0].addressLine1 }} - {{ element.address[0].addressLine2 }}<br/>
+                    {{ element.address[0].postalCode }} {{ element.address[0].locality }}
+                {%- else -%}
+                    -
+                {%- endif -%}
             </div>
         </div>
 
-        <div class="field">
-            <legend class="heading">
-                {{ 'Post Code'|t('cockpit') }}
-            </legend>
+{#        <div class="field">#}
+{#            <legend class="heading">#}
+{#                {{ 'Street'|t('cockpit') }}#}
+{#            </legend>#}
 
-            <div class="input ltr">
-                {{ forms.text({
-                    id: 'postCode',
-                    name: 'postCode',
-                    value: element.postCode,
-                }) }}
-            </div>
-        </div>
+{#            <div class="input ltr">#}
+{#                {{ forms.text({#}
+{#                    id: 'street',#}
+{#                    name: 'street',#}
+{#                    value: element.street,#}
+{#                }) }}#}
+{#            </div>#}
+{#        </div>#}
 
-        <div class="field">
-            <legend class="heading">
-                {{ 'City'|t('cockpit') }}
-            </legend>
+{#        <div class="field">#}
+{#            <legend class="heading">#}
+{#                {{ 'Post Code'|t('cockpit') }}#}
+{#            </legend>#}
 
-            <div class="input ltr">
-                {{ forms.text({
-                    id: 'city',
-                    name: 'city',
-                    value: element.city,
-                }) }}
-            </div>
-        </div>
+{#            <div class="input ltr">#}
+{#                {{ forms.text({#}
+{#                    id: 'postCode',#}
+{#                    name: 'postCode',#}
+{#                    value: element.postCode,#}
+{#                }) }}#}
+{#            </div>#}
+{#        </div>#}
+
+{#        <div class="field">#}
+{#            <legend class="heading">#}
+{#                {{ 'City'|t('cockpit') }}#}
+{#            </legend>#}
+
+{#            <div class="input ltr">#}
+{#                {{ forms.text({#}
+{#                    id: 'city',#}
+{#                    name: 'city',#}
+{#                    value: element.city,#}
+{#                }) }}#}
+{#            </div>#}
+{#        </div>#}
 
         <div class="field">
             <legend class="heading">
