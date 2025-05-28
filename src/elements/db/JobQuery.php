@@ -4,6 +4,7 @@ namespace craftpulse\cockpit\elements\db;
 
 use Craft;
 use craft\elements\db\ElementQuery;
+use craft\helpers\Db;
 use craftpulse\cockpit\db\Table;
 
 /**
@@ -11,6 +12,14 @@ use craftpulse\cockpit\db\Table;
  */
 class JobQuery extends ElementQuery
 {
+    public ?string $cockpitId = null;
+
+    public function cockpitId($value)
+    {
+        $this->cockpitId = $value;
+        return $this;
+    }
+
     /**
      * @return bool
      * @throws \craft\db\QueryAbortedException
@@ -38,6 +47,10 @@ class JobQuery extends ElementQuery
             'cockpit_jobs.postDate',
             'cockpit_jobs.street',
         ]);
+
+        if ($this->cockpitId) {
+            $this->subQuery->andWhere(Db::parseParam('cockpit_jobs.cockpitId', $this->cockpitId));
+        }
 
         return parent::beforePrepare();
     }

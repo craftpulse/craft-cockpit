@@ -14,9 +14,11 @@ use Craft;
 use craft\base\Component;
 use craft\events\ConfigEvent;
 use craft\fieldlayoutelements\TextField;
+use craft\helpers\Console;
 use craft\helpers\ProjectConfig;
 use craft\models\FieldLayout;
 use craftpulse\cockpit\elements\Job;
+use Illuminate\Support\Collection;
 
 /**
  * Class JobsService
@@ -28,7 +30,37 @@ use craftpulse\cockpit\elements\Job;
  */
 class JobsService extends Component
 {
+    public function createJob(Collection $publication): void
+    {
+        // @TODO: create a layer in between for mapping data between field layout and publication
+
+        $job = Job::find()->cockpitId($publication->get('id'))->one();
+
+        if (!$job) {
+            $job = new Job();
+        }
+
+        $job->city = $publication->get('jobRequest')['data']['location']['city'] ?? null;
+        $job->cockpitCompanyId = $publication->get('jobRequest')['data']['company']['id'] ?? null;
+        $job->cockpitId = $publication->get('id');
+        $job->cockpitJobRequestId = $publication->get('jobRequest')['id'] ?? null;
+        $job->cockpitOfficeId = $publication->get('owner')['departmentId'] ?? null;
+        $job->companyName = $publication->get('jobRequest')['data']['company']['name'] ?? null;
+        $job->title = $publication->get('title');
+
+        if (!$job->validate()) {
+            Console::stderr('   > Error on save job: ' . print_r($job->getErrors(), true) . PHP_EOL, Console::FG_RED);
+            Craft::error('Unable to save job', __METHOD__);
+            return;
+        }
+
+        if (!Craft::$app->elements->saveElement($job)) {
+            Craft::error('Unable to save job', __METHOD__);
+        }
+    }
+
     /**
+     * This creates the native fields for the job section
      * @return array[]|null
      */
     public function createFields(): ?array
