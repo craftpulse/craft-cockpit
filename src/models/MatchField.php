@@ -13,8 +13,10 @@ namespace craftpulse\cockpit\models;
 use Craft;
 use craft\base\Chippable;
 use craft\base\CpEditable;
+use craft\base\FieldLayoutProviderInterface;
 use craft\base\Iconic;
 use craft\base\Model;
+use craft\behaviors\FieldLayoutBehavior;
 use craft\db\Query;
 use craft\db\Table as CraftTable;
 use craft\elements\Entry;
@@ -25,11 +27,14 @@ use craft\helpers\ProjectConfig as ProjectConfigHelper;
 use craft\helpers\StringHelper;
 use craft\helpers\UrlHelper;
 
+use craft\models\FieldLayout;
 use craftpulse\cockpit\Cockpit;
 use craftpulse\cockpit\db\Table;
+use craftpulse\cockpit\elements\MatchFieldEntry;
 use craftpulse\cockpit\records\MatchField as MatchFieldRecord;
 use craft\validators\HandleValidator;
 use craft\validators\UniqueValidator;
+use DateTime;
 use Exception;
 use yii\base\ExitException;
 use yii\base\InvalidConfigException;
@@ -39,8 +44,13 @@ use yii\base\InvalidConfigException;
  *
  * @property MatchField_SiteSettings[] $siteSettings Site-specific settings
  * @property bool $hasMultiSiteEntries Whether MatchFieldEntries in this match field support multiple sites
+ * @mixin FieldLayoutBehavior
  */
-class MatchField extends Model implements Chippable, CpEditable, Iconic
+class MatchField extends Model implements
+    Chippable,
+    CpEditable,
+    FieldLayoutProviderInterface,
+    Iconic
 {
     public const PROPAGATION_METHOD_NONE = 'none';
     public const PROPAGATION_METHOD_SITE_GROUP = 'siteGroup';
@@ -69,6 +79,11 @@ class MatchField extends Model implements Chippable, CpEditable, Iconic
      * @var int|null Structure ID
      */
     public ?int $structureId = null;
+
+    /**
+     * @var int|null Field layout ID
+     */
+    public ?int $fieldLayoutId = null;
 
     /**
      * @var string|null Name
@@ -125,6 +140,11 @@ class MatchField extends Model implements Chippable, CpEditable, Iconic
     public ?string $uid = null;
 
     /**
+     * @var DateTime|null The date that the match field was trashed
+     */
+    public ?DateTime $dateDeleted = null;
+
+    /**
      * @var MatchField_SiteSettings[]|null
      */
     private ?array $_siteSettings = null;
@@ -146,6 +166,19 @@ class MatchField extends Model implements Chippable, CpEditable, Iconic
         }
 
         parent::init();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function defineBehaviors(): array
+    {
+        return [
+            'fieldLayout' => [
+                'class' => FieldLayoutBehavior::class,
+                'elementType' => MatchFieldEntry::class,
+            ],
+        ];
     }
 
     /**
@@ -182,15 +215,31 @@ class MatchField extends Model implements Chippable, CpEditable, Iconic
     protected function defineRules(): array
     {
         $rules = parent::defineRules();
-        $rules[] = [['id', 'structureId', 'maxLevels'], 'number', 'integerOnly' => true];
+        $rules[] = [['id', 'structureId', 'fieldLayoutId', 'maxLevels'], 'number', 'integerOnly' => true];
         $rules[] = [['handle'], HandleValidator::class, 'reservedWords' => ['id', 'dateCreated', 'dateUpdated', 'uid', 'title']];
         $rules[] = [['handle'], UniqueValidator::class, 'targetClass' => MatchFieldRecord::class];
         $rules[] = [['name', 'handle', 'type', 'propagationMethod', 'siteSettings'], 'required'];
         $rules[] = [['name', 'handle'], 'string', 'max' => 255];
-        $rules[] = [['siteSettings'], 'validateSiteSettings'];
         $rules[] = [['defaultPlacement'], 'in', 'range' => [self::DEFAULT_PLACEMENT_BEGINNING, self::DEFAULT_PLACEMENT_END]];
+        $rules[] = [['fieldLayout'], 'validateFieldLayout'];
         $rules[] = [['previewTargets'], 'validatePreviewTargets'];
+        $rules[] = [['siteSettings'], 'validateSiteSettings'];
         return $rules;
+    }
+
+    /**
+     * Validates the field layout.
+     */
+    public function validateFieldLayout(): void
+    {
+        $fieldLayout = $this->getFieldLayout();
+        $fieldLayout->reservedFieldHandles = [
+            'matchfield',
+        ];
+
+        if (!$fieldLayout->validate()) {
+            $this->addModelErrors($fieldLayout, 'fieldLayout');
+        }
     }
 
     /**
@@ -245,7 +294,7 @@ class MatchField extends Model implements Chippable, CpEditable, Iconic
     }
 
     /**
-     * Use the translated matchfield name as the string representation.
+     * Use the translated match field name as the string representation.
      *
      * @return string
      */
@@ -255,10 +304,29 @@ class MatchField extends Model implements Chippable, CpEditable, Iconic
     }
 
     /**
-     * Returns the matchfields' site-specific settings, indexed by site ID.
+     * @inheritdoc
+     */
+    public function getHandle(): ?string
+    {
+        return $this->handle;
+    }
+
+    /**
+     * @inheritdoc
+     * @throws InvalidConfigException
+     */
+    public function getFieldLayout(): FieldLayout
+    {
+        /** @var FieldLayoutBehavior $behavior */
+        $behavior = $this->getBehavior('fieldLayout');
+        return $behavior->getFieldLayout();
+    }
+
+    /**
+     * Returns the match fields' site-specific settings, indexed by site ID.
      *
      * @return MatchField_SiteSettings[]
-     * @throws InvalidConfigException|ExitException
+     * @throws InvalidConfigException
      */
     public function getSiteSettings(): array
     {
@@ -326,7 +394,6 @@ class MatchField extends Model implements Chippable, CpEditable, Iconic
      *
      * @return bool
      * @throws InvalidConfigException
-     * @throws ExitException
      */
     public function getHasMultiSiteEntries(): bool
     {
@@ -381,6 +448,14 @@ class MatchField extends Model implements Chippable, CpEditable, Iconic
             'uid' => $this->structureId ? Db::uidById(CraftTable::STRUCTURES, $this->structureId) : StringHelper::UUID(),
             'maxLevels' => (int)$this->maxLevels ?: null,
         ];
+
+        $fieldLayout = $this->getFieldLayout();
+
+        if ($fieldLayoutConfig = $fieldLayout->getConfig()) {
+            $config['fieldLayouts'] = [
+                $fieldLayout->uid => $fieldLayoutConfig,
+            ];
+        }
 
         foreach ($this->getSiteSettings() as $siteId => $siteSettings) {
             $siteUid = Db::uidById(CraftTable::SITES, $siteId);

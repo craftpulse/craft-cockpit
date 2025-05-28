@@ -14,6 +14,8 @@ use craft\elements\conditions\ElementConditionInterface;
 use craft\elements\db\ElementQueryInterface;
 use craft\enums\Color;
 use craft\helpers\UrlHelper;
+use craft\models\FieldLayout;
+use craft\services\ElementSources;
 use craft\web\CpScreenResponseBehavior;
 
 use craftpulse\cockpit\Cockpit;
@@ -22,6 +24,7 @@ use craftpulse\cockpit\elements\db\MatchFieldEntryQuery;
 use craftpulse\cockpit\models\MatchField as MatchFieldModel;
 
 use DateTime;
+use Throwable;
 use yii\base\InvalidConfigException;
 use yii\web\Response;
 
@@ -106,7 +109,7 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
      */
     public static function isLocalized(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -147,14 +150,50 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
         return Craft::createObject(MatchFieldEntryCondition::class, [static::class]);
     }
 
+    /**
+     * @inheritdoc
+     * @throws InvalidConfigException
+     * @throws Throwable
+     */
     protected static function defineSources(string $context): array
     {
-        return [
-            [
-                'key' => '*',
-                'label' => Craft::t('cockpit', 'All match field entries'),
-            ],
-        ];
+        $sources = [];
+
+        if ($context === ElementSources::CONTEXT_INDEX) {
+            $matchFields = Cockpit::$plugin->getMatchFields()->getEditableMatchFields();
+        } else {
+            $matchFields = Cockpit::$plugin->getMatchFields()->getAllMatchFields();
+        }
+
+        foreach ($matchFields as $matchField) {
+            $sources[] = [
+                'key' => 'matchfield:' . $matchField->uid,
+                'label' => Craft::t('site', $matchField->name),
+                'data' => ['handle' => $matchField->handle],
+                'criteria' => ['groupId' => $matchField->id],
+                'structureId' => $matchField->structureId,
+                'structureEditable' => Craft::$app->getRequest()->getIsConsoleRequest() || Craft::$app->getUser()->checkPermission("cockpit:view-match-fields:$matchField->uid"),
+            ];
+        }
+
+        return $sources;
+    }
+
+    /**
+     * @inheritdoc
+     * @throws InvalidConfigException
+     */
+    protected static function defineFieldLayouts(?string $source): array
+    {
+        if ($source !== null && preg_match('/^matchfield:(.+)$/', $source, $matches)) {
+            $matchFields = array_filter([
+                Cockpit::$plugin->getMatchFields()->getMatchFieldByUid($matches[1]),
+            ]);
+        } else {
+            $matchFields = Cockpit::$plugin->getMatchFields()->getAllMatchFields();
+        }
+
+        return array_map(fn(MatchFieldModel $matchField) => $matchField->getFieldLayout(), $matchFields);
     }
 
     protected static function defineActions(string $source): array
@@ -212,6 +251,7 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
     protected static function defineDefaultTableAttributes(string $source): array
     {
         return [
+            'status',
             'link',
             'dateCreated',
             // ...
@@ -246,15 +286,25 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
         return $previewTargets;
     }
 
+    /**
+     * @inheritdoc
+     */
     protected function route(): array|string|null
     {
-        // Define how match field entries should be routed when their URLs are requested
+        // Make sure the match field is set to have URLs for this site
+        $matchFieldSiteSettings = $this->getMatchField()->getSiteSettings()[$this->siteId] ?? null;
+
+        if (!$matchFieldSiteSettings?->hasUrls) {
+            return null;
+        }
+
         return [
-            'templates/render',
-            [
-                'template' => 'site/template/path',
-                'variables' => ['matchFieldEntry' => $this],
-            ]
+            'templates/render', [
+                'template' => (string)$matchFieldSiteSettings->template,
+                'variables' => [
+                    'matchField' => $this,
+                ],
+            ],
         ];
     }
 
@@ -264,7 +314,7 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
             return true;
         }
         // todo: implement user permissions
-        return $user->can('viewMatchFieldEntries');
+        return $user->can('cockpit:view-match-field-entries');
     }
 
     public function canSave(User $user): bool
@@ -273,7 +323,7 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
             return true;
         }
         // todo: implement user permissions
-        return $user->can('saveMatchFieldEntries');
+        return $user->can('cockpit:save-match-field-entries');
     }
 
     public function canDuplicate(User $user): bool
@@ -282,7 +332,7 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
             return true;
         }
         // todo: implement user permissions
-        return $user->can('saveMatchFieldEntries');
+        return $user->can('cockpit:duplicate-match-field-entries');
     }
 
     public function canDelete(User $user): bool
@@ -291,7 +341,7 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
             return true;
         }
         // todo: implement user permissions
-        return $user->can('deleteMatchFieldEntries');
+        return $user->can('cockpit:delete-match-field-entries');
     }
 
     public function canCreateDrafts(User $user): bool
@@ -307,6 +357,18 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
     public function getPostEditUrl(): ?string
     {
         return UrlHelper::cpUrl('match-field-entries');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getFieldLayout(): ?FieldLayout
+    {
+        try {
+            return $this->getMatchField()->getFieldLayout();
+        } catch (InvalidConfigException) {
+            return null;
+        }
     }
 
     public function prepareEditScreen(Response $response, string $containerId): void
@@ -351,5 +413,26 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
     public function getExpiryDate(): ?DateTime
     {
         return $this->expiryDate;
+    }
+
+    /**
+     * Returns the match field.
+     *
+     * @return MatchFieldModel
+     * @throws InvalidConfigException if [[groupId]] is missing or invalid
+     */
+    public function getMatchField(): MatchFieldModel
+    {
+        if (!isset($this->matchFieldId)) {
+            throw new InvalidConfigException('Match field is missing its match field ID');
+        }
+
+        $matchFields = Cockpit::$plugin->getMatchFields()->getMatchFieldById($this->matchFieldId);
+
+        if (!$matchFields) {
+            throw new InvalidConfigException('Invalid match field ID: ' . $this->matchFieldId);
+        }
+
+        return $matchFields;
     }
 }

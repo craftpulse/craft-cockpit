@@ -29,7 +29,7 @@
 {% block content %}
 
     {% if not readOnly %}
-        {{ actionInput('cockpit/matchfields/save-match-field') }}
+        {{ actionInput('cockpit/match-fields/save-match-field') }}
         {{ redirectInput('cockpit/settings/matchfields') }}
 
         {% if matchField.id %}{{ hiddenInput('matchFieldId', matchField.id) }}{% endif %}
@@ -242,6 +242,14 @@
             rows: matchField.previewTargets,
             errors: matchField.getErrors('previewTargets'),
             static: readOnly,
+        }) }}
+
+        <hr>
+
+        {{ forms.fieldLayoutDesignerField({
+            fieldLayout: matchField.getFieldLayout(),
+            withCardViewDesigner: true,
+            disabled: readOnly,
         }) }}
     </div>
 {% endblock %}
