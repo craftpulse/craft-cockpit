@@ -42,7 +42,7 @@ class SettingsModel extends Model
     public bool $enableMapbox = false;
 
     /**
-     * @var bool the Mapbox API Key
+     * @var string the Mapbox API Key
      */
     public ?string $mapboxApiKey = null;
 
