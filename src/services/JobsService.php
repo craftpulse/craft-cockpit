@@ -102,7 +102,7 @@ class JobsService extends Component
         $job->cockpitOfficeId = $publication->get('owner')['departmentId'] ?? null;
         $job->companyName = $publication->get('jobRequest')['data']['company']['name'] ?? null;
         $job->title = $publication->get('title');
-        $job->slug = StringHelper::slugify($publication->get('title') . '-' . $publication->get('id'));
+//        $job->slug = StringHelper::slugify($publication->get('title') . '-' . $publication->get('id'));
         $job->postDate = $startDate ? Carbon::parse($startDate) : Carbon::now();
         $job->expiryDate = $endDate;
 
