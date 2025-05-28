@@ -284,7 +284,6 @@ class Cockpit extends Plugin
         $projectConfigService = Craft::$app->getProjectConfig();
 
         $jobsService = $this->getJobs();
-
         $projectConfigService->onAdd(self::CONFIG_JOBFIELD_LAYOUT_KEY, [$jobsService, 'handleChangedFieldLayout'])
             ->onUpdate(self::CONFIG_JOBFIELD_LAYOUT_KEY, [$jobsService, 'handleChangedFieldLayout'])
             ->onRemove(self::CONFIG_JOBFIELD_LAYOUT_KEY, [$jobsService, 'handleDeletedFieldLayout']);

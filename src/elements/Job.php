@@ -2,11 +2,15 @@
 
 namespace craftpulse\cockpit\elements;
 
+use craft\helpers\StringHelper;
+use DateTime;
 use Craft;
 use craft\base\Element;
 use craft\elements\User;
 use craft\elements\conditions\ElementConditionInterface;
 use craft\elements\db\ElementQueryInterface;
+use craft\helpers\Cp;
+use craft\helpers\DateTimeHelper;
 use craft\helpers\UrlHelper;
 use craft\models\FieldLayout;
 use craft\web\CpScreenResponseBehavior;
@@ -21,15 +25,16 @@ use yii\web\Response;
  */
 class Job extends Element
 {
+
     // Properties
     // =========================================================================
-    /**
-     * @var FieldLayout|null
-     */
+    public const STATUS_EXPIRED = 'expired';
+    public const STATUS_PENDING = 'pending';
+
     private ?FieldLayout $fieldLayout = null;
 
     public ?string $type = 'job';
-    public ?string $applicationCount = null;
+    public int $applicationCount = 1;
     public string $city = '';
     public string $cockpitCompanyId ='';
     public string $cockpitId = '';
@@ -38,9 +43,19 @@ class Job extends Element
     public string $companyName = '';
     public ?float $latitude = null;
     public ?float $longitude = null;
-    public ?int $openPositions = null;
+    public int $openPositions = 1;
     public ?string $postCode = null;
     public ?string $street = null;
+
+    /**
+     * @var DateTime|null Post date
+     */
+    public ?DateTime $postDate = null;
+
+    /**
+     * @var DateTime|null Expiry date
+     */
+    public ?DateTime $expiryDate = null;
 
     // Methods
     // =========================================================================
@@ -94,6 +109,19 @@ class Job extends Element
         return true;
     }
 
+    /**
+     * @inheritdoc
+     */
+    public static function statuses(): array
+    {
+        return [
+            parent::STATUS_ENABLED => Craft::t('app', 'Enabled'),
+            self::STATUS_PENDING => Craft::t('app', 'Pending'),
+            self::STATUS_EXPIRED => ['label' => Craft::t('app', 'Expired'), 'color' => 'red'],
+            parent::STATUS_DISABLED => Craft::t('app', 'Disabled'),
+        ];
+    }
+
     public static function find(): ElementQueryInterface
     {
         return Craft::createObject(JobQuery::class, [static::class]);
@@ -102,6 +130,17 @@ class Job extends Element
     public static function createCondition(): ElementConditionInterface
     {
         return Craft::createObject(JobCondition::class, [static::class]);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function attributeLabels(): array
+    {
+        return array_merge(parent::attributeLabels(), [
+            'postDate' => Craft::t('app', 'Post Date'),
+            'expiryDate' => Craft::t('app', 'Expiry Date'),
+        ]);
     }
 
     protected static function defineSources(string $context): array
@@ -144,6 +183,11 @@ class Job extends Element
                 'defaultDir' => 'desc',
             ],
             [
+                'label' => Craft::t('app', 'Expiry Date'),
+                'orderBy' => 'expiryDate',
+                'defaultDir' => 'desc',
+            ],
+            [
                 'label' => Craft::t('app', 'ID'),
                 'orderBy' => 'elements.id',
                 'attribute' => 'id',
@@ -160,6 +204,8 @@ class Job extends Element
             'link' => ['label' => Craft::t('app', 'Link'), 'icon' => 'world'],
             'id' => ['label' => Craft::t('app', 'ID')],
             'uid' => ['label' => Craft::t('app', 'UID')],
+            'postDate' => ['label' => Craft::t('app', 'Post Date')],
+            'expiryDate' => ['label' => Craft::t('app', 'Expiry Date')],
             'dateCreated' => ['label' => Craft::t('app', 'Date Created')],
             'dateUpdated' => ['label' => Craft::t('app', 'Date Updated')],
             // ...
@@ -168,11 +214,14 @@ class Job extends Element
 
     protected static function defineDefaultTableAttributes(string $source): array
     {
-        return [
-            'link',
-            'dateCreated',
-            // ...
-        ];
+        $attributes = [];
+
+        $attributes[] = 'status';
+        $attributes[] = 'postDate';
+        $attributes[] = 'expiryDate';
+        $attributes[] = 'link';
+
+        return $attributes;
     }
 
     protected function defineRules(): array
@@ -188,10 +237,12 @@ class Job extends Element
                 'cockpitJobRequestId',
                 'cockpitOfficeId',
                 'companyName',
+                'expiryDate',
                 'latitude',
                 'longitude',
                 'openPositions',
                 'postCode',
+                'postDate',
                 'street',
             ],
             'safe'
@@ -230,6 +281,29 @@ class Job extends Element
         }
 
         return [];
+    }
+
+    public function getStatus(): ?string
+    {
+        $status = parent::getStatus();
+
+        if ($status == self::STATUS_ENABLED && $this->postDate) {
+            $currentTime = DateTimeHelper::currentTimeStamp();
+            $postDate = $this->postDate->getTimestamp();
+            $expiryDate = $this->expiryDate?->getTimestamp();
+
+            if ($postDate <= $currentTime && ($expiryDate === null || $expiryDate > $currentTime)) {
+                return parent::STATUS_ENABLED;
+            }
+
+            if ($postDate > $currentTime) {
+                return self::STATUS_PENDING;
+            }
+
+            return self::STATUS_EXPIRED;
+        }
+
+        return $status;
     }
 
     protected function route(): array|string|null
@@ -331,38 +405,51 @@ class Job extends Element
         ]);
     }
 
+    public function beforeSave(bool $isNew): bool
+    {
+        return parent::beforeSave($isNew); // TODO: Change the autogenerated stub
+    }
+
     /**
      * @inheritdoc
      * @throws Exception
      */
     public function afterSave(bool $isNew): void
     {
+//        Craft::dd($this->dateCreated);
         if (!$this->propagating) {
             if ($isNew) {
-                $jobRecord = new JobRecord();
-                $jobRecord->id = $this->id;
+                $record = new JobRecord();
+                $record->id = $this->id;
             } else {
-                $jobRecord = JobRecord::findOne($this->id);
+                $record = JobRecord::findOne($this->id);
             }
 
-            $jobRecord->fieldLayoutId = $this->fieldLayout->id;
+            if (!$this->postDate) {
+                $this->postDate = $this->dateCreated;
+            }
+
+            $record->fieldLayoutId = $this->fieldLayout->id;
 
             // Job specific fields
-            $jobRecord->applicationCount = $this->applicationCount;
-            $jobRecord->city = $this->city;
-            $jobRecord->cockpitCompanyId = $this->cockpitCompanyId;
-            $jobRecord->cockpitId = $this->cockpitId;
-            $jobRecord->cockpitJobRequestId = $this->cockpitJobRequestId;
-            $jobRecord->cockpitOfficeId = $this->cockpitOfficeId;
-            $jobRecord->companyName = $this->companyName;
-            $jobRecord->latitude = $this->latitude;
-            $jobRecord->longitude = $this->longitude;
-            $jobRecord->openPositions = $this->openPositions;
-            $jobRecord->postCode = $this->postCode;
-            $jobRecord->street = $this->street;
+            $record->postDate = $this->postDate;
+            $record->expiryDate = $this->expiryDate;
 
-            if (!$jobRecord->validate()) {
-                $errors = $jobRecord->getErrors();
+            $record->applicationCount = $this->applicationCount;
+            $record->city = $this->city;
+            $record->cockpitCompanyId = $this->cockpitCompanyId;
+            $record->cockpitId = $this->cockpitId;
+            $record->cockpitJobRequestId = $this->cockpitJobRequestId;
+            $record->cockpitOfficeId = $this->cockpitOfficeId;
+            $record->companyName = $this->companyName;
+            $record->latitude = $this->latitude;
+            $record->longitude = $this->longitude;
+            $record->openPositions = $this->openPositions;
+            $record->postCode = $this->postCode;
+            $record->street = $this->street;
+
+            if (!$record->validate()) {
+                $errors = $record->getErrors();
                 Craft::error(
                     'Cockpit job record validation failed: ' . json_encode($errors, JSON_PRETTY_PRINT),
                     __METHOD__
@@ -379,10 +466,52 @@ class Job extends Element
 
 
             // Save the record
-            $jobRecord->save(false);
+            $record->save(false);
         }
 
         parent::afterSave($isNew);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function metaFieldsHtml(bool $static): string
+    {
+        $fields = [];
+        $view = Craft::$app->getView();
+        // Slug
+        $fields[] = $this->slugFieldHtml($static);
+
+        $isDeltaRegistrationActive = $view->getIsDeltaRegistrationActive();
+        $view->registerDeltaName('postDate');
+        $view->registerDeltaName('expiryDate');
+        $view->setIsDeltaRegistrationActive($isDeltaRegistrationActive);
+
+        // Post Date
+        $fields[] = Cp::dateTimeFieldHtml([
+            'status' => $this->getAttributeStatus('postDate'),
+            'label' => Craft::t('app', 'Post Date'),
+            'id' => 'postDate',
+            'name' => 'postDate',
+            'value' => $this->postDate,
+            'errors' => $this->getErrors('postDate'),
+            'disabled' => $static,
+        ]);
+
+        // Expiry Date
+        $fields[] = Cp::dateTimeFieldHtml([
+            'status' => $this->getAttributeStatus('expiryDate'),
+            'label' => Craft::t('app', 'Expiry Date'),
+            'id' => 'expiryDate',
+            'name' => 'expiryDate',
+            'value' => $this->expiryDate,
+            'errors' => $this->getErrors('expiryDate'),
+            'disabled' => $static,
+        ]);
+
+        $fields[] = parent::metaFieldsHtml($static);
+
+        return implode("\n", $fields);
     }
 
 }

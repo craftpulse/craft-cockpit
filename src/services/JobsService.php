@@ -64,7 +64,6 @@ class JobsService extends Component
         $layout->uid = key($data);
         $fieldsService->saveLayout($layout, false);
 
-
         // Invalidate job caches
         Craft::$app->getElements()->invalidateCachesForElementType(Job::class);
     }
