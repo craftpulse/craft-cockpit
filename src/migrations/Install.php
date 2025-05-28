@@ -115,7 +115,6 @@ class Install extends Migration
 
                     // Job specific fields
                     'applicationCount' => $this->integer(),
-                    'city' => $this->string()->notNull(),
                     'cockpitCompanyId' => $this->string()->notNull(),
                     'cockpitId' => $this->string()->notNull(),
                     'cockpitJobRequestId' => $this->string()->notNull(),
@@ -123,8 +122,6 @@ class Install extends Migration
                     'companyName' => $this->string()->notNull(),
                     'expiryDate' => $this->dateTime(),
                     'openPositions' => $this->integer(),
-                    'postCode' => $this->string(),
-                    'street' => $this->string(),
                 ]
             );
         }

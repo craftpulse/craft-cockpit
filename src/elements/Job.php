@@ -53,10 +53,6 @@ class Job extends Element
     /**
      * @var string
      */
-    public string $city = '';
-    /**
-     * @var string
-     */
     public string $cockpitCompanyId ='';
     /**
      * @var string
@@ -78,14 +74,6 @@ class Job extends Element
      * @var int
      */
     public int $openPositions = 1;
-    /**
-     * @var string|null
-     */
-    public ?string $postCode = null;
-    /**
-     * @var string|null
-     */
-    public ?string $street = null;
 
     /**
      * @var DateTime|null Post date
@@ -406,7 +394,6 @@ class Job extends Element
         $rules[] = [
             [
                 'applicationCount',
-                'city',
                 'cockpitCompanyId',
                 'cockpitId',
                 'cockpitJobRequestId',
@@ -414,16 +401,13 @@ class Job extends Element
                 'companyName',
                 'expiryDate',
                 'openPositions',
-                'postCode',
                 'postDate',
-                'street',
             ],
             'safe'
         ];
 
         if ($this->id !== null) {
             $rules[] = [[
-                'city',
                 'cockpitCompanyId',
                 'cockpitId',
                 'cockpitJobRequestId',
@@ -665,15 +649,12 @@ class Job extends Element
             $record->expiryDate = $this->expiryDate;
 
             $record->applicationCount = $this->applicationCount;
-            $record->city = $this->city;
             $record->cockpitCompanyId = $this->cockpitCompanyId;
             $record->cockpitId = $this->cockpitId;
             $record->cockpitJobRequestId = $this->cockpitJobRequestId;
             $record->cockpitOfficeId = $this->cockpitOfficeId;
             $record->companyName = $this->companyName;
             $record->openPositions = $this->openPositions;
-            $record->postCode = $this->postCode;
-            $record->street = $this->street;
 
             if (!$record->validate()) {
                 $errors = $record->getErrors();

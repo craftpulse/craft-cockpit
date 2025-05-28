@@ -32,7 +32,6 @@ class JobQuery extends ElementQuery
         // todo: apply any custom query params
         $this->query->select([
             'cockpit_jobs.applicationCount',
-            'cockpit_jobs.city',
             'cockpit_jobs.cockpitCompanyId',
             'cockpit_jobs.cockpitId',
             'cockpit_jobs.cockpitJobRequestId',
@@ -41,9 +40,7 @@ class JobQuery extends ElementQuery
             'cockpit_jobs.expiryDate',
             'cockpit_jobs.fieldLayoutId',
             'cockpit_jobs.openPositions',
-            'cockpit_jobs.postCode',
             'cockpit_jobs.postDate',
-            'cockpit_jobs.street',
         ]);
 
         if ($this->cockpitId) {
