@@ -29,7 +29,7 @@ use craft\fieldlayoutelements\users\UsernameField;
 use craft\models\FieldLayout;
 
 use craftpulse\cockpit\elements\MatchFieldEntry;
-use craftpulse\cockpit\fieldlayoutelements\matchfields\MatchFieldIdField;
+use craftpulse\cockpit\fieldlayoutelements\matchfields\CockpitIdField;
 use craftpulse\cockpit\fieldlayoutelements\matchfields\MatchFieldTitleField;
 
 use craftpulse\cockpit\services\MatchField;
@@ -52,7 +52,7 @@ trait PluginTrait
                 switch ($fieldLayout->type) {
                     case MatchFieldEntry::class:
                         $event->fields[] = MatchFieldTitleField::class;
-                        $event->fields[] = MatchFieldIdField::class;
+                        $event->fields[] = CockpitIdField::class;
                         break;
                 }
         });

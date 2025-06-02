@@ -25,7 +25,7 @@ use yii\base\InvalidArgumentException;
  * @since       5.0.0
  *
  */
-class MatchFieldIdField extends TextField
+class CockpitIdField extends TextField
 {
     /**
      * @inheritdoc
