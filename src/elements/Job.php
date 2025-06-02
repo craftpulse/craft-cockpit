@@ -65,7 +65,7 @@ class Job extends Element
     /**
      * @var string
      */
-    public string $cockpitOfficeId = '';
+    public string $cockpitDepartmentId = '';
     /**
      * @var string
      */
@@ -399,7 +399,7 @@ class Job extends Element
                 'cockpitCompanyId',
                 'cockpitId',
                 'cockpitJobRequestId',
-                'cockpitOfficeId',
+                'cockpitDepartmentId',
                 'companyName',
                 'expiryDate',
                 'openPositions',
@@ -413,7 +413,7 @@ class Job extends Element
                 'cockpitCompanyId',
                 'cockpitId',
                 'cockpitJobRequestId',
-                'cockpitOfficeId',
+                'cockpitDepartmentId',
                 'companyName',
             ], 'required'];
 
@@ -656,7 +656,7 @@ class Job extends Element
             $record->cockpitCompanyId = $this->cockpitCompanyId;
             $record->cockpitId = $this->cockpitId;
             $record->cockpitJobRequestId = $this->cockpitJobRequestId;
-            $record->cockpitOfficeId = $this->cockpitOfficeId;
+            $record->cockpitDepartmentId = $this->cockpitDepartmentId;
             $record->companyName = $this->companyName;
             $record->openPositions = $this->openPositions;
             $record->title = $this->title;

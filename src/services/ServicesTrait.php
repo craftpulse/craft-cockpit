@@ -20,7 +20,7 @@ use yii\base\InvalidConfigException;
  * @property Api $api
  * @property CleanupService $cleanup
  * @property JobsService $jobs
- * @property OfficeService $offices
+ * @property DepartmentsService $deparments
  * @property MatchField $matchFields
  */
 trait ServicesTrait
@@ -34,7 +34,7 @@ trait ServicesTrait
                 'jobs' => JobsService::class,
                 'map' => MapboxService::class,
                 'matchFields' => MatchField::class,
-                'offices' => OfficeService::class,
+                'departments' => DepartmentsService::class,
             ],
         ];
     }
@@ -76,14 +76,14 @@ trait ServicesTrait
     }
 
     /**
-     * Returns the offices service
+     * Returns the darpartments service
      *
-     * @return OfficeService The offices service
+     * @return DepartmentsService The departments service
      * @throws InvalidConfigException
      */
-    public function getOffices(): OfficeService
+    public function getDepartments(): DepartmentsService
     {
-        return $this->get('offices');
+        return $this->get('departments');
     }
 
     /**

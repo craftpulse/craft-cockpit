@@ -12,6 +12,7 @@ namespace craftpulse\cockpit\models;
 use Craft;
 use craft\base\Model;
 use craft\behaviors\EnvAttributeParserBehavior;
+use craftpulse\cockpit\elements\Department;
 use craftpulse\cockpit\elements\Job;
 
 /**
@@ -55,6 +56,15 @@ class SettingsModel extends Model
      */
     public ?string $jobTemplate = '';
 
+    /**
+     * @var string|null
+     */
+    public ?string $departmentUriFormat = '';
+    /**
+     * @var string|null
+     */
+    public ?string $departmentTemplate = '';
+
     // Private Properties
     // =========================================================================
 
@@ -62,6 +72,11 @@ class SettingsModel extends Model
      * @var mixed
      */
     private mixed $_jobFieldLayout;
+
+    /**
+     * @var mixed
+     */
+    private mixed $_departmentFieldLayout;
 
     /**
      * @return array[]
@@ -113,5 +128,26 @@ class SettingsModel extends Model
     public function setJobFieldLayout(mixed $fieldLayout): void
     {
         $this->_jobFieldLayout = $fieldLayout;
+    }
+
+    /**
+     * @return \craft\models\FieldLayout|mixed
+     */
+    public function getDepartmentFieldLayout()
+    {
+        if (!isset($this->_departmentFieldLayout)) {
+            $this->_departmentFieldLayout = Craft::$app->getFields()->getLayoutByType(Department::class);
+        }
+
+        return $this->_departmentFieldLayout;
+    }
+
+    /**
+     * @param mixed $fieldLayout
+     * @return void
+     */
+    public function setDepartmentFieldLayout(mixed $fieldLayout): void
+    {
+        $this->_departmentFieldLayout = $fieldLayout;
     }
 }

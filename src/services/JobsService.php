@@ -183,7 +183,7 @@ class JobsService extends Component
         $job->cockpitCompanyId = $publication->get('jobRequest')['data']['company']['id'] ?? null;
         $job->cockpitId = $publication->get('id');
         $job->cockpitJobRequestId = $publication->get('jobRequest')['id'] ?? null;
-        $job->cockpitOfficeId = $publication->get('owner')['departmentId'] ?? null;
+        $job->cockpitDepartmentId = $publication->get('owner')['departmentId'] ?? null;
         $job->companyName = $publication->get('jobRequest')['data']['company']['name'] ?? null;
         $job->title = $publication->get('title');
         // $job->slug = StringHelper::slugify($publication->get('title') . '-' . $publication->get('id'));
