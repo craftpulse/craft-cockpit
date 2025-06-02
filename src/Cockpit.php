@@ -328,27 +328,6 @@ class Cockpit extends Plugin
         );
     }
 
-    private function _registerSidebarPanels(): void
-    {
-        Event::on(
-            Job::class,
-            Element::EVENT_DEFINE_SIDEBAR_HTML,
-            function (DefineHtmlEvent $event) {
-                /** @var Element $element */
-                $element = $event->sender;
-
-                $html = Craft::$app->getView()->renderTemplate('cockpit/_components/_job-sidebar', [
-                    'variable' => true,
-                    'element' => $element,
-                ]);
-
-//                $event->html .= $address;
-                $event->html .= $html;
-            },
-        );
-
-
-    }
 
     /**
      * Registers user permissions

@@ -1,5 +1,14 @@
 {% extends '_layouts/elementindex' %}
 {% set title = 'Departments'|t('cockpit') %}
-
 {% set elementType = 'craftpulse\\cockpit\\elements\\Department' %}
 {% set canHaveDrafts = false %}
+
+{% block actionButton %}
+    {{ tag('a', {
+        class: 'btn submit add icon',
+        href: actionUrl('elements/create', {
+            elementType: elementType
+        }),
+        text: 'New department'|t('cockpit'),
+    }) }}
+{% endblock %}

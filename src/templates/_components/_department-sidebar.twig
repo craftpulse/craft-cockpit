@@ -1,0 +1,50 @@
+{% import '_includes/forms' as forms %}
+
+<fieldset class="fieldset">
+
+    <legend class="h6">{{ 'Department Info'|t('cockpit') }}</legend>
+    <div class="meta">
+        <div class="field">
+            <legend class="heading">
+                {{ 'Address'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {%- if (element.address[0] ?? null) -%}
+                    {{ element.address[0].addressLine1 }} - {{ element.address[0].addressLine2 }}<br/>
+                    {{ element.address[0].postalCode }} {{ element.address[0].locality }}
+                {%- else -%}
+                    -
+                {%- endif -%}
+            </div>
+        </div>
+    </div>
+
+    <legend class="h6">{{ 'Cockpit'|t('cockpit') }}</legend>
+    <div class="meta">
+        <div class="field">
+            <legend class="heading">
+                {{ 'ID'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {{ forms.text({
+                    id: 'cockpitId',
+                    name: 'cockpitId',
+                    value: element.cockpitId,
+                }) }}
+            </div>
+        </div>
+    </div>
+</fieldset>
+
+{#<dl class="meta read-only">#}
+{#    <div class="data">#}
+{#        <dt class="heading">Application count</dt>#}
+{#        <dd class="value">{{ element.applicationCount }}</dd>#}
+{#    </div>#}
+{#    <div class="data">#}
+{#        <dt class="heading">Job open positions</dt>#}
+{#        <dd class="value">{{ element.openPositions }}</dd>#}
+{#    </div>#}
+{#</dl>#}

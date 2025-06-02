@@ -3,6 +3,7 @@
 namespace craftpulse\cockpit\base;
 
 use Craft;
+use craft\base\Element;
 use craft\elements\Address;
 use craft\elements\Asset;
 use craft\elements\Category;
@@ -10,6 +11,7 @@ use craft\elements\Entry;
 use craft\elements\Tag;
 use craft\elements\User;
 use craft\events\DefineFieldLayoutFieldsEvent;
+use craft\events\DefineHtmlEvent;
 use craft\fieldlayoutelements\addresses\AddressField;
 use craft\fieldlayoutelements\addresses\CountryCodeField;
 use craft\fieldlayoutelements\addresses\LabelField;
@@ -96,5 +98,40 @@ trait PluginTrait
         $projectConfigService->onAdd(self::CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY, [$departmentsService, 'handleChangedFieldLayout'])
             ->onUpdate(self::CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY, [$departmentsService, 'handleChangedFieldLayout'])
             ->onRemove(self::CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY, [$departmentsService, 'handleDeletedFieldLayout']);
+    }
+
+    private function _registerSidebarPanels(): void
+    {
+        Event::on(
+            Job::class,
+            Element::EVENT_DEFINE_SIDEBAR_HTML,
+            function (DefineHtmlEvent $event) {
+                /** @var Element $element */
+                $element = $event->sender;
+
+                $html = Craft::$app->getView()->renderTemplate('cockpit/_components/_job-sidebar', [
+                    'variable' => true,
+                    'element' => $element,
+                ]);
+
+                $event->html .= $html;
+            },
+        );
+
+        Event::on(
+            Department::class,
+            Element::EVENT_DEFINE_SIDEBAR_HTML,
+            function (DefineHtmlEvent $event) {
+                /** @var Element $element */
+                $element = $event->sender;
+
+                $html = Craft::$app->getView()->renderTemplate('cockpit/_components/_department-sidebar', [
+                    'variable' => true,
+                    'element' => $element,
+                ]);
+
+                $event->html .= $html;
+            },
+        );
     }
 }

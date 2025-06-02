@@ -65,6 +65,8 @@ class SettingsModel extends Model
      */
     public ?string $departmentTemplate = '';
 
+    public ?array $departmentSiteSettings = [];
+
     // Private Properties
     // =========================================================================
 
