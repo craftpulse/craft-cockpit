@@ -31,6 +31,7 @@ use craft\models\FieldLayout;
 use craftpulse\cockpit\elements\Department;
 use craftpulse\cockpit\elements\Job;
 use craftpulse\cockpit\elements\MatchFieldEntry;
+use craftpulse\cockpit\fieldlayoutelements\JobCoordindates;
 use craftpulse\cockpit\fieldlayoutelements\matchfields\CockpitIdField;
 use craftpulse\cockpit\fieldlayoutelements\matchfields\MatchFieldTitleField;
 
