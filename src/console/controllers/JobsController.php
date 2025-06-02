@@ -18,18 +18,36 @@ class JobsController extends Controller
 {
     public $defaultAction = 'index';
 
-    public $id;
+    public $publicationId;
+    public $jobRequestId;
 
     public function options($actionID): array
     {
         $options = parent::options($actionID);
+
         switch ($actionID) {
             case 'publication':
-                 $options[] = 'id';
+                 $options[] = 'publicationId';
+                break;
+            case 'job-request':
+                $options[] = 'jobRequestId';
+                break;
+            case 'delete-publication':
+                $options[] = 'publicationId';
                 break;
         }
+
         return $options;
     }
+
+    public function optionAliases(): array
+    {
+        return [
+            'job-request-id' => 'jobRequestId',
+            'publication-id' => 'publicationId',
+        ];
+    }
+
     /**
      * cockpit/jobs command
      */
@@ -68,7 +86,7 @@ class JobsController extends Controller
     {
         try {
             // Get the ID from command line options
-            $id = $this->id;
+            $id = $this->publicationId;
 
             Console::stdout('Start publication fetch ' . $id . PHP_EOL, Console::FG_CYAN);
 
@@ -79,6 +97,62 @@ class JobsController extends Controller
             }
 
             if (!Cockpit::$plugin->getJobs()->fetchPublicationById($id)) {
+                return ExitCode::DATAERR;
+            }
+
+            return ExitCode::OK;
+
+        } catch (\Exception $e) {
+            Console::stderr('   > Error on fetching publication: '.$e->getMessage() . PHP_EOL);
+            Craft::error($e->getMessage());
+        }
+
+        return ExitCode::DATAERR;
+    }
+
+    public function actionJobRequest(): int
+    {
+        try {
+            // Get the ID from command line options
+            $id = $this->jobRequestId;
+
+            Console::stdout('Start job request fetch ' . $id . PHP_EOL, Console::FG_CYAN);
+
+            if (!$id) {
+                Craft::error('Job request ID (as --id=x) is required');
+                Console::stderr('   > Error on fetching job request: Job request ID is required' . PHP_EOL, Console::FG_RED);
+                return ExitCode::DATAERR;
+            }
+
+            if (!Cockpit::$plugin->getJobs()->fetchJobRequestByid($id)) {
+                return ExitCode::DATAERR;
+            }
+
+            return ExitCode::OK;
+
+        } catch (\Exception $e) {
+            Console::stderr('   > Error on fetching publication: '.$e->getMessage() . PHP_EOL);
+            Craft::error($e->getMessage());
+        }
+
+        return ExitCode::DATAERR;
+    }
+
+    public function actionDeletePublication(): int
+    {
+        try {
+            // Get the ID from command line options
+            $id = $this->publicationId;
+
+            Console::stdout('Start publication deletion ' . $id . PHP_EOL, Console::FG_CYAN);
+
+            if (!$id) {
+                Craft::error('Publication ID (as --id=x) is required');
+                Console::stderr('   > Error on deleting publication: Publication ID is required' . PHP_EOL, Console::FG_RED);
+                return ExitCode::DATAERR;
+            }
+
+            if (!Cockpit::$plugin->getJobs()->deleteJobByCockpitId($id)) {
                 return ExitCode::DATAERR;
             }
 

@@ -13,10 +13,17 @@ use craftpulse\cockpit\db\Table;
 class JobQuery extends ElementQuery
 {
     public ?string $cockpitId = null;
+    public ?string $cockpitJobRequestId = null;
 
     public function cockpitId($value)
     {
         $this->cockpitId = $value;
+        return $this;
+    }
+
+    public function cockpitJobRequestId($value)
+    {
+        $this->cockpitJobRequestId = $value;
         return $this;
     }
 
@@ -41,10 +48,15 @@ class JobQuery extends ElementQuery
             'cockpit_jobs.fieldLayoutId',
             'cockpit_jobs.openPositions',
             'cockpit_jobs.postDate',
+            'cockpit_jobs.title',
         ]);
 
         if ($this->cockpitId) {
             $this->subQuery->andWhere(Db::parseParam('cockpit_jobs.cockpitId', $this->cockpitId));
+        }
+
+        if ($this->cockpitJobRequestId) {
+            $this->subQuery->andWhere(Db::parseParam('cockpit_jobs.cockpitJobRequestId', $this->cockpitJobRequestId));
         }
 
         return parent::beforePrepare();

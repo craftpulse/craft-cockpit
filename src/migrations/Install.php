@@ -114,6 +114,7 @@ class Install extends Migration
                     'fieldLayoutId' => $this->integer(),
 
                     // Job specific fields
+                    'title' => $this->string(),
                     'applicationCount' => $this->integer(),
                     'cockpitCompanyId' => $this->string()->notNull(),
                     'cockpitId' => $this->string()->notNull(),

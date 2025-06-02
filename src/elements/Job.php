@@ -355,15 +355,17 @@ class Job extends Element
     protected static function defineTableAttributes(): array
     {
         return [
-            'slug' => ['label' => Craft::t('app', 'Slug')],
-            'uri' => ['label' => Craft::t('app', 'URI')],
-            'link' => ['label' => Craft::t('app', 'Link'), 'icon' => 'world'],
-            'id' => ['label' => Craft::t('app', 'ID')],
-            'uid' => ['label' => Craft::t('app', 'UID')],
-            'postDate' => ['label' => Craft::t('app', 'Post Date')],
-            'expiryDate' => ['label' => Craft::t('app', 'Expiry Date')],
+            'cockpitId' => ['label' => Craft::t('app', 'Cockpit ID')],
+            'companyName' => ['label' => Craft::t('app', 'Company')],
             'dateCreated' => ['label' => Craft::t('app', 'Date Created')],
             'dateUpdated' => ['label' => Craft::t('app', 'Date Updated')],
+            'expiryDate' => ['label' => Craft::t('app', 'Expiry Date')],
+            'id' => ['label' => Craft::t('app', 'ID')],
+            'link' => ['label' => Craft::t('app', 'Link'), 'icon' => 'world'],
+            'postDate' => ['label' => Craft::t('app', 'Post Date')],
+            'slug' => ['label' => Craft::t('app', 'Slug')],
+            'uid' => ['label' => Craft::t('app', 'UID')],
+            'uri' => ['label' => Craft::t('app', 'URI')],
             // ...
         ];
     }
@@ -657,6 +659,7 @@ class Job extends Element
             $record->cockpitOfficeId = $this->cockpitOfficeId;
             $record->companyName = $this->companyName;
             $record->openPositions = $this->openPositions;
+            $record->title = $this->title;
 
             if (!$record->validate()) {
                 $errors = $record->getErrors();
@@ -726,11 +729,8 @@ class Job extends Element
 
     private function createAddressQuery(): AddressQuery
     {
-        // @TODO: add owner to only get current elements
-//            ->owner($this)
         return Address::find()
             ->owner($this)
             ->orderBy(['id' => SORT_ASC]);
     }
-
 }

@@ -16,6 +16,7 @@ use craft\base\Component;
 use craft\elements\Address;
 use craft\events\ConfigEvent;
 use craft\fieldlayoutelements\TextField;
+use craft\fieldlayoutelements\TitleField;
 use craft\helpers\Console;
 use craft\helpers\ProjectConfig;
 use craft\helpers\StringHelper;
@@ -37,11 +38,17 @@ use yii\console\ExitCode;
  */
 class JobsService extends Component
 {
+    /**
+     * @param string $id
+     * @return bool
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \yii\base\InvalidConfigException
+     */
     public function fetchPublicationById(string $id): bool
     {
         if (!$id) {
             Craft::error('Publication ID is required');
-            Console::stderr('Error on fetching publication: Publication ID is required' . PHP_EOL);
+            Console::stdout('Error on fetching publication: Publication ID is required' . PHP_EOL, Console::FG_RED);
             return false;
         }
 
@@ -50,9 +57,11 @@ class JobsService extends Component
 
         if (!$publication) {
             Craft::error('Publication not found');
-            Console::stderr('   > Error on fetching publication: Publication not found' . PHP_EOL, Console::FG_RED);
+            Console::stdout('   > Error on fetching publication: Publication not found' . PHP_EOL, Console::FG_RED);
             return false;
         }
+
+// @TODO: only accept website publications
 
         Console::stdout('   > Publication ' . $publication->get('title') . ' found ' . PHP_EOL);
 
@@ -60,7 +69,7 @@ class JobsService extends Component
 
         if (!$jobRequestId) {
             Craft::error('Job request ID not found');
-            Console::stderr('   > Error on fetching publication: Job request ID not found' . PHP_EOL, Console::FG_RED);
+            Console::stdout('   > Error on fetching publication: Job request ID not found' . PHP_EOL, Console::FG_RED);
             return false;
         }
 
@@ -69,18 +78,93 @@ class JobsService extends Component
         $jobRequest = Cockpit::$plugin->getApi()->getJobRequestById($jobRequestId);
         $publication->get('jobRequest')['data'] = $jobRequest;
 
-        $success = $this->upsertJob($publication);
+        $success = $this->upsertJobByCockpitPublication($publication);
 
         if ($success) {
             Console::stdout('   > Job added in our system ' . PHP_EOL, Console::FG_GREEN);
         } else {
-            Console::stderr('   > Couldn\'t add job in our system ' . PHP_EOL, Console::FG_RED);
+            Console::stdout('   > Couldn\'t add job in our system ' . PHP_EOL, Console::FG_RED);
         }
 
         return $success;
     }
 
-    public function upsertJob(Collection $publication): bool
+    /**
+     * @param string $jobRequestId
+     * @return bool
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Throwable
+     * @throws \craft\errors\ElementNotFoundException
+     * @throws \yii\base\Exception
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function fetchJobRequestById(string $jobRequestId): bool
+    {
+        if (!$jobRequestId) {
+            Craft::error('Job request ID is required');
+            Console::stdout('Error on fetching job request: Job request ID is required' . PHP_EOL, Console::FG_RED);
+            return false;
+        }
+
+        // Get job request by ID
+        $jobRequest = Cockpit::$plugin->getApi()->getJobRequestById($jobRequestId);
+
+        if (!$jobRequest) {
+            Craft::error('Job request not found');
+            Console::stdout('   > Error on fetching job request: Job request not found' . PHP_EOL, Console::FG_RED);
+            return false;
+        }
+
+        $job = Job::find()->cockpitJobRequestId($jobRequestId)->one();
+
+        if (!$job) {
+            Craft::error('Job not found');
+            Console::stdout('   > Error on fetching the publication (job) attached to the job request: Publication not found' . PHP_EOL, Console::FG_RED);
+            return false;
+        }
+
+        // save native fields
+        $job->cockpitCompanyId = $jobRequest['company']['id'] ?? null;
+        $job->companyName = $jobRequest['company']['name'] ?? null;
+
+        // save field layout fields
+// @TODO: create a layer in between for mapping data between field layout and publication
+        $mappings = collect([]);
+
+        // loop through mappings to add the Cockpit data
+        foreach($job->getFieldValues() as $field => $value) {
+            $mapping = $mappings->get($field) ?? $value;
+            $job->setFieldValue($field, $mapping);
+        }
+
+        // validate if the data matches our model
+        if (!$job->validate()) {
+            Console::stdout('   > Validation errors: ' . print_r($job->getErrors(), true) . PHP_EOL, Console::FG_RED);
+            Craft::error('Job element invalid', __METHOD__);
+            return false;
+        }
+
+        // save the job
+        if (!Craft::$app->elements->saveElement($job)) {
+            Console::stdout('   > Error unable to save job: ' . print_r($job->getErrors(), true) . PHP_EOL, Console::FG_RED);
+            Craft::error('Unable to save job', __METHOD__);
+            return false;
+        }
+
+        Console::stdout('   > Job request saved for ' . $job->title . ' [' . $job->cockpitId . ']' . PHP_EOL);
+
+        return true;
+    }
+
+    /**
+     * @param Collection $publication
+     * @return bool
+     * @throws \Throwable
+     * @throws \craft\errors\ElementNotFoundException
+     * @throws \yii\base\Exception
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function upsertJobByCockpitPublication(Collection $publication): bool
     {
         $job = Job::find()->cockpitId($publication->get('id'))->one();
 
@@ -102,12 +186,12 @@ class JobsService extends Component
         $job->cockpitOfficeId = $publication->get('owner')['departmentId'] ?? null;
         $job->companyName = $publication->get('jobRequest')['data']['company']['name'] ?? null;
         $job->title = $publication->get('title');
-//        $job->slug = StringHelper::slugify($publication->get('title') . '-' . $publication->get('id'));
+        // $job->slug = StringHelper::slugify($publication->get('title') . '-' . $publication->get('id'));
         $job->postDate = $startDate ? Carbon::parse($startDate) : Carbon::now();
         $job->expiryDate = $endDate;
 
         // save field layout fields
-        // @TODO: create a layer in between for mapping data between field layout and publication
+// @TODO: create a layer in between for mapping data between field layout and publication
         $mappings = collect([
             'offer' => $publication->get('descriptions')['offerDescription'] ?? null,
             'taskAndProfiles' => $publication->get('descriptions')['functionDescription'] ?? null,
@@ -135,20 +219,72 @@ class JobsService extends Component
 
         // validate if the data matches our model
         if (!$job->validate()) {
-            Console::stderr('   > Validation errors: ' . print_r($job->getErrors(), true) . PHP_EOL, Console::FG_RED);
+            Console::stdout('   > Validation errors: ' . print_r($job->getErrors(), true) . PHP_EOL, Console::FG_RED);
             Craft::error('Job element invalid', __METHOD__);
             return false;
         }
 
         // save the job
         if (!Craft::$app->elements->saveElement($job)) {
-            Console::stderr('   > Error unable to save job: ' . print_r($job->getErrors(), true) . PHP_EOL, Console::FG_RED);
+            Console::stdout('   > Error unable to save job: ' . print_r($job->getErrors(), true) . PHP_EOL, Console::FG_RED);
             Craft::error('Unable to save job', __METHOD__);
             return false;
         }
 
         // add address after a succesful save
         $this->_saveLocation($publication, $job);
+
+        return true;
+    }
+
+    /**
+     * @param string $cockpitId
+     * @return bool
+     * @throws \Throwable
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function deleteJobByCockpitId(string $cockpitId): bool
+    {
+        $job = Job::find()->cockpitId($cockpitId)->one();
+
+        if (!$job) {
+            Console::stdout('   > Error unable to delete job because it doesn\'t exist ' . PHP_EOL, Console::FG_RED);
+            Craft::error('Job not found', __METHOD__);
+            return false;
+        }
+
+        $title = $job->title;
+
+        if (!Craft::$app->elements->deleteElement($job)) {
+            Console::stdout('   > Error unable to delete job: ' . print_r($job->getErrors(), true) . PHP_EOL, Console::FG_RED);
+            Craft::error('Unable to delete job', __METHOD__);
+            return false;
+        }
+
+        Console::stdout('   > Job deleted: ' . $title . ' [' . $cockpitId . ']' . PHP_EOL);
+
+        return true;
+    }
+
+    /**
+     * @param int $id
+     * @return bool
+     * @throws \Throwable
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function deleteJobById(int $id): bool
+    {
+        $job = Job::find()->id($id)->one();
+
+        if (!$job) {
+            Craft::error('Job not found', __METHOD__);
+            return false;
+        }
+
+        if (!Craft::$app->elements->deleteElement($job)) {
+            Craft::error('Unable to delete job', __METHOD__);
+            return false;
+        }
 
         return true;
     }
@@ -161,10 +297,10 @@ class JobsService extends Component
     {
         return [
             [
-                'class' => TextField::class,
+                'class' => TitleField::class,
                 'attribute' => 'title',
                 'name' => 'title',
-                'label' => Craft::t('cockpit', 'Vacancy'),
+                'label' => Craft::t('cockpit', 'Job'),
                 'inputType' => 'text',
                 'mandatory' => true,
                 'required' => true,
@@ -260,7 +396,7 @@ class JobsService extends Component
 
         // save the address
         if (!Craft::$app->elements->saveElement($address)) {
-            Console::stderr('   > Error unable to save address: ' . print_r($address->getErrors(), true) . PHP_EOL, Console::FG_RED);
+            Console::stdout('   > Error unable to save address: ' . print_r($address->getErrors(), true) . PHP_EOL, Console::FG_RED);
             Craft::error('Unable to save address', __METHOD__);
         }
     }
