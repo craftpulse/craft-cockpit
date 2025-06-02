@@ -167,7 +167,7 @@ class Job extends Element
      */
     public static function isLocalized(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -428,22 +428,13 @@ class Job extends Element
      */
     public function getUriFormat(): ?string
     {
-        // If jobs should have URLs, define their URI format here
-        return Cockpit::getInstance()->getSettings()->jobUriFormat;
-    }
+        $departmentSettings = Cockpit::getInstance()->getSettings()->jobSiteSettings ?? [];
 
-    /**
-     * @return array|array[]
-     */
-    protected function previewTargets(): array
-    {
-        if ($uriFormat = $this->getUriFormat()) {
-            return [[
-                'urlFormat' => $uriFormat,
-            ]];
+        if (!isset($departmentSettings[$this->siteId])) {
+            throw new InvalidConfigException('The jobs are not enabled for the ' . $this->getSite()->name . '" site.');
         }
 
-        return [];
+        return $departmentSettings[$this->siteId]['uriFormat'];
     }
 
     /**
@@ -477,24 +468,27 @@ class Job extends Element
      */
     protected function route(): array|string|null
     {
+        // Make sure that the product is actually live
         if (!$this->previewing && $this->getStatus() != self::STATUS_ENABLED) {
             return null;
         }
 
-        $settings = Cockpit::getInstance()->getSettings();
+        // Make sure the product type is set to have URLs for this site
+        $siteId = Craft::$app->getSites()->currentSite->id;
+        $settings = Cockpit::getInstance()->getSettings()->jobSiteSettings ?? [];
 
-        if ($settings->jobUriFormat) {
-            return [
-                'templates/render', [
-                    'template' => $settings->jobTemplate,
-                    'variables' => [
-                        'entry' => $this,
-                    ],
-                ],
-            ];
+        if (!isset($settings[$this->siteId])) {
+            return null;
         }
 
-        return null;
+        return [
+            'templates/render', [
+                'template' => $settings[$siteId]['template'],
+                'variables' => [
+                    'entry' => $this,
+                ],
+            ],
+        ];
     }
 
     /**

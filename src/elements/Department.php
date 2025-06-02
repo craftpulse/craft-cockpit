@@ -287,7 +287,7 @@ class Department extends Element
         $departmentSettings = Cockpit::getInstance()->getSettings()->departmentSiteSettings ?? [];
 
         if (!isset($departmentSettings[$this->siteId])) {
-            throw new InvalidConfigException('The departments is not enabled for the ' . $this->getSite()->name . '" site.');
+            throw new InvalidConfigException('The departments are not enabled for the ' . $this->getSite()->name . '" site.');
         }
 
         return $departmentSettings[$this->siteId]['uriFormat'];
@@ -302,15 +302,15 @@ class Department extends Element
 
         // Make sure the product type is set to have URLs for this site
         $siteId = Craft::$app->getSites()->currentSite->id;
-        $departmentSettings = Cockpit::getInstance()->getSettings()->departmentSiteSettings ?? [];
+        $settings = Cockpit::getInstance()->getSettings()->departmentSiteSettings ?? [];
 
-        if (!isset($departmentSettings[$this->siteId])) {
+        if (!isset($settings[$this->siteId])) {
             return null;
         }
 
         return [
             'templates/render', [
-                'template' => $departmentSettings[$siteId]['template'],
+                'template' => $settings[$siteId]['template'],
                 'variables' => [
                     'entry' => $this,
                 ],
