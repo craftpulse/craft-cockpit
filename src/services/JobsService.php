@@ -291,34 +291,6 @@ class JobsService extends Component
     }
 
     /**
-     * This creates the native fields for the job section
-     * @return array[]|null
-     */
-    public function createFields(): ?array
-    {
-        return [
-            [
-                'class' => TitleField::class,
-                'attribute' => 'title',
-                'name' => 'title',
-                'label' => Craft::t('cockpit', 'Job'),
-                'inputType' => 'text',
-                'mandatory' => true,
-                'required' => true,
-                'width' => '100%',
-            ],
-            [
-                'class' => AddressField::class,
-                'attribute' => 'address',
-                'name' => 'address',
-                'mandatory' => true,
-                'label' => Craft::t('cockpit', 'Address'),
-                'width' => '100%',
-            ],
-        ];
-    }
-
-    /**
      * @param ConfigEvent $event
      * @return void
      * @throws Exception

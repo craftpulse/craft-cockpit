@@ -12,13 +12,16 @@ use craft\elements\User;
 use craft\elements\conditions\ElementConditionInterface;
 use craft\elements\db\ElementQueryInterface;
 use craft\enums\PropagationMethod;
+use craft\helpers\ArrayHelper;
 use craft\helpers\UrlHelper;
 use craft\models\FieldLayout;
+use craft\models\Site;
 use craft\web\CpScreenResponseBehavior;
 use craftpulse\cockpit\Cockpit;
 use craftpulse\cockpit\elements\conditions\DepartmentCondition;
 use craftpulse\cockpit\elements\db\DepartmentQuery;
 use craftpulse\cockpit\records\DepartmentRecord;
+use yii\base\InvalidConfigException;
 use yii\web\Response;
 
 /**
@@ -26,11 +29,20 @@ use yii\web\Response;
  */
 class Department extends Element
 {
-
     /**
      * @var string
      */
     public string $cockpitId = '';
+
+    /**
+     * @var string
+     */
+    public ?string $email = null;
+
+    /**
+     * @var string
+     */
+    public ?string $phone = null;
 
     /**
      * @var string|null
@@ -127,6 +139,14 @@ class Department extends Element
         }
 
         return $this->_address;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getSupportedSites(): array
+    {
+        return Cockpit::$plugin->getSettings()->departmentSiteSettings ?? [];
     }
 
     /**
@@ -252,7 +272,7 @@ class Department extends Element
 
         $rules[] = [
             [
-                'cockpitId',
+                'phone',
             ],
             'safe'
         ];
@@ -262,6 +282,7 @@ class Department extends Element
                 'cockpitId',
             ], 'required'];
 
+            $rules[] = [['email'], 'email'];
         }
 
         return $rules;
@@ -287,7 +308,7 @@ class Department extends Element
         $departmentSettings = Cockpit::getInstance()->getSettings()->departmentSiteSettings ?? [];
 
         if (!isset($departmentSettings[$this->siteId])) {
-            throw new InvalidConfigException('The departments are not enabled for the ' . $this->getSite()->name . '" site.');
+            return null;
         }
 
         return $departmentSettings[$this->siteId]['uriFormat'];
@@ -313,6 +334,7 @@ class Department extends Element
                 'template' => $settings[$siteId]['template'],
                 'variables' => [
                     'entry' => $this,
+                    'department' => $this,
                 ],
             ],
         ];
@@ -356,7 +378,7 @@ class Department extends Element
 
     public function canCreateDrafts(User $user): bool
     {
-        return true;
+        return false;
     }
 
     protected function cpEditUrl(): ?string
@@ -421,6 +443,9 @@ class Department extends Element
 
             // fields
             $record->cockpitId = $this->cockpitId;
+            $record->email = $this->email;
+            $record->phone = $this->phone;
+            $record->title = $this->title;
 
             // Save the record
             $record->save(false);

@@ -201,6 +201,14 @@ class Job extends Element
     }
 
     /**
+     * @inheritdoc
+     */
+    public function getSupportedSites(): array
+    {
+        return Cockpit::$plugin->getSettings()->jobSiteSettings ?? [];
+    }
+
+    /**
      * Gets the address.
      *
      * @return ElementCollection
@@ -431,7 +439,7 @@ class Job extends Element
         $departmentSettings = Cockpit::getInstance()->getSettings()->jobSiteSettings ?? [];
 
         if (!isset($departmentSettings[$this->siteId])) {
-            throw new InvalidConfigException('The jobs are not enabled for the ' . $this->getSite()->name . '" site.');
+            return null;
         }
 
         return $departmentSettings[$this->siteId]['uriFormat'];
@@ -486,6 +494,7 @@ class Job extends Element
                 'template' => $settings[$siteId]['template'],
                 'variables' => [
                     'entry' => $this,
+                    'job' => $this,
                 ],
             ],
         ];
@@ -648,9 +657,9 @@ class Job extends Element
 
             $record->applicationCount = $this->applicationCount;
             $record->cockpitCompanyId = $this->cockpitCompanyId;
+            $record->cockpitDepartmentId = $this->cockpitDepartmentId;
             $record->cockpitId = $this->cockpitId;
             $record->cockpitJobRequestId = $this->cockpitJobRequestId;
-            $record->cockpitDepartmentId = $this->cockpitDepartmentId;
             $record->companyName = $this->companyName;
             $record->openPositions = $this->openPositions;
             $record->title = $this->title;

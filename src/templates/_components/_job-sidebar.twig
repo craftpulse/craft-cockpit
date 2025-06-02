@@ -42,7 +42,11 @@
             </legend>
 
             <div class="input ltr">
-                {{ element.cockpitId }}
+                {{ forms.text({
+                    id: 'cockpitId',
+                    name: 'cockpitId',
+                    value: element.cockpitId,
+                }) }}
             </div>
         </div>
         <div class="field">
@@ -51,7 +55,11 @@
             </legend>
 
             <div class="input ltr">
-                {{ element.cockpitCompanyId }}
+                {{ forms.text({
+                    id: 'cockpitCompanyId',
+                    name: 'cockpitCompanyId',
+                    value: element.cockpitCompanyId,
+                }) }}
             </div>
         </div>
         <div class="field">
@@ -60,12 +68,11 @@
             </legend>
 
             <div class="input ltr">
-                {{ element.cockpitJobRequestId }}
-                {# {{ forms.text({
+                {{ forms.text({
                     id: 'cockpitJobRequestId',
                     name: 'cockpitJobRequestId',
                     value: element.cockpitJobRequestId,
-                }) }} #}
+                }) }}
             </div>
         </div>
         <div class="field">
@@ -74,7 +81,11 @@
             </legend>
 
             <div class="input ltr">
-                {{ element.cockpitDepartmentId }}
+                {{ forms.text({
+                    id: 'cockpitOfficeId',
+                    name: 'cockpitDepartmentId',
+                    value: element.cockpitDepartmentId,
+                }) }}
             </div>
         </div>
     </div>

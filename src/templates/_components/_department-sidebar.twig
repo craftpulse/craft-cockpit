@@ -18,6 +18,34 @@
                 {%- endif -%}
             </div>
         </div>
+        <div class="field">
+            <legend class="heading">
+                {{ 'Email'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {{ forms.text({
+                    id: 'email',
+                    name: 'email',
+                    value: element.email,
+                    type: 'email',
+                }) }}
+            </div>
+        </div>
+        <div class="field">
+            <legend class="heading">
+                {{ 'Telephone'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {{ forms.text({
+                    id: 'phone',
+                    name: 'phone',
+                    value: element.phone,
+                    type: 'phone',
+                }) }}
+            </div>
+        </div>
     </div>
 
     <legend class="h6">{{ 'Cockpit'|t('cockpit') }}</legend>

@@ -28,6 +28,9 @@ class DepartmentQuery extends ElementQuery
         // todo: apply any custom query params
         $this->query->select([
             'cockpit_departments.cockpitId',
+            'cockpit_departments.email',
+            'cockpit_departments.phone',
+            'cockpit_departments.title',
         ]);
 
         if ($this->cockpitId) {
