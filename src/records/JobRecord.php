@@ -33,6 +33,7 @@ use craftpulse\cockpit\db\Table;
  * @property int|null $openPositions
  * @property string|null $postCode
  * @property string|null $street
+ * @property string|null $title
  */
 class JobRecord extends ActiveRecord
 {

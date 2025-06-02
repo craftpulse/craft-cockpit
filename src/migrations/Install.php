@@ -114,19 +114,15 @@ class Install extends Migration
                     'fieldLayoutId' => $this->integer(),
 
                     // Job specific fields
+                    'title' => $this->string(),
                     'applicationCount' => $this->integer(),
-                    'city' => $this->string()->notNull(),
                     'cockpitCompanyId' => $this->string()->notNull(),
                     'cockpitId' => $this->string()->notNull(),
                     'cockpitJobRequestId' => $this->string()->notNull(),
                     'cockpitOfficeId' => $this->string()->notNull(),
                     'companyName' => $this->string()->notNull(),
                     'expiryDate' => $this->dateTime(),
-                    'latitude' => $this->decimal(10, 8),
-                    'longitude' => $this->decimal(11, 8),
                     'openPositions' => $this->integer(),
-                    'postCode' => $this->string(),
-                    'street' => $this->string(),
                 ]
             );
         }

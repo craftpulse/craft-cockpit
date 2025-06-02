@@ -12,10 +12,15 @@ namespace craftpulse\cockpit;
 
 use Craft;
 use craft\base\Element;
+use craft\elements\Address;
+use craft\elements\Entry;
 use craft\events\DefineFieldLayoutFieldsEvent;
 use craft\events\DefineHtmlEvent;
+use craft\helpers\Html;
 use craft\models\FieldLayout;
 use craftpulse\cockpit\base\PluginTrait;
+use craftpulse\cockpit\fieldlayoutelements\JobAddressSettings;
+use craftpulse\cockpit\fieldlayoutelements\JobCoordindates;
 use Monolog\Formatter\LineFormatter;
 use Psr\Log\LogLevel;
 use Throwable;
@@ -339,10 +344,15 @@ class Cockpit extends Plugin
                 /** @var FieldLayout $fieldLayout */
                 $fieldLayout = $event->sender;
 
-                if ($fieldLayout->type === Job::class) {
-                    foreach ($this->getJobs()->createFields() as $field) {
-                        $event->fields[] = $field;
-                    }
+                switch ($fieldLayout->type) {
+                    case Address::class:
+                        $event->fields[] = JobCoordindates::class;
+                        break;
+
+                    case Job::class:
+                        foreach ($this->getJobs()->createFields() as $field) {
+                            $event->fields[] = $field;
+                        }
                 }
             }
         );
@@ -362,6 +372,7 @@ class Cockpit extends Plugin
                     'element' => $element,
                 ]);
 
+//                $event->html .= $address;
                 $event->html .= $html;
             },
         );

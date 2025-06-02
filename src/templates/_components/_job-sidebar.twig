@@ -20,72 +20,16 @@
 
         <div class="field">
             <legend class="heading">
-                {{ 'Street'|t('cockpit') }}
+                {{ 'Address'|t('cockpit') }}
             </legend>
 
             <div class="input ltr">
-                {{ forms.text({
-                    id: 'street',
-                    name: 'street',
-                    value: element.street,
-                }) }}
-            </div>
-        </div>
-
-        <div class="field">
-            <legend class="heading">
-                {{ 'Post Code'|t('cockpit') }}
-            </legend>
-
-            <div class="input ltr">
-                {{ forms.text({
-                    id: 'postCode',
-                    name: 'postCode',
-                    value: element.postCode,
-                }) }}
-            </div>
-        </div>
-
-        <div class="field">
-            <legend class="heading">
-                {{ 'City'|t('cockpit') }}
-            </legend>
-
-            <div class="input ltr">
-                {{ forms.text({
-                    id: 'city',
-                    name: 'city',
-                    value: element.city,
-                }) }}
-            </div>
-        </div>
-
-        <div class="field">
-            <legend class="heading">
-                {{ 'Latitude'|t('cockpit') }}
-            </legend>
-
-            <div class="input ltr">
-                {{ forms.text({
-                    id: 'latitude',
-                    name: 'latitude',
-                    value: element.latitude,
-                }) }}
-            </div>
-        </div>
-
-
-        <div class="field">
-            <legend class="heading">
-                {{ 'Longitude'|t('cockpit') }}
-            </legend>
-
-            <div class="input ltr">
-                {{ forms.text({
-                    id: 'longitude',
-                    name: 'longitude',
-                    value: element.longitude,
-                }) }}
+                {%- if (element.address[0] ?? null) -%}
+                    {{ element.address[0].addressLine1 }} - {{ element.address[0].addressLine2 }}<br/>
+                    {{ element.address[0].postalCode }} {{ element.address[0].locality }}
+                {%- else -%}
+                    -
+                {%- endif -%}
             </div>
         </div>
     </div>
@@ -98,11 +42,7 @@
             </legend>
 
             <div class="input ltr">
-                {{ forms.text({
-                    id: 'cockpitId',
-                    name: 'cockpitId',
-                    value: element.cockpitId,
-                }) }}
+                {{ element.cockpitId }}
             </div>
         </div>
         <div class="field">
@@ -111,11 +51,7 @@
             </legend>
 
             <div class="input ltr">
-                {{ forms.text({
-                    id: 'cockpitCompanyId',
-                    name: 'cockpitCompanyId',
-                    value: element.cockpitCompanyId,
-                }) }}
+                {{ element.cockpitCompanyId }}
             </div>
         </div>
         <div class="field">
@@ -124,11 +60,12 @@
             </legend>
 
             <div class="input ltr">
-                {{ forms.text({
+                {{ element.cockpitJobRequestId }}
+                {# {{ forms.text({
                     id: 'cockpitJobRequestId',
                     name: 'cockpitJobRequestId',
                     value: element.cockpitJobRequestId,
-                }) }}
+                }) }} #}
             </div>
         </div>
         <div class="field">
@@ -137,11 +74,7 @@
             </legend>
 
             <div class="input ltr">
-                {{ forms.text({
-                    id: 'cockpitOfficeId',
-                    name: 'cockpitOfficeId',
-                    value: element.cockpitOfficeId,
-                }) }}
+                {{ element.cockpitOfficeId }}
             </div>
         </div>
     </div>
