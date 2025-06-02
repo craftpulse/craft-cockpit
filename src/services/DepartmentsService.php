@@ -126,6 +126,62 @@ class DepartmentsService extends Component
         return true;
     }
 
+    /**
+     * @param string $cockpitId
+     * @return bool
+     * @throws \Throwable
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function deleteDepartmentByCockpitId(string $cockpitId): bool
+    {
+        $department = Department::find()->cockpitId($cockpitId)->one();
+
+        if (!$department) {
+            Console::stdout('   > Error unable to delete department because it doesn\'t exist ' . PHP_EOL, Console::FG_RED);
+            Craft::error('Department not found', __METHOD__);
+            return false;
+        }
+
+        $title = $department->title;
+
+        if (!Craft::$app->elements->deleteElement($department)) {
+            Console::stdout('   > Error unable to delete department: ' . print_r($department->getErrors(), true) . PHP_EOL, Console::FG_RED);
+            Craft::error('Unable to delete department', __METHOD__);
+            return false;
+        }
+
+        Console::stdout('   > Department deleted: ' . $title . ' [' . $cockpitId . ']' . PHP_EOL);
+
+        return true;
+    }
+
+    /**
+     * @param int $id
+     * @return bool
+     * @throws \Throwable
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function deleteJobById(int $id): bool
+    {
+        $department = Department::find()->id($id)->one();
+
+        if (!$department) {
+            Console::stdout('   > Error unable to delete department because it doesn\'t exist ' . PHP_EOL, Console::FG_RED);
+            Craft::error('Department not found', __METHOD__);
+            return false;
+        }
+
+        if (!Craft::$app->elements->deleteElement($department)) {
+            Console::stdout('   > Error unable to delete department: ' . print_r($department->getErrors(), true) . PHP_EOL, Console::FG_RED);
+            Craft::error('Unable to delete department', __METHOD__);
+            return false;
+        }
+
+        Console::stdout('   > Department deleted: ' . $title . ' [' . $cockpitId . ']' . PHP_EOL);
+
+        return true;
+    }
+
 
     /**
      * @param ConfigEvent $event

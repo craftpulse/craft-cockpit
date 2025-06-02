@@ -25,6 +25,9 @@ class DepartmentsController extends Controller
             case 'department':
                 $options[] = 'departmentId';
                 break;
+            case 'delete-department':
+                $options[] = 'departmentId';
+                break;
         }
         return $options;
     }
@@ -84,6 +87,34 @@ class DepartmentsController extends Controller
 
         } catch (\Exception $e) {
             Console::stderr('   > Error on fetching department: '.$e->getMessage() . PHP_EOL);
+            Craft::error($e->getMessage());
+        }
+
+        return ExitCode::DATAERR;
+    }
+
+    public function actionDeleteDepartment(): int
+    {
+        try {
+            // Get the ID from command line options
+            $id = $this->departmentId;
+
+            Console::stdout('Start department deletion ' . $id . PHP_EOL, Console::FG_CYAN);
+
+            if (!$id) {
+                Craft::error('Department ID (as --id=x) is required');
+                Console::stderr('   > Error on deleting department: Department ID is required' . PHP_EOL, Console::FG_RED);
+                return ExitCode::DATAERR;
+            }
+
+            if (!Cockpit::$plugin->getDepartments()->deleteDepartmentByCockpitId($id)) {
+                return ExitCode::DATAERR;
+            }
+
+            return ExitCode::OK;
+
+        } catch (\Exception $e) {
+            Console::stderr('   > Error on deleting departments: '.$e->getMessage() . PHP_EOL);
             Craft::error($e->getMessage());
         }
 

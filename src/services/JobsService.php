@@ -278,14 +278,18 @@ class JobsService extends Component
         $job = Job::find()->id($id)->one();
 
         if (!$job) {
+            Console::stdout('   > Error unable to delete job because it doesn\'t exist ' . PHP_EOL, Console::FG_RED);
             Craft::error('Job not found', __METHOD__);
             return false;
         }
 
         if (!Craft::$app->elements->deleteElement($job)) {
+            Console::stdout('   > Error unable to delete job: ' . print_r($job->getErrors(), true) . PHP_EOL, Console::FG_RED);
             Craft::error('Unable to delete job', __METHOD__);
             return false;
         }
+
+        Console::stdout('   > Job deleted: ' . $title . ' [' . $cockpitId . ']' . PHP_EOL);
 
         return true;
     }

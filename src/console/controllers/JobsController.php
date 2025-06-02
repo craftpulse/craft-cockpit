@@ -151,7 +151,7 @@ class JobsController extends Controller
             return ExitCode::OK;
 
         } catch (\Exception $e) {
-            Console::stderr('   > Error on fetching publication: '.$e->getMessage() . PHP_EOL);
+            Console::stderr('   > Error on deleting publication: '.$e->getMessage() . PHP_EOL);
             Craft::error($e->getMessage());
         }
 
