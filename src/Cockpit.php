@@ -12,15 +12,8 @@ namespace craftpulse\cockpit;
 
 use Craft;
 use craft\base\Element;
-use craft\elements\Address;
-use craft\elements\Entry;
-use craft\events\DefineFieldLayoutFieldsEvent;
 use craft\events\DefineHtmlEvent;
-use craft\helpers\Html;
-use craft\models\FieldLayout;
 use craftpulse\cockpit\base\PluginTrait;
-use craftpulse\cockpit\fieldlayoutelements\JobAddressSettings;
-use craftpulse\cockpit\fieldlayoutelements\JobCoordindates;
 use Monolog\Formatter\LineFormatter;
 use Psr\Log\LogLevel;
 use Throwable;
@@ -41,9 +34,8 @@ use craft\web\UrlManager;
 use craftpulse\cockpit\elements\Contact;
 use craftpulse\cockpit\elements\Job;
 use craftpulse\cockpit\elements\MatchFieldEntry;
-use craftpulse\cockpit\elements\Office;
+use craftpulse\cockpit\elements\Department;
 use craftpulse\cockpit\models\SettingsModel;
-use craftpulse\cockpit\services\MatchField;
 use craftpulse\cockpit\services\ServicesTrait;
 use yii\base\Event;
 use yii\base\InvalidRouteException;
@@ -70,7 +62,8 @@ class Cockpit extends Plugin
 
     // Const Properties
     // =========================================================================
-    public const CONFIG_JOBFIELD_LAYOUT_KEY = 'cockpit.jobFieldLayout';
+    public const CONFIG_JOB_FIELD_LAYOUT_KEY = 'cockpit.jobFieldLayout';
+    public const CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY = 'cockpit.departmentFieldLayout';
 
     // Static Properties
     // =========================================================================
@@ -130,7 +123,6 @@ class Cockpit extends Plugin
         if (Craft::$app->getRequest()->getIsCpRequest()) {
             $this->_registerCpUrlRules();
             $this->_registerElements();
-            $this->_registerFieldLayouts();
             $this->_registerSidebarPanels();
         }
 
@@ -206,10 +198,10 @@ class Cockpit extends Plugin
             ];
         }
 
-        if ($currentUser->can('cockpit:view-offices')) {
-            $subNavs['offices'] = [
-                'label' => Craft::t('cockpit', 'Offices'),
-                'url' => 'cockpit/offices',
+        if ($currentUser->can('cockpit:view-departments')) {
+            $subNavs['departments'] = [
+                'label' => Craft::t('cockpit', 'Departments'),
+                'url' => 'cockpit/departments',
             ];
         }
 
@@ -310,9 +302,10 @@ class Cockpit extends Plugin
                 $event->rules['cockpit/jobs'] = ['template' => 'cockpit/jobs/_index.twig'];
                 $event->rules['cockpit/jobs/<elementId:\\d+>'] = 'elements/edit';
 
-                // Office Elements
-                $event->rules['cockpit/offices'] = ['template' => 'cockpit/offices/_index.twig'];
-                $event->rules['cockpit/offices/<elementId:\\d+>'] = 'elements/edit';
+                // Department Elements
+                $event->rules['cockpit/settings/departments'] = 'cockpit/departments/edit-settings';
+                $event->rules['cockpit/departments'] = ['template' => 'cockpit/departments/_index.twig'];
+                $event->rules['cockpit/departments/<elementId:\\d+>'] = 'elements/edit';
 
                 /*$event->rules['match-field-entries'] = ['template' => 'cockpit/match-field-entries/_index.twig'];
                 $event->rules['match-field-entries/<elementId:\\d+>'] = 'elements/edit';*/
@@ -329,31 +322,8 @@ class Cockpit extends Plugin
             function(RegisterComponentTypesEvent $event) {
                 $event->types[] = Contact::class;
                 $event->types[] = Job::class;
-                $event->types[] = Office::class;
+                $event->types[] = Department::class;
                 $event->types[] = MatchFieldEntry::class;
-            }
-        );
-    }
-
-    private function _registerFieldLayouts(): void
-    {
-        Event::on(
-            FieldLayout::class,
-            FieldLayout::EVENT_DEFINE_NATIVE_FIELDS,
-            function (DefineFieldLayoutFieldsEvent $event) {
-                /** @var FieldLayout $fieldLayout */
-                $fieldLayout = $event->sender;
-
-                switch ($fieldLayout->type) {
-                    case Address::class:
-                        $event->fields[] = JobCoordindates::class;
-                        break;
-
-                    case Job::class:
-                        foreach ($this->getJobs()->createFields() as $field) {
-                            $event->fields[] = $field;
-                        }
-                }
             }
         );
     }
@@ -402,8 +372,14 @@ class Cockpit extends Plugin
                         'cockpit:delete-jobs' => [
                             'label' => Craft::t('cockpit', 'Delete Jobs.'),
                         ],
-                        'cockpit:offices' => [
-                            'label' => Craft::t('cockpit', 'View Offices.'),
+                        'cockpit:departments' => [
+                            'label' => Craft::t('cockpit', 'View Departments.'),
+                        ],
+                        'cockpit:save-departments' => [
+                            'label' => Craft::t('cockpit', 'Save Departments.'),
+                        ],
+                        'cockpit:delete-departments' => [
+                            'label' => Craft::t('cockpit', 'Delete Departments.'),
                         ],
                         'cockpit:settings' => [
                             'label' => Craft::t('cockpit', 'Manage plugin settings.'),

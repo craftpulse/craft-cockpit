@@ -8,39 +8,46 @@ use craft\elements\User;
 use craft\elements\conditions\ElementConditionInterface;
 use craft\elements\db\ElementQueryInterface;
 use craft\helpers\UrlHelper;
+use craft\models\FieldLayout;
 use craft\web\CpScreenResponseBehavior;
-use craftpulse\cockpit\elements\conditions\OfficeCondition;
-use craftpulse\cockpit\elements\db\OfficeQuery;
+use craftpulse\cockpit\elements\conditions\DepartmentCondition;
+use craftpulse\cockpit\elements\db\DepartmentQuery;
 use yii\web\Response;
 
 /**
- * Office element type
+ * Department element type
  */
-class Office extends Element
+class Department extends Element
 {
+
+    /**
+     * @var FieldLayout|null
+     */
+    private ?FieldLayout $fieldLayout = null;
+
     public static function displayName(): string
     {
-        return Craft::t('cockpit', 'Office');
+        return Craft::t('cockpit', 'Department');
     }
 
     public static function lowerDisplayName(): string
     {
-        return Craft::t('cockpit', 'office');
+        return Craft::t('cockpit', 'department');
     }
 
     public static function pluralDisplayName(): string
     {
-        return Craft::t('cockpit', 'Offices');
+        return Craft::t('cockpit', 'Departments');
     }
 
     public static function pluralLowerDisplayName(): string
     {
-        return Craft::t('cockpit', 'offices');
+        return Craft::t('cockpit', 'departments');
     }
 
     public static function refHandle(): ?string
     {
-        return 'office';
+        return 'department';
     }
 
     public static function trackChanges(): bool
@@ -70,12 +77,12 @@ class Office extends Element
 
     public static function find(): ElementQueryInterface
     {
-        return Craft::createObject(OfficeQuery::class, [static::class]);
+        return Craft::createObject(DepartmentQuery::class, [static::class]);
     }
 
     public static function createCondition(): ElementConditionInterface
     {
-        return Craft::createObject(OfficeCondition::class, [static::class]);
+        return Craft::createObject(DepartmentCondition::class, [static::class]);
     }
 
     protected static function defineSources(string $context): array
@@ -83,7 +90,7 @@ class Office extends Element
         return [
             [
                 'key' => '*',
-                'label' => Craft::t('cockpit', 'All offices'),
+                'label' => Craft::t('cockpit', 'All departments'),
             ],
         ];
     }
@@ -156,9 +163,24 @@ class Office extends Element
         ]);
     }
 
+    /**
+     * @inheritdoc
+     * @return FieldLayout|null
+     */
+    public function getFieldLayout(): ?FieldLayout
+    {
+        if ($this->fieldLayout !== null) {
+            return $this->fieldLayout;
+        }
+
+        $this->fieldLayout = Craft::$app->getFields()->getLayoutByType(self::class);
+
+        return $this->fieldLayout;
+    }
+
     public function getUriFormat(): ?string
     {
-        // If offices should have URLs, define their URI format here
+        // If departments should have URLs, define their URI format here
         return null;
     }
 
@@ -179,12 +201,12 @@ class Office extends Element
 
     protected function route(): array|string|null
     {
-        // Define how offices should be routed when their URLs are requested
+        // Define how departments should be routed when their URLs are requested
         return [
             'templates/render',
             [
                 'template' => 'site/template/path',
-                'variables' => ['office' => $this],
+                'variables' => ['department' => $this],
             ]
         ];
     }
@@ -195,7 +217,7 @@ class Office extends Element
             return true;
         }
         // todo: implement user permissions
-        return $user->can('viewOffices');
+        return $user->can('cockpit:departments');
     }
 
     public function canSave(User $user): bool
@@ -204,7 +226,7 @@ class Office extends Element
             return true;
         }
         // todo: implement user permissions
-        return $user->can('saveOffices');
+        return $user->can('cockpit:save-departments');
     }
 
     public function canDuplicate(User $user): bool
@@ -213,7 +235,7 @@ class Office extends Element
             return true;
         }
         // todo: implement user permissions
-        return $user->can('saveOffices');
+        return $user->can('cockpit:save-departments');
     }
 
     public function canDelete(User $user): bool
@@ -222,7 +244,7 @@ class Office extends Element
             return true;
         }
         // todo: implement user permissions
-        return $user->can('deleteOffices');
+        return $user->can('cockpit:delete-departments');
     }
 
     public function canCreateDrafts(User $user): bool
@@ -232,12 +254,12 @@ class Office extends Element
 
     protected function cpEditUrl(): ?string
     {
-        return sprintf('offices/%s', $this->getCanonicalId());
+        return sprintf('cockpit/departments/%s', $this->getCanonicalId());
     }
 
     public function getPostEditUrl(): ?string
     {
-        return UrlHelper::cpUrl('offices');
+        return UrlHelper::cpUrl('cockpit/departments');
     }
 
     public function prepareEditScreen(Response $response, string $containerId): void
@@ -246,7 +268,7 @@ class Office extends Element
         $response->crumbs([
             [
                 'label' => self::pluralDisplayName(),
-                'url' => UrlHelper::cpUrl('offices'),
+                'url' => UrlHelper::cpUrl('cockpit/departments'),
             ],
         ]);
     }
@@ -254,7 +276,31 @@ class Office extends Element
     public function afterSave(bool $isNew): void
     {
         if (!$this->propagating) {
-            // todo: update the `offices` table
+            if ($isNew) {
+                $record = new DepartmentQuery();
+                $record->id = $this->id;
+            } else {
+                $record = DepartmentQuery::findOne($this->id);
+            }
+
+            if (!$record->validate()) {
+                $errors = $record->getErrors();
+                Craft::error(
+                    'Cockpit department record validation failed: ' . json_encode($errors, JSON_PRETTY_PRINT),
+                    __METHOD__
+                );
+
+                // Add errors to the element
+                foreach ($errors as $attribute => $attributeErrors) {
+                    foreach ($attributeErrors as $error) {
+                        $this->addError($attribute, $error);
+                    }
+                }
+                return;
+            }
+
+            // Save the record
+            $record->save(false);
         }
 
         parent::afterSave($isNew);

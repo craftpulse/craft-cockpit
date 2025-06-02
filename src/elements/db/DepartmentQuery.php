@@ -6,14 +6,14 @@ use Craft;
 use craft\elements\db\ElementQuery;
 
 /**
- * Office query
+ * Department query
  */
-class OfficeQuery extends ElementQuery
+class DepartmentQuery extends ElementQuery
 {
     protected function beforePrepare(): bool
     {
-        // todo: join the `offices` table
-        // $this->joinElementTable('offices');
+        // todo: join the `cockpit_departments` table
+        // $this->joinElementTable('cockpit_departments');
 
         // todo: apply any custom query params
         // ...

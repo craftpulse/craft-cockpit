@@ -19,7 +19,7 @@ use craftpulse\cockpit\db\Table;
 use craftpulse\cockpit\elements\Contact as ContactElement;
 use craftpulse\cockpit\elements\MatchFieldEntry as MatchFieldEntryElement;
 use craftpulse\cockpit\elements\Job as JobElement;
-use craftpulse\cockpit\elements\Office as OfficeElement;
+use craftpulse\cockpit\elements\Department as DepartmentElement;
 use craftpulse\cockpit\models\MatchField;
 use yii\base\Exception;
 
@@ -68,7 +68,7 @@ class Install extends Migration
         $this->dropTables();
         $this->dropProjectConfig();
 
-        $this->delete(CraftTable::FIELDLAYOUTS, ['type' => [ContactElement::class, JobElement::class, OfficeElement::class]]);
+        $this->delete(CraftTable::FIELDLAYOUTS, ['type' => [ContactElement::class, JobElement::class, DepartmentElement::class]]);
 
         return true;
     }
@@ -119,7 +119,7 @@ class Install extends Migration
                     'cockpitCompanyId' => $this->string()->notNull(),
                     'cockpitId' => $this->string()->notNull(),
                     'cockpitJobRequestId' => $this->string()->notNull(),
-                    'cockpitOfficeId' => $this->string()->notNull(),
+                    'cockpitDepartmentId' => $this->string()->notNull(),
                     'companyName' => $this->string()->notNull(),
                     'expiryDate' => $this->dateTime(),
                     'openPositions' => $this->integer(),
@@ -127,9 +127,9 @@ class Install extends Migration
             );
         }
 
-        if(!$this->db->tableExists(Table::OFFICES)) {
+        if(!$this->db->tableExists(Table::DEPARTMENTS)) {
             $this->createTable(
-                TABLE::OFFICES,
+                TABLE::DEPARTMENTS,
                 [
                     'id' => $this->primaryKey(),
                     'dateCreated' => $this->dateTime()->notNull(),
@@ -206,10 +206,13 @@ class Install extends Migration
     public function createIndexes(): void
     {
         $this->createIndex(null, Table::CONTACTS, 'cockpitId', false);
+        $this->createIndex(null, Table::DEPARTMENTS, 'cockpitId', false);
+        $this->createIndex(null, Table::DEPARTMENTS, ['fieldLayoutId'], false);
         $this->createIndex(null, Table::JOBS, 'cockpitId', false);
         $this->createIndex(null, Table::JOBS, 'cockpitJobRequestId', false);
-        $this->createIndex(null, Table::JOBS, 'cockpitOfficeId', false);
-        $this->createIndex(null, Table::OFFICES, 'cockpitId', false);
+        $this->createIndex(null, Table::JOBS, 'cockpitDepartmentId', false);
+        $this->createIndex(null, Table::JOBS, ['fieldLayoutId'], false);
+        $this->createIndex(null, Table::DEPARTMENTS, 'cockpitId', false);
         $this->createIndex(null, Table::MATCHFIELDS, ['handle'], false);
         $this->createIndex(null, Table::MATCHFIELDS, ['name'], false);
         $this->createIndex(null, Table::MATCHFIELDS, ['structureId'], false);
@@ -231,8 +234,10 @@ class Install extends Migration
     public function addForeignKeys(): void
     {
         $this->addForeignKey(null, Table::CONTACTS, 'id', CraftTable::ELEMENTS, 'id', 'CASCADE', null);
+        $this->addForeignKey(null, Table::DEPARTMENTS, ['fieldLayoutId'], CraftTable::FIELDLAYOUTS, ['id'], 'SET NULL', null);
         $this->addForeignKey(null, Table::JOBS, 'id', CraftTable::ELEMENTS, 'id', 'CASCADE', null);
-        $this->addForeignKey(null, Table::OFFICES, 'id', CraftTable::ELEMENTS, 'id', 'CASCADE', null);
+        $this->addForeignKey(null, Table::JOBS, ['fieldLayoutId'], CraftTable::FIELDLAYOUTS, ['id'], 'SET NULL', null);
+        $this->addForeignKey(null, Table::DEPARTMENTS, 'id', CraftTable::ELEMENTS, 'id', 'CASCADE', null);
         $this->addForeignKey(null, Table::MATCHFIELDS, ['structureId'], CraftTable::STRUCTURES, ['id'], 'SET NULL', null);
         $this->addForeignKey(null, Table::MATCHFIELDS, ['fieldLayoutId'], CraftTable::FIELDLAYOUTS, ['id'], 'SET NULL', null);
         $this->addForeignKey(null, Table::MATCHFIELDS_ENTRIES, ['id'], CraftTable::ELEMENTS, ['id'], 'CASCADE', null);
@@ -257,8 +262,8 @@ class Install extends Migration
             Db::dropAllForeignKeysToTable(TABLE::JOBS);
         }
 
-        if ($this->db->tableExists(Table::OFFICES)) {
-            Db::dropAllForeignKeysToTable(Table::OFFICES);
+        if ($this->db->tableExists(Table::DEPARTMENTS)) {
+            Db::dropAllForeignKeysToTable(Table::DEPARTMENTS);
         }
 
         if ($this->db->tableExists(Table::MATCHFIELDS)) {
@@ -287,8 +292,8 @@ class Install extends Migration
             $this->dropTable(TABLE::JOBS);
         }
 
-        if (Craft::$app->db->schema->getTableSchema(Table::OFFICES)) {
-            $this->dropTable(Table::OFFICES);
+        if (Craft::$app->db->schema->getTableSchema(Table::DEPARTMENTS)) {
+            $this->dropTable(Table::DEPARTMENTS);
         }
 
         if (Craft::$app->db->schema->getTableSchema(Table::MATCHFIELDS)) {

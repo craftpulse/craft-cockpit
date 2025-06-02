@@ -28,7 +28,10 @@ use craft\fieldlayoutelements\users\PhotoField;
 use craft\fieldlayoutelements\users\UsernameField;
 use craft\models\FieldLayout;
 
+use craftpulse\cockpit\elements\Department;
+use craftpulse\cockpit\elements\Job;
 use craftpulse\cockpit\elements\MatchFieldEntry;
+use craftpulse\cockpit\fieldlayoutelements\JobCoordindates;
 use craftpulse\cockpit\fieldlayoutelements\matchfields\CockpitIdField;
 use craftpulse\cockpit\fieldlayoutelements\matchfields\MatchFieldTitleField;
 
@@ -50,6 +53,20 @@ trait PluginTrait
             $fieldLayout = $event->sender;
 
                 switch ($fieldLayout->type) {
+                    case Address::class:
+                        $event->fields[] = JobCoordindates::class;
+                        break;
+
+                    case Job::class:
+                        foreach ($this->getJobs()->createFields() as $field) {
+                            $event->fields[] = $field;
+                        }
+
+                    case Department::class:
+                        foreach ($this->getDepartments()->createFields() as $field) {
+                            $event->fields[] = $field;
+                        }
+
                     case MatchFieldEntry::class:
                         $event->fields[] = MatchFieldTitleField::class;
                         $event->fields[] = CockpitIdField::class;
@@ -66,13 +83,18 @@ trait PluginTrait
         $projectConfigService = Craft::$app->getProjectConfig();
 
         $jobsService = $this->getJobs();
-        $projectConfigService->onAdd(self::CONFIG_JOBFIELD_LAYOUT_KEY, [$jobsService, 'handleChangedFieldLayout'])
-            ->onUpdate(self::CONFIG_JOBFIELD_LAYOUT_KEY, [$jobsService, 'handleChangedFieldLayout'])
-            ->onRemove(self::CONFIG_JOBFIELD_LAYOUT_KEY, [$jobsService, 'handleDeletedFieldLayout']);
+        $projectConfigService->onAdd(self::CONFIG_JOB_FIELD_LAYOUT_KEY, [$jobsService, 'handleChangedFieldLayout'])
+            ->onUpdate(self::CONFIG_JOB_FIELD_LAYOUT_KEY, [$jobsService, 'handleChangedFieldLayout'])
+            ->onRemove(self::CONFIG_JOB_FIELD_LAYOUT_KEY, [$jobsService, 'handleDeletedFieldLayout']);
 
         $matchFieldsService = $this->getMatchFields();
         $projectConfigService->onAdd(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleChangedMatchField'])
             ->onUpdate(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleChangedMatchField'])
             ->onRemove(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleDeletedMatchField']);
+
+        $departmentsService = $this->getDepartments();
+        $projectConfigService->onAdd(self::CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY, [$departmentsService, 'handleChangedFieldLayout'])
+            ->onUpdate(self::CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY, [$departmentsService, 'handleChangedFieldLayout'])
+            ->onRemove(self::CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY, [$departmentsService, 'handleDeletedFieldLayout']);
     }
 }

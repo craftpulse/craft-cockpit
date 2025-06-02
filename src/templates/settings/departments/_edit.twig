@@ -1,0 +1,71 @@
+{% requirePermission "cockpit:settings" %}
+
+{% extends "cockpit/_layouts/cockpit-cp-settings.twig" %}
+{% import '_includes/forms.twig' as forms %}
+{% from 'cockpit/_macros' import instructions %}
+
+{% set crumbs = [
+    { label: 'Cockpit'|t('cockpit'), url: url('cockpit') },
+    { label: 'Settings'|t('cockpit'), url: url('cockpit/settings'), ariaLabel: 'Cockpit Settings'|t('cockpit') },
+] %}
+
+{% set selectedSubnavItem = 'settings' %}
+
+{% if readOnly %}
+    {% set contentNotice = readOnlyNotice() %}
+{% endif %}
+
+{% import "_includes/forms" as forms %}
+
+{% block content %}
+
+    {% if not readOnly %}
+        {{ actionInput('cockpit/departments/save-settings') }}
+    {% endif %}
+
+    <input type="hidden" name="pluginHandle" value="cockpit">
+
+    <div class="flex-fields">
+        {{ forms.editableTableField({
+            label: "Routing Settings"|t('cockpit'),
+            instructions: "Configure the department’s front-end routing settings."|t('cockpit'),
+            id: 'routing',
+            name: 'settings',
+            cols: {
+                uriFormat: {
+                    type: 'singleline',
+                    heading: "Deparmtent URI Format"|t('cockpit'),
+                    info: "What department URIs should look like."|t('cockpit'),
+                    placeholder: "Leave blank if departments don’t have URLs"|t('cockpit'),
+                    code: true
+                },
+                template:{
+                    type: 'template',
+                    heading: "Template"|t('app'),
+                    info: "Which template should be loaded when a department’s URL is requested."|t('cockpit'),
+                    code: true
+                },
+            }|filter,
+            rows: {
+                'routing': {
+                    uriFormat: {
+                        value: settings.departmentUriFormat ?? null,
+                        hasErrors: settings.hasErrors('departmentUriFormat') ?? false
+                    },
+                    template: {
+                        value: settings.departmentTemplate ?? null,
+                        hasErrors: settings.hasErrors('departmentTemplate') ?? false,
+                    }
+                }
+            },
+            allowAdd: false,
+            allowDelete: false,
+            allowReorder: false,
+            errors: []|unique
+        }) }}
+
+        {{ forms.fieldLayoutDesignerField({
+            fieldLayout: settings.getDepartmentFieldLayout(),
+        }) }}
+    </div>
+{% endblock %}

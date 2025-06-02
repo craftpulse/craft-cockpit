@@ -14,6 +14,7 @@ class JobQuery extends ElementQuery
 {
     public ?string $cockpitId = null;
     public ?string $cockpitJobRequestId = null;
+    public ?string $cockpitDepartmentId = null;
 
     public function cockpitId($value)
     {
@@ -24,6 +25,12 @@ class JobQuery extends ElementQuery
     public function cockpitJobRequestId($value)
     {
         $this->cockpitJobRequestId = $value;
+        return $this;
+    }
+
+    public function cockpitDepartmentId($value)
+    {
+        $this->cockpitDepartmentId = $value;
         return $this;
     }
 
@@ -42,7 +49,7 @@ class JobQuery extends ElementQuery
             'cockpit_jobs.cockpitCompanyId',
             'cockpit_jobs.cockpitId',
             'cockpit_jobs.cockpitJobRequestId',
-            'cockpit_jobs.cockpitOfficeId',
+            'cockpit_jobs.cockpitDepartmentId',
             'cockpit_jobs.companyName',
             'cockpit_jobs.expiryDate',
             'cockpit_jobs.fieldLayoutId',
@@ -57,6 +64,10 @@ class JobQuery extends ElementQuery
 
         if ($this->cockpitJobRequestId) {
             $this->subQuery->andWhere(Db::parseParam('cockpit_jobs.cockpitJobRequestId', $this->cockpitJobRequestId));
+        }
+
+        if ($this->cockpitDepartmentId) {
+            $this->subQuery->andWhere(Db::parseParam('cockpit_jobs.cockpitDepartmentId', $this->cockpitDepartmentId));
         }
 
         return parent::beforePrepare();
