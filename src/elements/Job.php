@@ -208,6 +208,17 @@ class Job extends Element
         return Cockpit::$plugin->getSettings()->jobSiteSettings ?? [];
     }
 
+    // Public Methods
+    // =========================================================================
+    public function getDepartment(): ?Department
+    {
+        if ($this->id) {
+            return Department::find()->cockpitId($this->cockpitDepartmentId)->one() ?? null;
+        }
+
+        return null;
+    }
+
     /**
      * Gets the address.
      *

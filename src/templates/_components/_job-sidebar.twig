@@ -2,6 +2,29 @@
 
 <fieldset class="fieldset">
 
+    <legend class="h6">{{ 'Job Info'|t('cockpit') }}</legend>
+    <div class="meta">
+        <div class="field">
+            <legend class="heading">
+                {{ 'Department'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {% include '_includes/forms/elementSelect.twig' with departmentConfig %}
+            </div>
+        </div>
+
+        <div class="field">
+            <legend class="heading">
+                {{ 'Contact'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                @TODO
+            </div>
+        </div>
+    </div>
+
     <legend class="h6">{{ 'Company Info'|t('cockpit') }}</legend>
     <div class="meta">
         <div class="field">
@@ -101,3 +124,5 @@
         <dd class="value">{{ element.openPositions }}</dd>
     </div>
 </dl>
+
+<hr/>

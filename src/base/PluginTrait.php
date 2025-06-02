@@ -135,10 +135,26 @@ trait PluginTrait
                     /** @var Element $element */
                     $element = $event->sender;
 
-                    $html = Craft::$app->getView()->renderTemplate($panel['template'], [
+                    $data = [];
+
+                    if ($element instanceof Job) {
+                        $data['departmentConfig'] = [
+                            'allowAdd' => false,
+                            'allowRemove' => false,
+                            'criteria' => ['siteId' => Craft::$app->sites->currentSite->id],
+                            'elementType' => Department::class,
+                            'elements' => [$element->department ?? null],
+                            'limit' => 1,
+                            'showCardsInGrid' => false,
+                            'single' => true,
+                            'viewMode' => 'list',
+                        ];
+                    }
+
+                    $html = Craft::$app->getView()->renderTemplate($panel['template'], array_merge([
                         'variable' => true,
                         'element' => $element,
-                    ]);
+                    ], $data));
 
                     $event->html .= $html;
                 },
