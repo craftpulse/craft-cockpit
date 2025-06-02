@@ -4,6 +4,8 @@
 {% import '_includes/forms.twig' as forms %}
 {% from 'cockpit/_macros' import instructions %}
 
+{% set headlessMode = craft.app.config.general.headlessMode %}
+
 {% set crumbs = [
     { label: 'Cockpit'|t('cockpit'), url: url('cockpit') },
     { label: 'Settings'|t('cockpit'), url: url('cockpit/settings'), ariaLabel: 'Cockpit Settings'|t('cockpit') },
@@ -26,42 +28,75 @@
     <input type="hidden" name="pluginHandle" value="cockpit">
 
     <div class="flex-fields">
+        {% set siteRows = [] %}
+        {% set siteErrors = settings.getErrors('jobSiteSettings') %}
+
+        {% for site in craft.app.sites.getAllSites() %}
+            {% set siteSettings = settings.jobSiteSettings[site.id] ?? null %}
+            {% set siteRows = siteRows|merge({
+                (site.handle): {
+                    heading: site.name|t('site')|e,
+                    enabled: include('_includes/forms/lightswitch.twig', {
+                        name: 'sites['~site.handle~'][enabled]',
+                        on: siteSettings,
+                        value: site.id,
+                        small: true,
+                        disabled: readOnly,
+                    }),
+                    uriFormat: {
+                        value: siteSettings ? siteSettings.uriFormat,
+                    },
+                    template: not headlessMode ? {
+                        value: siteSettings ? siteSettings.template,
+                    },
+                    enabledByDefault: siteSettings ? siteSettings.enabledByDefault : true,
+                }|filter
+            }) %}
+        {% endfor %}
+
         {{ forms.editableTableField({
-            label: "Routing Settings"|t('cockpit'),
-            instructions: "Configure the job’s front-end routing settings."|t('cockpit'),
-            id: 'routing',
-            name: 'settings',
+            label: "Site Settings"|t('app'),
+            instructions: "Choose which sites this match field should be available in, and configure the site-specific settings."|t('cockpit'),
+            id: 'sites',
+            name: 'sites',
             cols: {
+                heading: {
+                    type: 'heading',
+                    heading: "Site"|t('app'),
+                    thin: true
+                },
+                enabled: {
+                    type: 'heading',
+                    thin: true,
+                    class: not craft.app.getIsMultiSite() ? 'hidden'
+                },
                 uriFormat: {
                     type: 'singleline',
                     heading: "Job URI Format"|t('cockpit'),
-                    info: "What job URIs should look like."|t('cockpit'),
-                    placeholder: "Leave blank if jobs don’t have URLs"|t('cockpit'),
-                    code: true
+                    info: "What entry URIs should look like for the site. Leave blank if jobs don’t have URLs."|t('cockpit'),
+                    placeholder: 'Leave blank if jobs don’t have URLs'|t('cockpit'),
+                    code: true,
+                    width: headlessMode ? 500,
                 },
-                template:{
+                template: not headlessMode ? {
                     type: 'template',
                     heading: "Template"|t('app'),
-                    info: "Which template should be loaded when a job’s URL is requested."|t('cockpit'),
+                    info: "Which template should be loaded when an jobs URL is requested."|t('cockpit'),
                     code: true
                 },
-            }|filter,
-            rows: {
-                'routing': {
-                    uriFormat: {
-                        value: settings.jobUriFormat ?? null,
-                        hasErrors: settings.hasErrors('jobUriFormat') ?? false
-                    },
-                    template: {
-                        value: settings.jobTemplate ?? null,
-                        hasErrors: settings.hasErrors('jobTemplate') ?? false,
-                    }
+                enabledByDefault: {
+                    type: 'lightswitch',
+                    heading: "Default Status"|t('app'),
+                    thin: true,
                 }
-            },
+            }|filter,
+            rows: siteRows,
+            fullWidth: true,
             allowAdd: false,
             allowDelete: false,
             allowReorder: false,
-            errors: []|unique
+            errors: siteErrors|unique,
+            static: readOnly,
         }) }}
 
         {{ forms.fieldLayoutDesignerField({

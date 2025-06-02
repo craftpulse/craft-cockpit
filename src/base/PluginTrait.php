@@ -3,6 +3,7 @@
 namespace craftpulse\cockpit\base;
 
 use Craft;
+use craft\base\Element;
 use craft\elements\Address;
 use craft\elements\Asset;
 use craft\elements\Category;
@@ -10,7 +11,7 @@ use craft\elements\Entry;
 use craft\elements\Tag;
 use craft\elements\User;
 use craft\events\DefineFieldLayoutFieldsEvent;
-use craft\fieldlayoutelements\addresses\AddressField;
+use craft\events\DefineHtmlEvent;
 use craft\fieldlayoutelements\addresses\CountryCodeField;
 use craft\fieldlayoutelements\addresses\LabelField;
 use craft\fieldlayoutelements\addresses\LatLongField;
@@ -31,7 +32,8 @@ use craft\models\FieldLayout;
 use craftpulse\cockpit\elements\Department;
 use craftpulse\cockpit\elements\Job;
 use craftpulse\cockpit\elements\MatchFieldEntry;
-use craftpulse\cockpit\fieldlayoutelements\JobCoordindates;
+use craftpulse\cockpit\fieldlayoutelements\AddressField;
+use craftpulse\cockpit\fieldlayoutelements\AddressCoordinates;
 use craftpulse\cockpit\fieldlayoutelements\matchfields\CockpitIdField;
 use craftpulse\cockpit\fieldlayoutelements\matchfields\MatchFieldTitleField;
 
@@ -54,18 +56,32 @@ trait PluginTrait
 
                 switch ($fieldLayout->type) {
                     case Address::class:
-                        $event->fields[] = JobCoordindates::class;
+                        $event->fields[] = AddressCoordinates::class;
                         break;
 
                     case Job::class:
-                        foreach ($this->getJobs()->createFields() as $field) {
-                            $event->fields[] = $field;
-                        }
+                        $event->fields[] = TitleField::class;
+                        $event->fields[] = [
+                            'class' => AddressField::class,
+                            'attribute' => 'address',
+                            'name' => 'address',
+                            'mandatory' => true,
+                            'label' => Craft::t('cockpit', 'Address'),
+                            'width' => '100%',
+                        ];
+                        break;
 
                     case Department::class:
-                        foreach ($this->getDepartments()->createFields() as $field) {
-                            $event->fields[] = $field;
-                        }
+                        $event->fields[] = TitleField::class;
+                        $event->fields[] = [
+                            'class' => AddressField::class,
+                            'attribute' => 'address',
+                            'name' => 'address',
+                            'mandatory' => true,
+                            'label' => Craft::t('cockpit', 'Address'),
+                            'width' => '100%',
+                        ];
+                        break;
 
                     case MatchFieldEntry::class:
                         $event->fields[] = MatchFieldTitleField::class;
@@ -96,5 +112,53 @@ trait PluginTrait
         $projectConfigService->onAdd(self::CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY, [$departmentsService, 'handleChangedFieldLayout'])
             ->onUpdate(self::CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY, [$departmentsService, 'handleChangedFieldLayout'])
             ->onRemove(self::CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY, [$departmentsService, 'handleDeletedFieldLayout']);
+    }
+
+    private function _registerSidebarPanels(): void
+    {
+        $sidepanels = [
+            [
+                'element' => Job::class,
+                'template' => 'cockpit/_components/_job-sidebar',
+            ],
+            [
+                'element' => Department::class,
+                'template' => 'cockpit/_components/_department-sidebar',
+            ]
+        ];
+
+        foreach ($sidepanels as $panel) {
+            Event::on(
+                $panel['element'],
+                Element::EVENT_DEFINE_SIDEBAR_HTML,
+                function (DefineHtmlEvent $event) use ($panel) {
+                    /** @var Element $element */
+                    $element = $event->sender;
+
+                    $data = [];
+
+                    if ($element instanceof Job) {
+                        $data['departmentConfig'] = [
+                            'allowAdd' => false,
+                            'allowRemove' => false,
+                            'criteria' => ['siteId' => Craft::$app->sites->currentSite->id],
+                            'elementType' => Department::class,
+                            'elements' => [$element->department ?? null],
+                            'limit' => 1,
+                            'showCardsInGrid' => false,
+                            'single' => true,
+                            'viewMode' => 'list',
+                        ];
+                    }
+
+                    $html = Craft::$app->getView()->renderTemplate($panel['template'], array_merge([
+                        'variable' => true,
+                        'element' => $element,
+                    ], $data));
+
+                    $event->html .= $html;
+                },
+            );
+        }
     }
 }

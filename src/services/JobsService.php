@@ -79,7 +79,7 @@ class JobsService extends Component
         $jobRequest = Cockpit::$plugin->getApi()->getJobRequestById($jobRequestId);
         $publication->get('jobRequest')['data'] = $jobRequest;
 
-        $success = $this->upsertJobByCockpitPublication($publication);
+        $success = $this->upsertJob($publication);
 
         if ($success) {
             Console::stdout('   > Job added in our system ' . PHP_EOL, Console::FG_GREEN);
@@ -165,7 +165,7 @@ class JobsService extends Component
      * @throws \yii\base\Exception
      * @throws \yii\base\InvalidConfigException
      */
-    public function upsertJobByCockpitPublication(Collection $publication): bool
+    public function upsertJob(Collection $publication): bool
     {
         $job = Job::find()->cockpitId($publication->get('id'))->one();
 
@@ -278,44 +278,20 @@ class JobsService extends Component
         $job = Job::find()->id($id)->one();
 
         if (!$job) {
+            Console::stdout('   > Error unable to delete job because it doesn\'t exist ' . PHP_EOL, Console::FG_RED);
             Craft::error('Job not found', __METHOD__);
             return false;
         }
 
         if (!Craft::$app->elements->deleteElement($job)) {
+            Console::stdout('   > Error unable to delete job: ' . print_r($job->getErrors(), true) . PHP_EOL, Console::FG_RED);
             Craft::error('Unable to delete job', __METHOD__);
             return false;
         }
 
-        return true;
-    }
+        Console::stdout('   > Job deleted: ' . $title . ' [' . $cockpitId . ']' . PHP_EOL);
 
-    /**
-     * This creates the native fields for the job section
-     * @return array[]|null
-     */
-    public function createFields(): ?array
-    {
-        return [
-            [
-                'class' => TitleField::class,
-                'attribute' => 'title',
-                'name' => 'title',
-                'label' => Craft::t('cockpit', 'Job'),
-                'inputType' => 'text',
-                'mandatory' => true,
-                'required' => true,
-                'width' => '100%',
-            ],
-            [
-                'class' => AddressField::class,
-                'attribute' => 'address',
-                'name' => 'address',
-                'mandatory' => true,
-                'label' => Craft::t('cockpit', 'Address'),
-                'width' => '100%',
-            ],
-        ];
+        return true;
     }
 
     /**

@@ -48,22 +48,14 @@ class SettingsModel extends Model
     public ?string $mapboxApiKey = null;
 
     /**
-     * @var string|null
+     * @var array the job site settings
      */
-    public ?string $jobUriFormat = '';
-    /**
-     * @var string|null
-     */
-    public ?string $jobTemplate = '';
+    public ?array $jobSiteSettings = [];
 
     /**
-     * @var string|null
+     * @var array the department site settings
      */
-    public ?string $departmentUriFormat = '';
-    /**
-     * @var string|null
-     */
-    public ?string $departmentTemplate = '';
+    public ?array $departmentSiteSettings = [];
 
     // Private Properties
     // =========================================================================
@@ -91,8 +83,6 @@ class SettingsModel extends Model
                     'apiUrl',
                     'enableMapbox',
                     'mapboxApiKey',
-                    'jobUriFormat',
-                    'jobTemplate',
                 ],
             ],
         ];

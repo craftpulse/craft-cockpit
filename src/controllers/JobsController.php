@@ -106,14 +106,31 @@ class JobsController extends Controller
 
         // provide settings
         $pluginSettings = $plugin->getSettings();
-        $originalUriFormat = $pluginSettings['jobUriFormat'];
-        $settings['jobUriFormat'] = $settings['routing']['uriFormat'];
-        if (isset($settings['routing']['template'])) {
-            $settings['jobTemplate'] = $settings['routing']['template'];
-        }
-        unset($settings['routing']);
 
-        $settings = array_merge($pluginSettings->toArray(), $settings);
+        // Site-specific settings
+        $allSiteSettings = [];
+
+        foreach (Craft::$app->getSites()->getAllSites() as $site) {
+            $postedSettings = $this->request->getBodyParam('sites.' . $site->handle);
+
+            // Skip disabled sites if this is a multi-site install
+            if (Craft::$app->getIsMultiSite() && empty($postedSettings['enabled'])) {
+                continue;
+            }
+
+            $siteSettings = [];
+            $siteSettings['siteId'] = $site->id;
+            $siteSettings['uriFormat'] = $postedSettings['uriFormat'] ?? null;
+            $siteSettings['enabledByDefault'] = (bool)$postedSettings['enabledByDefault'];
+
+            if ($siteSettings['hasUrls'] = (bool)$siteSettings['uriFormat']) {
+                $siteSettings['template'] = $postedSettings['template'] ?? null;
+            }
+
+            $allSiteSettings[$site->id] = $siteSettings;
+        }
+
+        $pluginSettings['jobSiteSettings'] = $allSiteSettings;
 
         if (!Craft::$app->getPlugins()->savePluginSettings($plugin, $settings)) {
             Craft::$app->getSession()->setError(Craft::t('app', "Couldn't save plugin settings."));
@@ -128,6 +145,16 @@ class JobsController extends Controller
             return null;
         }
 
+        // Resave all products if the URI format changed
+        Craft::$app->getQueue()->push(new ResaveElements([
+            'elementType' => Job::class,
+            'criteria' => [
+                'siteId' => '*',
+                'unique' => true,
+                'status' => null,
+            ],
+        ]));
+
         $fieldLayout = Craft::$app->getFields()->assembleLayoutFromPost();
         $fieldLayout->type = Job::class;
 
@@ -138,16 +165,14 @@ class JobsController extends Controller
         $pluginSettings->setJobFieldLayout($fieldLayout);
 
         // Resave all products if the URI format changed
-        if ($originalUriFormat != $settings['jobUriFormat']) {
-            Craft::$app->getQueue()->push(new ResaveElements([
-                'elementType' => Job::class,
-                'criteria' => [
-                    'siteId' => '*',
-                    'unique' => true,
-                    'status' => null,
-                ],
-            ]));
-        }
+        Craft::$app->getQueue()->push(new ResaveElements([
+            'elementType' => Job::class,
+            'criteria' => [
+                'siteId' => '*',
+                'unique' => true,
+                'status' => null,
+            ],
+        ]));
 
         Craft::$app->getSession()->setNotice(Craft::t('app', 'Plugin settings saved.'));
 

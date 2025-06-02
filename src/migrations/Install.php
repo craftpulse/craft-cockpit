@@ -114,15 +114,15 @@ class Install extends Migration
                     'fieldLayoutId' => $this->integer(),
 
                     // Job specific fields
-                    'title' => $this->string(),
                     'applicationCount' => $this->integer(),
                     'cockpitCompanyId' => $this->string()->notNull(),
+                    'cockpitDepartmentId' => $this->string()->notNull(),
                     'cockpitId' => $this->string()->notNull(),
                     'cockpitJobRequestId' => $this->string()->notNull(),
-                    'cockpitDepartmentId' => $this->string()->notNull(),
                     'companyName' => $this->string()->notNull(),
                     'expiryDate' => $this->dateTime(),
                     'openPositions' => $this->integer(),
+                    'title' => $this->string(),
                 ]
             );
         }
@@ -139,6 +139,10 @@ class Install extends Migration
 
                     // connectors
                     'cockpitId' => $this->string()->notNull(),
+                    'email' => $this->string(),
+                    'phone' => $this->string(),
+                    'reference' => $this->string(),
+                    'title' => $this->string(),
                 ]
             );
         }

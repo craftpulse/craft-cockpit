@@ -4,14 +4,24 @@ namespace craftpulse\cockpit\elements;
 
 use Craft;
 use craft\base\Element;
+use craft\elements\Address;
+use craft\elements\db\AddressQuery;
+use craft\elements\ElementCollection;
+use craft\elements\NestedElementManager;
 use craft\elements\User;
 use craft\elements\conditions\ElementConditionInterface;
 use craft\elements\db\ElementQueryInterface;
+use craft\enums\PropagationMethod;
+use craft\helpers\ArrayHelper;
 use craft\helpers\UrlHelper;
 use craft\models\FieldLayout;
+use craft\models\Site;
 use craft\web\CpScreenResponseBehavior;
+use craftpulse\cockpit\Cockpit;
 use craftpulse\cockpit\elements\conditions\DepartmentCondition;
 use craftpulse\cockpit\elements\db\DepartmentQuery;
+use craftpulse\cockpit\records\DepartmentRecord;
+use yii\base\InvalidConfigException;
 use yii\web\Response;
 
 /**
@@ -19,6 +29,41 @@ use yii\web\Response;
  */
 class Department extends Element
 {
+    /**
+     * @var string
+     */
+    public string $cockpitId = '';
+
+    /**
+     * @var string
+     */
+    public ?string $email = null;
+
+    /**
+     * @var string
+     */
+    public ?string $phone = null;
+
+    /**
+     * @var string
+     */
+    public ?string $reference = null;
+
+    /**
+     * @var string|null
+     */
+    public ?string $type = 'department';
+
+    /**
+     * @var ElementCollection<Address> Address
+     * @see getAddres()
+     */
+    private ElementCollection $_address;
+
+    /**
+     * @see getAddressManager()
+     */
+    private NestedElementManager $_addressManager;
 
     /**
      * @var FieldLayout|null
@@ -67,7 +112,7 @@ class Department extends Element
 
     public static function isLocalized(): bool
     {
-        return false;
+        return true;
     }
 
     public static function hasStatuses(): bool
@@ -78,6 +123,76 @@ class Department extends Element
     public static function find(): ElementQueryInterface
     {
         return Craft::createObject(DepartmentQuery::class, [static::class]);
+    }
+
+    /**
+     * Gets the address.
+     *
+     * @return ElementCollection
+     */
+    public function getAddress(): ElementCollection
+    {
+        if (!isset($this->_address)) {
+            if (!$this->id) {
+                /** @var ElementCollection<Address> */
+                return ElementCollection::make();
+            }
+
+            $this->_address = $this->createAddressQuery()
+                ->andWhere(['fieldId' => null])
+                ->collect();
+        }
+
+        return $this->_address;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getSupportedSites(): array
+    {
+        return Cockpit::$plugin->getSettings()->departmentSiteSettings ?? [];
+    }
+
+    /**
+     * Returns a nested element manager for the user’s address.
+     *
+     * @return NestedElementManager
+     * @since 5.0.0
+     */
+    public function getAddressManager(): NestedElementManager
+    {
+        if (!isset($this->_addressManager)) {
+            $this->_addressManager = new NestedElementManager(
+                Address::class,
+                fn() => $this->createAddressQuery(),
+                [
+                    'attribute' => 'address',
+                    'propagationMethod' => PropagationMethod::None,
+                ],
+            );
+        }
+
+        return $this->_addressManager;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function afterRestore(): void
+    {
+        $this->getAddressManager()->restoreNestedElements($this);
+        parent::afterRestore();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function extraFields(): array
+    {
+        $names = parent::extraFields();
+        $names[] = 'address';
+        return $names;
     }
 
     public static function createCondition(): ElementConditionInterface
@@ -158,9 +273,25 @@ class Department extends Element
 
     protected function defineRules(): array
     {
-        return array_merge(parent::defineRules(), [
-            // ...
-        ]);
+        $rules = parent::defineRules();
+
+        $rules[] = [
+            [
+                'phone',
+                'reference',
+            ],
+            'safe'
+        ];
+
+        if ($this->id !== null) {
+            $rules[] = [[
+                'cockpitId',
+            ], 'required'];
+
+            $rules[] = [['email'], 'email'];
+        }
+
+        return $rules;
     }
 
     /**
@@ -180,34 +311,38 @@ class Department extends Element
 
     public function getUriFormat(): ?string
     {
-        // If departments should have URLs, define their URI format here
-        return null;
-    }
+        $departmentSettings = Cockpit::getInstance()->getSettings()->departmentSiteSettings ?? [];
 
-    protected function previewTargets(): array
-    {
-        $previewTargets = [];
-        $url = $this->getUrl();
-        if ($url) {
-            $previewTargets[] = [
-                'label' => Craft::t('app', 'Primary {type} page', [
-                    'type' => self::lowerDisplayName(),
-                ]),
-                'url' => $url,
-            ];
+        if (!isset($departmentSettings[$this->siteId])) {
+            return null;
         }
-        return $previewTargets;
+
+        return $departmentSettings[$this->siteId]['uriFormat'];
     }
 
     protected function route(): array|string|null
     {
-        // Define how departments should be routed when their URLs are requested
+        // Make sure that the product is actually live
+        if (!$this->previewing && $this->getStatus() != self::STATUS_ENABLED) {
+            return null;
+        }
+
+        // Make sure the product type is set to have URLs for this site
+        $siteId = Craft::$app->getSites()->currentSite->id;
+        $settings = Cockpit::getInstance()->getSettings()->departmentSiteSettings ?? [];
+
+        if (!isset($settings[$this->siteId])) {
+            return null;
+        }
+
         return [
-            'templates/render',
-            [
-                'template' => 'site/template/path',
-                'variables' => ['department' => $this],
-            ]
+            'templates/render', [
+                'template' => $settings[$siteId]['template'],
+                'variables' => [
+                    'entry' => $this,
+                    'department' => $this,
+                ],
+            ],
         ];
     }
 
@@ -249,7 +384,7 @@ class Department extends Element
 
     public function canCreateDrafts(User $user): bool
     {
-        return true;
+        return false;
     }
 
     protected function cpEditUrl(): ?string
@@ -272,15 +407,28 @@ class Department extends Element
             ],
         ]);
     }
+    /**
+     * @inheritdoc
+     */
+    public function beforeDelete(): bool
+    {
+        if (!parent::beforeDelete()) {
+            return false;
+        }
+
+        $this->getAddressManager()->deleteNestedElements($this, $this->hardDelete);
+
+        return true;
+    }
 
     public function afterSave(bool $isNew): void
     {
         if (!$this->propagating) {
             if ($isNew) {
-                $record = new DepartmentQuery();
+                $record = new DepartmentRecord();
                 $record->id = $this->id;
             } else {
-                $record = DepartmentQuery::findOne($this->id);
+                $record = DepartmentRecord::findOne($this->id);
             }
 
             if (!$record->validate()) {
@@ -299,10 +447,24 @@ class Department extends Element
                 return;
             }
 
+            // fields
+            $record->cockpitId = $this->cockpitId;
+            $record->email = $this->email;
+            $record->phone = $this->phone;
+            $record->reference = $this->reference;
+            $record->title = $this->title;
+
             // Save the record
             $record->save(false);
         }
 
         parent::afterSave($isNew);
+    }
+
+    private function createAddressQuery(): AddressQuery
+    {
+        return Address::find()
+            ->owner($this)
+            ->orderBy(['id' => SORT_ASC]);
     }
 }
