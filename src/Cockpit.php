@@ -15,6 +15,7 @@ use craft\base\Element;
 use craft\events\DefineFieldLayoutFieldsEvent;
 use craft\events\DefineHtmlEvent;
 use craft\models\FieldLayout;
+use craftpulse\cockpit\base\PluginTrait;
 use Monolog\Formatter\LineFormatter;
 use Psr\Log\LogLevel;
 use Throwable;
@@ -59,6 +60,7 @@ class Cockpit extends Plugin
     // Traits
     // =========================================================================
 
+    use PluginTrait;
     use ServicesTrait;
 
     // Const Properties
@@ -126,7 +128,6 @@ class Cockpit extends Plugin
             $this->_registerFieldLayouts();
             $this->_registerSidebarPanels();
         }
-
 
         // Log that the plugin has loaded
         Craft::info(
@@ -268,6 +269,7 @@ class Cockpit extends Plugin
             }
         );
 
+        $this->_registerFieldLayoutListener();
         $this->_registerUserPermissions();
         $this->_registerUtilities();
         $this->_registerProjectConfigEventListeners();
@@ -275,24 +277,6 @@ class Cockpit extends Plugin
 
     // Private Methods
     // =========================================================================
-
-    /**
-     * Register Commerce’s project config event listeners
-     */
-    private function _registerProjectConfigEventListeners(): void
-    {
-        $projectConfigService = Craft::$app->getProjectConfig();
-
-        $jobsService = $this->getJobs();
-        $projectConfigService->onAdd(self::CONFIG_JOBFIELD_LAYOUT_KEY, [$jobsService, 'handleChangedFieldLayout'])
-            ->onUpdate(self::CONFIG_JOBFIELD_LAYOUT_KEY, [$jobsService, 'handleChangedFieldLayout'])
-            ->onRemove(self::CONFIG_JOBFIELD_LAYOUT_KEY, [$jobsService, 'handleDeletedFieldLayout']);
-
-        $matchFieldsService = $this->getMatchFields();
-        $projectConfigService->onAdd(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleChangedMatchField'])
-            ->onUpdate(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleChangedMatchField'])
-            ->onRemove(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleDeletedMatchField']);
-    }
 
     /**
      * Registers CP URL rules event

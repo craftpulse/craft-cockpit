@@ -644,7 +644,7 @@ class MatchField extends Component
                 'url' => $matchField->getCpEditUrl(),
                 'handle' => $matchField->handle,
                 // @TODO: add type data from API
-                'type' => '1',
+                'type' => $matchField->type,
             ];
         }
 

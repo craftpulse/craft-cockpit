@@ -17,6 +17,7 @@ use craft\fieldlayoutelements\TextField;
 use craft\helpers\ProjectConfig;
 use craft\models\FieldLayout;
 use craftpulse\cockpit\elements\Job;
+use yii\base\Exception;
 
 /**
  * Class JobsService
@@ -50,7 +51,7 @@ class JobsService extends Component
     /**
      * @param ConfigEvent $event
      * @return void
-     * @throws \yii\base\Exception
+     * @throws Exception
      */
     public function handleChangedFieldLayout(ConfigEvent $event): void
     {
