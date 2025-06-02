@@ -2,10 +2,15 @@
 
 namespace craftpulse\cockpit\elements;
 
+use craft\elements\db\AddressQuery;
+use craft\elements\ElementCollection;
+use craft\elements\NestedElementManager;
+use craft\enums\PropagationMethod;
 use craft\helpers\StringHelper;
 use DateTime;
 use Craft;
 use craft\base\Element;
+use craft\elements\Address;
 use craft\elements\User;
 use craft\elements\conditions\ElementConditionInterface;
 use craft\elements\db\ElementQueryInterface;
@@ -48,10 +53,6 @@ class Job extends Element
     /**
      * @var string
      */
-    public string $city = '';
-    /**
-     * @var string
-     */
     public string $cockpitCompanyId ='';
     /**
      * @var string
@@ -70,25 +71,9 @@ class Job extends Element
      */
     public string $companyName = '';
     /**
-     * @var float|null
-     */
-    public ?float $latitude = null;
-    /**
-     * @var float|null
-     */
-    public ?float $longitude = null;
-    /**
      * @var int
      */
     public int $openPositions = 1;
-    /**
-     * @var string|null
-     */
-    public ?string $postCode = null;
-    /**
-     * @var string|null
-     */
-    public ?string $street = null;
 
     /**
      * @var DateTime|null Post date
@@ -99,6 +84,17 @@ class Job extends Element
      * @var DateTime|null Expiry date
      */
     public ?DateTime $expiryDate = null;
+
+    /**
+     * @var ElementCollection<Address> Address
+     * @see getAddres()
+     */
+    private ElementCollection $_address;
+
+    /**
+     * @see getAddressManager()
+     */
+    private NestedElementManager $_addressManager;
 
     // Methods
     // =========================================================================
@@ -205,6 +201,68 @@ class Job extends Element
     }
 
     /**
+     * Gets the address.
+     *
+     * @return ElementCollection
+     */
+    public function getAddress(): ElementCollection
+    {
+        if (!isset($this->_address)) {
+            if (!$this->id) {
+                /** @var ElementCollection<Address> */
+                return ElementCollection::make();
+            }
+
+            $this->_address = $this->createAddressQuery()
+                ->andWhere(['fieldId' => null])
+                ->collect();
+        }
+
+        return $this->_address;
+    }
+
+    /**
+     * Returns a nested element manager for the user’s address.
+     *
+     * @return NestedElementManager
+     * @since 5.0.0
+     */
+    public function getAddressManager(): NestedElementManager
+    {
+        if (!isset($this->_addressManager)) {
+            $this->_addressManager = new NestedElementManager(
+                Address::class,
+                fn() => $this->createAddressQuery(),
+                [
+                    'attribute' => 'address',
+                    'propagationMethod' => PropagationMethod::None,
+                ],
+            );
+        }
+
+        return $this->_addressManager;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function afterRestore(): void
+    {
+        $this->getAddressManager()->restoreNestedElements($this);
+        parent::afterRestore();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function extraFields(): array
+    {
+        $names = parent::extraFields();
+        $names[] = 'address';
+        return $names;
+    }
+
+    /**
      * @return ElementConditionInterface
      * @throws \yii\base\InvalidConfigException
      */
@@ -297,15 +355,17 @@ class Job extends Element
     protected static function defineTableAttributes(): array
     {
         return [
-            'slug' => ['label' => Craft::t('app', 'Slug')],
-            'uri' => ['label' => Craft::t('app', 'URI')],
-            'link' => ['label' => Craft::t('app', 'Link'), 'icon' => 'world'],
-            'id' => ['label' => Craft::t('app', 'ID')],
-            'uid' => ['label' => Craft::t('app', 'UID')],
-            'postDate' => ['label' => Craft::t('app', 'Post Date')],
-            'expiryDate' => ['label' => Craft::t('app', 'Expiry Date')],
+            'cockpitId' => ['label' => Craft::t('app', 'Cockpit ID')],
+            'companyName' => ['label' => Craft::t('app', 'Company')],
             'dateCreated' => ['label' => Craft::t('app', 'Date Created')],
             'dateUpdated' => ['label' => Craft::t('app', 'Date Updated')],
+            'expiryDate' => ['label' => Craft::t('app', 'Expiry Date')],
+            'id' => ['label' => Craft::t('app', 'ID')],
+            'link' => ['label' => Craft::t('app', 'Link'), 'icon' => 'world'],
+            'postDate' => ['label' => Craft::t('app', 'Post Date')],
+            'slug' => ['label' => Craft::t('app', 'Slug')],
+            'uid' => ['label' => Craft::t('app', 'UID')],
+            'uri' => ['label' => Craft::t('app', 'URI')],
             // ...
         ];
     }
@@ -336,26 +396,20 @@ class Job extends Element
         $rules[] = [
             [
                 'applicationCount',
-                'city',
                 'cockpitCompanyId',
                 'cockpitId',
                 'cockpitJobRequestId',
                 'cockpitOfficeId',
                 'companyName',
                 'expiryDate',
-                'latitude',
-                'longitude',
                 'openPositions',
-                'postCode',
                 'postDate',
-                'street',
             ],
             'safe'
         ];
 
         if ($this->id !== null) {
             $rules[] = [[
-                'city',
                 'cockpitCompanyId',
                 'cockpitId',
                 'cockpitJobRequestId',
@@ -364,8 +418,6 @@ class Job extends Element
             ], 'required'];
 
             $rules[] = [['applicationCount', 'openPositions'], 'integer'];
-            $rules[] = [['latitude'], 'number', 'min' => -90, 'max' => 90];
-            $rules[] = [['longitude'], 'number', 'min' => -180, 'max' => 180];
         }
 
         return $rules;
@@ -565,6 +617,20 @@ class Job extends Element
     /**
      * @inheritdoc
      */
+    public function beforeDelete(): bool
+    {
+        if (!parent::beforeDelete()) {
+            return false;
+        }
+
+        $this->getAddressManager()->deleteNestedElements($this, $this->hardDelete);
+
+        return true;
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function afterSave(bool $isNew): void
     {
 //        Craft::dd($this->dateCreated);
@@ -587,17 +653,13 @@ class Job extends Element
             $record->expiryDate = $this->expiryDate;
 
             $record->applicationCount = $this->applicationCount;
-            $record->city = $this->city;
             $record->cockpitCompanyId = $this->cockpitCompanyId;
             $record->cockpitId = $this->cockpitId;
             $record->cockpitJobRequestId = $this->cockpitJobRequestId;
             $record->cockpitOfficeId = $this->cockpitOfficeId;
             $record->companyName = $this->companyName;
-            $record->latitude = $this->latitude;
-            $record->longitude = $this->longitude;
             $record->openPositions = $this->openPositions;
-            $record->postCode = $this->postCode;
-            $record->street = $this->street;
+            $record->title = $this->title;
 
             if (!$record->validate()) {
                 $errors = $record->getErrors();
@@ -665,4 +727,10 @@ class Job extends Element
         return implode("\n", $fields);
     }
 
+    private function createAddressQuery(): AddressQuery
+    {
+        return Address::find()
+            ->owner($this)
+            ->orderBy(['id' => SORT_ASC]);
+    }
 }
