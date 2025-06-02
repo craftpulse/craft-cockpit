@@ -12,14 +12,8 @@ namespace craftpulse\cockpit;
 
 use Craft;
 use craft\base\Element;
-use craft\elements\Address;
-use craft\elements\Entry;
-use craft\events\DefineFieldLayoutFieldsEvent;
 use craft\events\DefineHtmlEvent;
-use craft\helpers\Html;
-use craft\models\FieldLayout;
-use craftpulse\cockpit\fieldlayoutelements\JobAddressSettings;
-use craftpulse\cockpit\fieldlayoutelements\JobCoordindates;
+use craftpulse\cockpit\base\PluginTrait;
 use Monolog\Formatter\LineFormatter;
 use Psr\Log\LogLevel;
 use Throwable;
@@ -42,7 +36,6 @@ use craftpulse\cockpit\elements\Job;
 use craftpulse\cockpit\elements\MatchFieldEntry;
 use craftpulse\cockpit\elements\Department;
 use craftpulse\cockpit\models\SettingsModel;
-use craftpulse\cockpit\services\MatchField;
 use craftpulse\cockpit\services\ServicesTrait;
 use yii\base\Event;
 use yii\base\InvalidRouteException;
@@ -64,6 +57,7 @@ class Cockpit extends Plugin
     // Traits
     // =========================================================================
 
+    use PluginTrait;
     use ServicesTrait;
 
     // Const Properties
@@ -129,10 +123,8 @@ class Cockpit extends Plugin
         if (Craft::$app->getRequest()->getIsCpRequest()) {
             $this->_registerCpUrlRules();
             $this->_registerElements();
-            $this->_registerFieldLayouts();
             $this->_registerSidebarPanels();
         }
-
 
         // Log that the plugin has loaded
         Craft::info(
@@ -274,6 +266,7 @@ class Cockpit extends Plugin
             }
         );
 
+        $this->_registerFieldLayoutListener();
         $this->_registerUserPermissions();
         $this->_registerUtilities();
         $this->_registerProjectConfigEventListeners();
@@ -281,29 +274,6 @@ class Cockpit extends Plugin
 
     // Private Methods
     // =========================================================================
-
-    /**
-     * Register Commerce’s project config event listeners
-     */
-    private function _registerProjectConfigEventListeners(): void
-    {
-        $projectConfigService = Craft::$app->getProjectConfig();
-
-        $jobsService = $this->getJobs();
-        $projectConfigService->onAdd(self::CONFIG_JOB_FIELD_LAYOUT_KEY, [$jobsService, 'handleChangedFieldLayout'])
-            ->onUpdate(self::CONFIG_JOB_FIELD_LAYOUT_KEY, [$jobsService, 'handleChangedFieldLayout'])
-            ->onRemove(self::CONFIG_JOB_FIELD_LAYOUT_KEY, [$jobsService, 'handleDeletedFieldLayout']);
-
-        $matchFieldsService = $this->getMatchFields();
-        $projectConfigService->onAdd(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleChangedMatchField'])
-            ->onUpdate(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleChangedMatchField'])
-            ->onRemove(MatchField::CONFIG_MATCHFIELDS_KEY . '.{uid}', [$matchFieldsService, 'handleDeletedMatchField']);
-
-        $departmentsService = $this->getDepartments();
-        $projectConfigService->onAdd(self::CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY, [$departmentsService, 'handleChangedFieldLayout'])
-            ->onUpdate(self::CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY, [$departmentsService, 'handleChangedFieldLayout'])
-            ->onRemove(self::CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY, [$departmentsService, 'handleDeletedFieldLayout']);
-    }
 
     /**
      * Registers CP URL rules event
@@ -354,34 +324,6 @@ class Cockpit extends Plugin
                 $event->types[] = Job::class;
                 $event->types[] = Department::class;
                 $event->types[] = MatchFieldEntry::class;
-            }
-        );
-    }
-
-    private function _registerFieldLayouts(): void
-    {
-        Event::on(
-            FieldLayout::class,
-            FieldLayout::EVENT_DEFINE_NATIVE_FIELDS,
-            function (DefineFieldLayoutFieldsEvent $event) {
-                /** @var FieldLayout $fieldLayout */
-                $fieldLayout = $event->sender;
-
-                switch ($fieldLayout->type) {
-                    case Address::class:
-                        $event->fields[] = JobCoordindates::class;
-                        break;
-
-                    case Job::class:
-                        foreach ($this->getJobs()->createFields() as $field) {
-                            $event->fields[] = $field;
-                        }
-
-                    case Department::class:
-                        foreach ($this->getDepartments()->createFields() as $field) {
-                            $event->fields[] = $field;
-                        }
-                }
             }
         );
     }

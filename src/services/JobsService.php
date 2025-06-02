@@ -23,6 +23,7 @@ use craft\helpers\StringHelper;
 use craft\models\FieldLayout;
 use craftpulse\cockpit\Cockpit;
 use craftpulse\cockpit\elements\Job;
+use yii\base\Exception;
 use craftpulse\cockpit\fieldlayoutelements\AddressField;
 use DateTime;
 use Illuminate\Support\Collection;
@@ -320,7 +321,7 @@ class JobsService extends Component
     /**
      * @param ConfigEvent $event
      * @return void
-     * @throws \yii\base\Exception
+     * @throws Exception
      */
     public function handleChangedFieldLayout(ConfigEvent $event): void
     {
