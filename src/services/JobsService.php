@@ -79,7 +79,7 @@ class JobsService extends Component
         $jobRequest = Cockpit::$plugin->getApi()->getJobRequestById($jobRequestId);
         $publication->get('jobRequest')['data'] = $jobRequest;
 
-        $success = $this->upsertJobByCockpitPublication($publication);
+        $success = $this->upsertJob($publication);
 
         if ($success) {
             Console::stdout('   > Job added in our system ' . PHP_EOL, Console::FG_GREEN);
@@ -165,7 +165,7 @@ class JobsService extends Component
      * @throws \yii\base\Exception
      * @throws \yii\base\InvalidConfigException
      */
-    public function upsertJobByCockpitPublication(Collection $publication): bool
+    public function upsertJob(Collection $publication): bool
     {
         $job = Job::find()->cockpitId($publication->get('id'))->one();
 

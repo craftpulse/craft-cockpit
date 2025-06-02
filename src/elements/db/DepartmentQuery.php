@@ -30,6 +30,7 @@ class DepartmentQuery extends ElementQuery
             'cockpit_departments.cockpitId',
             'cockpit_departments.email',
             'cockpit_departments.phone',
+            'cockpit_departments.reference',
             'cockpit_departments.title',
         ]);
 

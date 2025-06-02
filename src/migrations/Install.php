@@ -141,6 +141,7 @@ class Install extends Migration
                     'cockpitId' => $this->string()->notNull(),
                     'email' => $this->string(),
                     'phone' => $this->string(),
+                    'reference' => $this->string(),
                     'title' => $this->string(),
                 ]
             );

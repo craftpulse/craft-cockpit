@@ -66,13 +66,9 @@
     </div>
 </fieldset>
 
-{#<dl class="meta read-only">#}
-{#    <div class="data">#}
-{#        <dt class="heading">Application count</dt>#}
-{#        <dd class="value">{{ element.applicationCount }}</dd>#}
-{#    </div>#}
-{#    <div class="data">#}
-{#        <dt class="heading">Job open positions</dt>#}
-{#        <dd class="value">{{ element.openPositions }}</dd>#}
-{#    </div>#}
-{#</dl>#}
+<dl class="meta read-only">
+    <div class="data">
+        <dt class="heading">Reference</dt>
+        <dd class="value">{{ element.reference ?? '-' }}</dd>
+    </div>
+</dl>

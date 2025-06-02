@@ -21,6 +21,7 @@ use craftpulse\cockpit\db\Table;
  * @property string $cockpitId
  * @property string|null $email
  * @property string|null $phone
+ * @property string|null $reference
  * @property string|null $title
  */
 class DepartmentRecord extends ActiveRecord

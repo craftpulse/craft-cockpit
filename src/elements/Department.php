@@ -45,6 +45,11 @@ class Department extends Element
     public ?string $phone = null;
 
     /**
+     * @var string
+     */
+    public ?string $reference = null;
+
+    /**
      * @var string|null
      */
     public ?string $type = 'department';
@@ -273,6 +278,7 @@ class Department extends Element
         $rules[] = [
             [
                 'phone',
+                'reference',
             ],
             'safe'
         ];
@@ -445,6 +451,7 @@ class Department extends Element
             $record->cockpitId = $this->cockpitId;
             $record->email = $this->email;
             $record->phone = $this->phone;
+            $record->reference = $this->reference;
             $record->title = $this->title;
 
             // Save the record

@@ -16,7 +16,7 @@ use yii\console\ExitCode;
  */
 class JobsController extends Controller
 {
-    public $defaultAction = 'index';
+    public $defaultAction = 'publications';
 
     public $publicationId;
     public $jobRequestId;
@@ -46,14 +46,6 @@ class JobsController extends Controller
             'job-request-id' => 'jobRequestId',
             'publication-id' => 'publicationId',
         ];
-    }
-
-    /**
-     * cockpit/jobs command
-     */
-    public function actionIndex(): int
-    {
-        return ExitCode::OK;
     }
 
     /**
