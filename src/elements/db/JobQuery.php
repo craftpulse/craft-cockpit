@@ -43,6 +43,23 @@ class JobQuery extends ElementQuery
         // todo: join the `companies` table
         $this->joinElementTable(Table::JOBS);
 
+        // Check if sorting by department
+        $orderByKeys = array_keys($this->orderBy ?? []);
+        $sortingByDepartment = in_array('department', $orderByKeys, true);
+
+        if ($sortingByDepartment) {
+            $this->subQuery->leftJoin(
+                '{{%cockpit_departments}} departments',
+                'departments.id = cockpit_jobs.cockpitDepartmentId'
+            );
+
+            $this->subQuery->addSelect(['departments.title AS department']);
+
+            // Apply explicit order by with direction (asc/desc)
+            $direction = reset($this->orderBy) ?: SORT_ASC; // get the direction for 'department'
+            $this->subQuery->orderBy(['department' => $direction]);
+        }
+
         // todo: apply any custom query params
         $this->query->select([
             'cockpit_jobs.applicationCount',

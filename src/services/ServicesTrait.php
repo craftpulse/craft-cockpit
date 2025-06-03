@@ -21,6 +21,7 @@ use yii\base\InvalidConfigException;
  * @property CleanupService $cleanup
  * @property JobsService $jobs
  * @property DepartmentsService $deparments
+ * @property PostcodeService $postcodes
  * @property MatchField $matchFields
  */
 trait ServicesTrait
@@ -31,10 +32,11 @@ trait ServicesTrait
             'components' => [
                 'api' => Api::class,
                 'cleanup' => CleanupService::class,
+                'departments' => DepartmentsService::class,
                 'jobs' => JobsService::class,
                 'map' => MapboxService::class,
                 'matchFields' => MatchField::class,
-                'departments' => DepartmentsService::class,
+                'postcodes' => PostcodeService::class,
             ],
         ];
     }
@@ -96,6 +98,18 @@ trait ServicesTrait
     {
         return $this->get('map');
     }
+
+    /**
+     * Returns the postcode service
+     *
+     * @return PostcodeService The postcode service
+     * @throws InvalidConfigException
+     */
+    public function getPostcodes(): PostcodeService
+    {
+        return $this->get('postcodes');
+    }
+
 
     /**
      * Returns the matchField service

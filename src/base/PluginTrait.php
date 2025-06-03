@@ -12,6 +12,7 @@ use craft\elements\Tag;
 use craft\elements\User;
 use craft\events\DefineFieldLayoutFieldsEvent;
 use craft\events\DefineHtmlEvent;
+use craft\events\ElementIndexTableAttributeEvent;
 use craft\fieldlayoutelements\addresses\CountryCodeField;
 use craft\fieldlayoutelements\addresses\LabelField;
 use craft\fieldlayoutelements\addresses\LatLongField;
@@ -143,7 +144,7 @@ trait PluginTrait
                             'allowRemove' => false,
                             'criteria' => ['siteId' => Craft::$app->sites->currentSite->id],
                             'elementType' => Department::class,
-                            'elements' => [$element->department ?? null],
+                            'elements' => $element->department ? [$element->department] : null,
                             'limit' => 1,
                             'showCardsInGrid' => false,
                             'single' => true,

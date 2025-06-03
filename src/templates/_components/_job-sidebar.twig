@@ -10,7 +10,11 @@
             </legend>
 
             <div class="input ltr">
-                {% include '_includes/forms/elementSelect.twig' with departmentConfig %}
+                {%- if departmentConfig.elements -%}
+                    {% include '_includes/forms/elementSelect.twig' with departmentConfig %}
+                {%- else -%}
+                    -
+                {%- endif -%}
             </div>
         </div>
 
