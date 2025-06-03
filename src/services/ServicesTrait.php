@@ -10,6 +10,7 @@
 
 namespace craftpulse\cockpit\services;
 
+use craftpulse\cockpit\services\ApplicationService;
 use yii\base\InvalidConfigException;
 
 /**
@@ -31,6 +32,7 @@ trait ServicesTrait
         return [
             'components' => [
                 'api' => Api::class,
+                'application' => ApplicationService::class,
                 'cleanup' => CleanupService::class,
                 'contacts' => ContactsService::class,
                 'departments' => DepartmentsService::class,
@@ -55,6 +57,18 @@ trait ServicesTrait
     {
         return $this->get('api');
     }
+
+    /**
+     * Returns the api service
+     *
+     * @return Api The api service
+     * @throws InvalidConfigException
+     */
+    public function getApplication(): ApplicationService
+    {
+        return $this->get('application');
+    }
+
 
     /**
      * Returns the cleanup service
