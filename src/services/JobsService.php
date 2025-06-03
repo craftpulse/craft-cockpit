@@ -15,8 +15,6 @@ use Craft;
 use craft\base\Component;
 use craft\elements\Address;
 use craft\events\ConfigEvent;
-use craft\fieldlayoutelements\TextField;
-use craft\fieldlayoutelements\TitleField;
 use craft\helpers\Console;
 use craft\helpers\ProjectConfig;
 use craft\helpers\StringHelper;
@@ -173,8 +171,9 @@ class JobsService extends Component
             $job = new Job();
         }
 
-        $startDate = $publication->get('publicationDate')['start'] ?? null;
-        $endDate = ($publication->get('publicationDate')['end'] ?? null) ? Carbon::parse($publication->get('publicationDate')['end']) : null;
+        $startDate = ($publication->get('publicationDate')['start'] ?? null) ? Carbon::parse($publication->get('publicationDate')['start']) : Carbon::now();
+        $calculationDate = $startDate->copy();
+        $endDate = ($publication->get('publicationDate')['end'] ?? null) ? Carbon::parse($publication->get('publicationDate')['end']) : $calculationDate->addMonths(3);
 
         if ($endDate && $endDate->isPast()) {
             return true;
@@ -188,7 +187,7 @@ class JobsService extends Component
         $job->companyName = $publication->get('jobRequest')['data']['company']['name'] ?? null;
         $job->title = $publication->get('title');
         // $job->slug = StringHelper::slugify($publication->get('title') . '-' . $publication->get('id'));
-        $job->postDate = $startDate ? Carbon::parse($startDate) : Carbon::now();
+        $job->postDate = $startDate;
         $job->expiryDate = $endDate;
 
         // save field layout fields
