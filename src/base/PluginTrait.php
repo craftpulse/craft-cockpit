@@ -21,7 +21,6 @@ use craft\fieldlayoutelements\addresses\OrganizationTaxIdField;
 use craft\fieldlayoutelements\assets\AltField;
 use craft\fieldlayoutelements\assets\AssetTitleField;
 use craft\fieldlayoutelements\entries\EntryTitleField;
-use craft\fieldlayoutelements\FullNameField;
 use craft\fieldlayoutelements\TitleField;
 use craft\fieldlayoutelements\users\AffiliatedSiteField;
 use craft\fieldlayoutelements\users\EmailField;
@@ -30,6 +29,7 @@ use craft\fieldlayoutelements\users\PhotoField;
 use craft\fieldlayoutelements\users\UsernameField;
 use craft\models\FieldLayout;
 
+use craftpulse\cockpit\elements\Contact;
 use craftpulse\cockpit\elements\Department;
 use craftpulse\cockpit\elements\Job;
 use craftpulse\cockpit\elements\MatchFieldEntry;
@@ -55,40 +55,44 @@ trait PluginTrait
             /** @var FieldLayout $fieldLayout */
             $fieldLayout = $event->sender;
 
-                switch ($fieldLayout->type) {
-                    case Address::class:
-                        $event->fields[] = AddressCoordinates::class;
-                        break;
+            switch ($fieldLayout->type) {
+                case Address::class:
+                    $event->fields[] = AddressCoordinates::class;
+                    break;
 
-                    case Job::class:
-                        $event->fields[] = TitleField::class;
-                        $event->fields[] = [
-                            'class' => AddressField::class,
-                            'attribute' => 'address',
-                            'name' => 'address',
-                            'mandatory' => true,
-                            'label' => Craft::t('cockpit', 'Address'),
-                            'width' => '100%',
-                        ];
-                        break;
+                case Contact::class:
+                    $event->fields[] = TitleField::class;
+                    break;
 
-                    case Department::class:
-                        $event->fields[] = TitleField::class;
-                        $event->fields[] = [
-                            'class' => AddressField::class,
-                            'attribute' => 'address',
-                            'name' => 'address',
-                            'mandatory' => true,
-                            'label' => Craft::t('cockpit', 'Address'),
-                            'width' => '100%',
-                        ];
-                        break;
+                case Department::class:
+                    $event->fields[] = TitleField::class;
+                    $event->fields[] = [
+                        'class' => AddressField::class,
+                        'attribute' => 'address',
+                        'name' => 'address',
+                        'mandatory' => true,
+                        'label' => Craft::t('cockpit', 'Address'),
+                        'width' => '100%',
+                    ];
+                    break;
 
-                    case MatchFieldEntry::class:
-                        $event->fields[] = MatchFieldTitleField::class;
-                        $event->fields[] = CockpitIdField::class;
-                        break;
-                }
+                case Job::class:
+                    $event->fields[] = TitleField::class;
+                    $event->fields[] = [
+                        'class' => AddressField::class,
+                        'attribute' => 'address',
+                        'name' => 'address',
+                        'mandatory' => true,
+                        'label' => Craft::t('cockpit', 'Address'),
+                        'width' => '100%',
+                    ];
+                    break;
+
+                case MatchFieldEntry::class:
+                    $event->fields[] = MatchFieldTitleField::class;
+                    $event->fields[] = CockpitIdField::class;
+                    break;
+            }
         });
     }
 
@@ -113,6 +117,11 @@ trait PluginTrait
         $projectConfigService->onAdd(self::CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY, [$departmentsService, 'handleChangedFieldLayout'])
             ->onUpdate(self::CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY, [$departmentsService, 'handleChangedFieldLayout'])
             ->onRemove(self::CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY, [$departmentsService, 'handleDeletedFieldLayout']);
+
+        $contactService = $this->getContacts();
+        $projectConfigService->onAdd(self::CONFIG_CONTACT_FIELD_LAYOUT_KEY, [$contactService, 'handleChangedFieldLayout'])
+            ->onUpdate(self::CONFIG_CONTACT_FIELD_LAYOUT_KEY, [$contactService, 'handleChangedFieldLayout'])
+            ->onRemove(self::CONFIG_CONTACT_FIELD_LAYOUT_KEY, [$contactService, 'handleDeletedFieldLayout']);
     }
 
     private function _registerSidebarPanels(): void
@@ -125,6 +134,10 @@ trait PluginTrait
             [
                 'element' => Department::class,
                 'template' => 'cockpit/_components/_department-sidebar',
+            ],
+            [
+                'element' => Contact::class,
+                'template' => 'cockpit/_components/_contact-sidebar',
             ]
         ];
 
@@ -137,20 +150,6 @@ trait PluginTrait
                     $element = $event->sender;
 
                     $data = [];
-
-                    if ($element instanceof Job) {
-                        $data['departmentConfig'] = [
-                            'allowAdd' => false,
-                            'allowRemove' => false,
-                            'criteria' => ['siteId' => Craft::$app->sites->currentSite->id],
-                            'elementType' => Department::class,
-                            'elements' => $element->department ? [$element->department] : null,
-                            'limit' => 1,
-                            'showCardsInGrid' => false,
-                            'single' => true,
-                            'viewMode' => 'list',
-                        ];
-                    }
 
                     $html = Craft::$app->getView()->renderTemplate($panel['template'], array_merge([
                         'variable' => true,

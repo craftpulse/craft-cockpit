@@ -311,13 +311,20 @@ class Department extends Element
 
     public function getUriFormat(): ?string
     {
-        $departmentSettings = Cockpit::getInstance()->getSettings()->departmentSiteSettings ?? [];
+        $settings = Cockpit::getInstance()->getSettings()->departmentSiteSettings ?? [];
 
-        if (!isset($departmentSettings[$this->siteId])) {
+        $hasUrls = $settings[$this->siteId]['hasUrl'] ?? false;
+        $uriFormat = $settings[$this->siteId]['uriFormat'] ?? null;
+
+        if (!$hasUrls) {
             return null;
         }
 
-        return $departmentSettings[$this->siteId]['uriFormat'];
+        if (!$uriFormat) {
+            return null;
+        }
+
+        return $settings[$this->siteId]['uriFormat'];
     }
 
     protected function route(): array|string|null
@@ -337,7 +344,7 @@ class Department extends Element
 
         return [
             'templates/render', [
-                'template' => $settings[$siteId]['template'],
+                'template' => $settings[$siteId]['template'] ?? null,
                 'variables' => [
                     'entry' => $this,
                     'department' => $this,

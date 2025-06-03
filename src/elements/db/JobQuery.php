@@ -40,7 +40,6 @@ class JobQuery extends ElementQuery
      */
     protected function beforePrepare(): bool
     {
-        // todo: join the `companies` table
         $this->joinElementTable(Table::JOBS);
 
         // Check if sorting by department
@@ -60,12 +59,12 @@ class JobQuery extends ElementQuery
             $this->subQuery->orderBy(['department' => $direction]);
         }
 
-        // todo: apply any custom query params
         $this->query->select([
             'cockpit_jobs.applicationCount',
             'cockpit_jobs.cockpitCompanyId',
             'cockpit_jobs.cockpitId',
             'cockpit_jobs.cockpitJobRequestId',
+            'cockpit_jobs.cockpitContactId',
             'cockpit_jobs.cockpitDepartmentId',
             'cockpit_jobs.companyName',
             'cockpit_jobs.expiryDate',

@@ -1,0 +1,82 @@
+{% import '_includes/forms' as forms %}
+
+<fieldset class="fieldset">
+
+    <legend class="h6">{{ 'Contact Info'|t('cockpit') }}</legend>
+    <div class="meta">
+        <div class="field">
+            <legend class="heading">
+                {{ 'Email'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {{ forms.text({
+                    id: 'email',
+                    name: 'email',
+                    value: element.email,
+                    type: 'email',
+                }) }}
+            </div>
+        </div>
+        <div class="field">
+            <legend class="heading">
+                {{ 'Telephone'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {{ forms.text({
+                    id: 'phone',
+                    name: 'phone',
+                    value: element.phone,
+                    type: 'phone',
+                }) }}
+            </div>
+        </div>
+        <div class="field">
+            <legend class="heading">
+                {{ 'Departments'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {%- if element.departments -%}
+                    {% include '_includes/forms/elementSelect.twig' with {
+                        allowAdd: false,
+                        allowRemove: false,
+                        id: 'departments',
+                        name: 'departments',
+                        elements: element.departments ?? [],
+                        elementType: 'craftpulse\\cockpit\\elements\\Department',
+                        limit: null,
+                        selectionLabel: "Choose departments"|t('cockpit')
+                    } %}
+                {%- else -%}
+                    -
+                {%- endif -%}
+            </div>
+        </div>
+    </div>
+
+    <legend class="h6">{{ 'Cockpit'|t('cockpit') }}</legend>
+    <div class="meta">
+        <div class="field">
+            <legend class="heading">
+                {{ 'ID'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {{ forms.text({
+                    id: 'cockpitId',
+                    name: 'cockpitId',
+                    value: element.cockpitId,
+                }) }}
+            </div>
+        </div>
+    </div>
+</fieldset>
+
+{#<dl class="meta read-only">#}
+{#    <div class="data">#}
+{#        <dt class="heading">Reference</dt>#}
+{#        <dd class="value">{{ element.reference ?? '-' }}</dd>#}
+{#    </div>#}
+{#</dl>#}

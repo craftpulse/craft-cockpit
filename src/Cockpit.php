@@ -12,6 +12,7 @@ namespace craftpulse\cockpit;
 
 use Craft;
 use craft\base\Element;
+use craft\events\DefineAttributeHtmlEvent;
 use craft\events\DefineHtmlEvent;
 use craftpulse\cockpit\base\PluginTrait;
 use Monolog\Formatter\LineFormatter;
@@ -41,7 +42,6 @@ use yii\base\Event;
 use yii\base\InvalidRouteException;
 use yii\log\Dispatcher;
 use yii\log\Logger;
-
 /**
  * Class Cockpit
  *
@@ -62,8 +62,9 @@ class Cockpit extends Plugin
 
     // Const Properties
     // =========================================================================
-    public const CONFIG_JOB_FIELD_LAYOUT_KEY = 'cockpit.jobFieldLayout';
+    public const CONFIG_CONTACT_FIELD_LAYOUT_KEY = 'cockpit.dcontactFieldLayout';
     public const CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY = 'cockpit.departmentFieldLayout';
+    public const CONFIG_JOB_FIELD_LAYOUT_KEY = 'cockpit.jobFieldLayout';
 
     // Static Properties
     // =========================================================================
@@ -134,6 +135,7 @@ class Cockpit extends Plugin
                 ['name' => $this->name]
             )
         );
+
     }
 
     // Public Methods
@@ -201,7 +203,7 @@ class Cockpit extends Plugin
         if ($currentUser->can('cockpit:view-departments')) {
             $subNavs['departments'] = [
                 'label' => Craft::t('cockpit', 'Departments'),
-                'url' => 'cockpit/jobs',
+                'url' => 'cockpit/departments',
             ];
         }
 
@@ -290,7 +292,6 @@ class Cockpit extends Plugin
         Event::on(UrlManager::class, UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function(RegisterUrlRulesEvent $event) {
                 // General Settings
-                $event->rules['cockpit'] = 'cockpit/settings/edit';
                 $event->rules['cockpit/settings'] = 'cockpit/settings/edit';
                 $event->rules['cockpit/settings/general'] = 'cockpit/settings/edit';
                 $event->rules['cockpit/plugins/cockpit'] = 'cockpit/settings/edit';
@@ -301,10 +302,12 @@ class Cockpit extends Plugin
                 $event->rules['cockpit/settings/matchfields/new'] = 'cockpit/match-fields/edit-match-field';
 
                 // Contact Elements
+                $event->rules['cockpit/settings/contacts'] = 'cockpit/contacts/edit-settings';
                 $event->rules['cockpit/contacts'] = ['template' => 'cockpit/contacts/_index.twig'];
                 $event->rules['cockpit/contacts/<elementId:\\d+>'] = 'elements/edit';
 
                 // Job Elements
+                $event->rules['cockpit'] = ['template' => 'cockpit/jobs/_index.twig'];
                 $event->rules['cockpit/settings/jobs'] = 'cockpit/jobs/edit-settings';
                 $event->rules['cockpit/jobs'] = ['template' => 'cockpit/jobs/_index.twig'];
                 $event->rules['cockpit/jobs/<elementId:\\d+>'] = 'elements/edit';

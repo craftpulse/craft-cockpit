@@ -10,11 +10,14 @@
             </legend>
 
             <div class="input ltr">
-                {%- if departmentConfig.elements -%}
-                    {% include '_includes/forms/elementSelect.twig' with departmentConfig %}
-                {%- else -%}
-                    -
-                {%- endif -%}
+                {% include '_includes/forms/elementSelect.twig' with {
+                    allowAdd: false,
+                    allowRemove: false,
+                    elements: element.department ?? [] ? [element.department] : [],
+                    elementType: 'craftpulse\\cockpit\\elements\\Department',
+                    limit: 1,
+                    single: true,
+                } %}
             </div>
         </div>
 
@@ -24,7 +27,14 @@
             </legend>
 
             <div class="input ltr">
-                @TODO
+                {% include '_includes/forms/elementSelect.twig' with {
+                    allowAdd: false,
+                    allowRemove: false,
+                    elements: element.contact ?? [] ? [element.contact] : [],
+                    elementType: 'craftpulse\\cockpit\\elements\\Contact',
+                    limit: 1,
+                    single: true,
+                } %}
             </div>
         </div>
     </div>
@@ -109,9 +119,22 @@
 
             <div class="input ltr">
                 {{ forms.text({
-                    id: 'cockpitOfficeId',
+                    id: 'cockpitDepartmentId',
                     name: 'cockpitDepartmentId',
                     value: element.cockpitDepartmentId,
+                }) }}
+            </div>
+        </div>
+        <div class="field">
+            <legend class="heading">
+                {{ 'Contact ID'|t('cockpit') }}
+            </legend>
+
+            <div class="input ltr">
+                {{ forms.text({
+                    id: 'cockpitContactId',
+                    name: 'cockpitContactId',
+                    value: element.cockpitContactId,
                 }) }}
             </div>
         </div>

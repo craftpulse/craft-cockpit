@@ -15,13 +15,13 @@ use Craft;
 use craft\base\Component;
 use craft\elements\Address;
 use craft\events\ConfigEvent;
-use craft\fieldlayoutelements\TextField;
-use craft\fieldlayoutelements\TitleField;
 use craft\helpers\Console;
 use craft\helpers\ProjectConfig;
 use craft\helpers\StringHelper;
 use craft\models\FieldLayout;
 use craftpulse\cockpit\Cockpit;
+use craftpulse\cockpit\elements\Contact;
+use craftpulse\cockpit\elements\Department;
 use craftpulse\cockpit\elements\Job;
 use yii\base\Exception;
 use craftpulse\cockpit\fieldlayoutelements\AddressField;
@@ -47,6 +47,7 @@ class JobsService extends Component
      */
     public function fetchPublicationById(string $id): bool
     {
+        Console::stdout('Start publication fetch ' . $id . PHP_EOL, Console::FG_CYAN);
         if (!$id) {
             Craft::error('Publication ID is required');
             Console::stdout('Error on fetching publication: Publication ID is required' . PHP_EOL, Console::FG_RED);
@@ -64,7 +65,7 @@ class JobsService extends Component
 
 // @TODO: only accept website publications
 
-        Console::stdout('   > Publication ' . $publication->get('title') . ' found ' . PHP_EOL);
+        Console::stdout('   > Publication found: ' . $publication->get('title') . PHP_EOL);
 
         $jobRequestId = $publication->get('jobRequest')['id'] ?? null;
 
@@ -82,7 +83,7 @@ class JobsService extends Component
         $success = $this->upsertJob($publication);
 
         if ($success) {
-            Console::stdout('   > Job added in our system ' . PHP_EOL, Console::FG_GREEN);
+            Console::stdout('   > Job ' . $publication->get('title'). ' added / updated in our system ' . PHP_EOL, Console::FG_GREEN);
         } else {
             Console::stdout('   > Couldn\'t add job in our system ' . PHP_EOL, Console::FG_RED);
         }
@@ -101,6 +102,7 @@ class JobsService extends Component
      */
     public function fetchJobRequestById(string $jobRequestId): bool
     {
+        Console::stdout('Start job request fetch ' . $jobRequestId . PHP_EOL, Console::FG_CYAN);
         if (!$jobRequestId) {
             Craft::error('Job request ID is required');
             Console::stdout('Error on fetching job request: Job request ID is required' . PHP_EOL, Console::FG_RED);
@@ -167,15 +169,18 @@ class JobsService extends Component
      */
     public function upsertJob(Collection $publication): bool
     {
+        // set / create job
         $job = Job::find()->cockpitId($publication->get('id'))->one();
-
         if (!$job) {
             $job = new Job();
         }
 
-        $startDate = $publication->get('publicationDate')['start'] ?? null;
-        $endDate = ($publication->get('publicationDate')['end'] ?? null) ? Carbon::parse($publication->get('publicationDate')['end']) : null;
+        // set dates
+        $startDate = ($publication->get('publicationDate')['start'] ?? null) ? Carbon::parse($publication->get('publicationDate')['start']) : Carbon::now();
+        $calculationDate = $startDate->copy();
+        $endDate = ($publication->get('publicationDate')['end'] ?? null) ? Carbon::parse($publication->get('publicationDate')['end']) : $calculationDate->addMonths(3);
 
+        // if job end date is passed -> don't add
         if ($endDate && $endDate->isPast()) {
             return true;
         }
@@ -185,11 +190,23 @@ class JobsService extends Component
         $job->cockpitId = $publication->get('id');
         $job->cockpitJobRequestId = $publication->get('jobRequest')['id'] ?? null;
         $job->cockpitDepartmentId = $publication->get('owner')['departmentId'] ?? null;
+        $job->cockpitContactId = $publication->get('owner')['userId'] ?? null;
         $job->companyName = $publication->get('jobRequest')['data']['company']['name'] ?? null;
         $job->title = $publication->get('title');
         // $job->slug = StringHelper::slugify($publication->get('title') . '-' . $publication->get('id'));
-        $job->postDate = $startDate ? Carbon::parse($startDate) : Carbon::now();
+        $job->postDate = $startDate;
         $job->expiryDate = $endDate;
+
+        // upsert department
+        if ($job->cockpitDepartmentId) {
+            Cockpit::$plugin->getDepartments()->fetchDepartmentByCockpitId($job->cockpitDepartmentId);
+        }
+
+        // upsert contact
+        if ($job->cockpitContactId) {
+            Cockpit::$plugin->getContacts()->fetchContactByCockpitId($job->cockpitContactId);
+        }
+
 
         // save field layout fields
 // @TODO: create a layer in between for mapping data between field layout and publication
@@ -246,6 +263,7 @@ class JobsService extends Component
      */
     public function deleteJobByCockpitId(string $cockpitId): bool
     {
+        Console::stdout('Start publication delete ' . $cockpitId . PHP_EOL, Console::FG_CYAN);
         $job = Job::find()->cockpitId($cockpitId)->one();
 
         if (!$job) {

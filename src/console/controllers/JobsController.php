@@ -80,8 +80,6 @@ class JobsController extends Controller
             // Get the ID from command line options
             $id = $this->publicationId;
 
-            Console::stdout('Start publication fetch ' . $id . PHP_EOL, Console::FG_CYAN);
-
             if (!$id) {
                 Craft::error('Publication ID (as --id=x) is required');
                 Console::stderr('   > Error on fetching publication: Publication ID is required' . PHP_EOL, Console::FG_RED);
