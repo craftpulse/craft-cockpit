@@ -14,6 +14,7 @@ use craftpulse\cockpit\Cockpit;
 use craftpulse\cockpit\elements\conditions\ContactCondition;
 use craftpulse\cockpit\elements\db\ContactQuery;
 use craftpulse\cockpit\records\ContactRecord;
+use Illuminate\Support\Collection;
 use yii\web\Response;
 
 /**
@@ -31,10 +32,38 @@ class Contact extends Element
      * @var string|null
      */
     public ?string $type = 'contact';
+
     /**
      * @var string
      */
     public string $cockpitId = '';
+
+    public Collection|string|array|null $cockpitDepartmentIds = null;
+
+    /**
+     * @var string
+     */
+    public ?string $firstName = null;
+
+    /**
+     * @var string
+     */
+    public string $lastName = '';
+
+    /**
+     * @var string
+     */
+    public ?string $email = null;
+
+    /**
+     * @var string
+     */
+    public ?string $phone = null;
+
+    /**
+     * @var string
+     */
+    public ?string $functionTitle = null;
 
 
     public static function displayName(): string
@@ -156,23 +185,23 @@ class Contact extends Element
     protected static function defineTableAttributes(): array
     {
         return [
-            'slug' => ['label' => Craft::t('app', 'Slug')],
-            'uri' => ['label' => Craft::t('app', 'URI')],
-            'link' => ['label' => Craft::t('app', 'Link'), 'icon' => 'world'],
-            'id' => ['label' => Craft::t('app', 'ID')],
-            'uid' => ['label' => Craft::t('app', 'UID')],
             'dateCreated' => ['label' => Craft::t('app', 'Date Created')],
             'dateUpdated' => ['label' => Craft::t('app', 'Date Updated')],
-            // ...
+            'email' => ['label' => Craft::t('app', 'Email')],
+            'id' => ['label' => Craft::t('app', 'ID')],
+            'link' => ['label' => Craft::t('app', 'Link'), 'icon' => 'world'],
+            'phone' => ['label' => Craft::t('app', 'Phone')],
+            'slug' => ['label' => Craft::t('app', 'Slug')],
+            'uid' => ['label' => Craft::t('app', 'UID')],
+            'uri' => ['label' => Craft::t('app', 'URI')],
         ];
     }
 
     protected static function defineDefaultTableAttributes(string $source): array
     {
         return [
-            'link',
+            'departments',
             'dateCreated',
-            // ...
         ];
     }
 
@@ -182,10 +211,21 @@ class Contact extends Element
 
         $rules[] = [
             [
-                'cockpitId',
+                'firstName',
+                'lastName',
+                'phone',
+                'functionTitle',
             ],
             'safe'
         ];
+
+        if ($this->id !== null) {
+            $rules[] = [[
+                'cockpitId',
+            ], 'required'];
+
+            $rules[] = [['email'], 'email'];
+        }
 
         return $rules;
     }
@@ -253,6 +293,23 @@ class Contact extends Element
         ];
     }
 
+    public function tableAttributeHtml(string $attribute): string
+    {
+        Craft::info("Rendering table attribute: $attribute", __METHOD__);
+
+        if ($attribute === 'departments') {
+            $departments = $this->getDepartments();
+
+            if (!$departments) {
+                return '-';
+            }
+
+            return implode(', ', array_map(fn($d) => $d->title, $departments));
+        }
+
+        return parent::tableAttributeHtml($attribute) ?? '-';
+    }
+
     public function canView(User $user): bool
     {
         if (parent::canView($user)) {
@@ -299,6 +356,25 @@ class Contact extends Element
         return sprintf('cockpit/contacts/%s', $this->getCanonicalId());
     }
 
+    // Public Methods
+    // =========================================================================
+    public function getDepartments(): ?array
+    {
+        if (!$this->cockpitDepartmentIds) {
+            return null;
+        }
+
+        if (is_string($this->cockpitDepartmentIds)) {
+            $this->cockpitDepartmentIds = json_decode($this->cockpitDepartmentIds, true);
+        }
+
+        if ($this->cockpitDepartmentIds) {
+            return Department::find()->cockpitId($this->cockpitDepartmentIds)->all() ?? null;
+        }
+
+        return null;
+    }
+
     public function getPostEditUrl(): ?string
     {
         return UrlHelper::cpUrl('cockpit/contacts');
@@ -325,7 +401,7 @@ class Contact extends Element
         $response->crumbs([
             [
                 'label' => self::pluralDisplayName(),
-                'url' => UrlHelper::cpUrl('contacts'),
+                'url' => UrlHelper::cpUrl('cockpit/contacts'),
             ],
         ]);
     }
@@ -344,6 +420,12 @@ class Contact extends Element
 
             // Job specific fields
             $record->cockpitId = $this->cockpitId;
+            $record->firstName = $this->firstName;
+            $record->lastName = $this->lastName;
+            $record->email = $this->email;
+            $record->phone = $this->phone;
+            $record->functionTitle = $this->functionTitle;
+            $record->cockpitDepartmentIds = $this->cockpitDepartmentIds;
 
             if (!$record->validate()) {
                 $errors = $record->getErrors();

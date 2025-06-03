@@ -12,7 +12,8 @@ use craftpulse\cockpit\db\Table;
  */
 class DepartmentQuery extends ElementQuery
 {
-    public ?string $cockpitId = null;
+    /** @var string|string[]|null */
+    public string|array|null $cockpitId = null;
 
     public function cockpitId($value)
     {

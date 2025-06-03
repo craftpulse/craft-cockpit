@@ -64,6 +64,7 @@ class JobQuery extends ElementQuery
             'cockpit_jobs.cockpitCompanyId',
             'cockpit_jobs.cockpitId',
             'cockpit_jobs.cockpitJobRequestId',
+            'cockpit_jobs.cockpitContactId',
             'cockpit_jobs.cockpitDepartmentId',
             'cockpit_jobs.companyName',
             'cockpit_jobs.expiryDate',

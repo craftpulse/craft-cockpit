@@ -12,6 +12,7 @@ namespace craftpulse\cockpit;
 
 use Craft;
 use craft\base\Element;
+use craft\events\DefineAttributeHtmlEvent;
 use craft\events\DefineHtmlEvent;
 use craftpulse\cockpit\base\PluginTrait;
 use Monolog\Formatter\LineFormatter;
@@ -41,7 +42,6 @@ use yii\base\Event;
 use yii\base\InvalidRouteException;
 use yii\log\Dispatcher;
 use yii\log\Logger;
-
 /**
  * Class Cockpit
  *
@@ -135,6 +135,7 @@ class Cockpit extends Plugin
                 ['name' => $this->name]
             )
         );
+
     }
 
     // Public Methods

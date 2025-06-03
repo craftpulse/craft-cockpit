@@ -226,6 +226,18 @@ class Api extends Component
     }
 
     /**
+     * Returns the departments by ID
+     *
+     * @param string $id
+     * @return Collection|null
+     * @throws GuzzleException
+     */
+    public function getContactById(string $id): ?Collection
+    {
+        return $this->get("Users/$id");
+    }
+
+    /**
      * Returns the registered webhooks
      *
      * @return Collection|null

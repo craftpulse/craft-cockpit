@@ -97,6 +97,13 @@ class Install extends Migration
 
                     // connectors
                     'cockpitId' => $this->string()->notNull(),
+                    'cockpitDepartmentIds' => $this->json(),
+                    'firstName' => $this->string(),
+                    'lastName' => $this->string()->notNull(),
+                    'email' => $this->string(),
+                    'phone' => $this->string(),
+                    'functionTitle' => $this->string(),
+
                 ]
             );
         }
@@ -115,6 +122,7 @@ class Install extends Migration
 
                     // Job specific fields
                     'applicationCount' => $this->integer(),
+                    'cockpitContactId' => $this->string()->notNull(),
                     'cockpitCompanyId' => $this->string()->notNull(),
                     'cockpitDepartmentId' => $this->string()->notNull(),
                     'cockpitId' => $this->string()->notNull(),

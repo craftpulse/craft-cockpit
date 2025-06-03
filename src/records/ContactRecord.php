@@ -13,11 +13,18 @@ namespace craftpulse\cockpit\records;
 use DateTime;
 use craft\db\ActiveRecord;
 use craftpulse\cockpit\db\Table;
+use Illuminate\Support\Collection;
 
 /**
  * Class MatchField
  *
  * @property string $cockpitId
+ * @property Collection $cockpitDepartmentIds
+ * @property string $firstName
+ * @property string $lastName
+ * @property string $email
+ * @property string $phone
+ * @property string $functionTitle
  * @property string|null $fieldLayoutId
  */
 class ContactRecord extends ActiveRecord

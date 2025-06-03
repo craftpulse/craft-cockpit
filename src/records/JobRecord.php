@@ -25,6 +25,7 @@ use craftpulse\cockpit\db\Table;
  * @property string $cockpitId
  * @property string $cockpitJobRequestId
  * @property string $cockpitDepartmentId
+ * @property string $cockpitContactId
  * @property string $companyName
  * @property string|null $fieldLayoutId
  * @property string|int|null $id

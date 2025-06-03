@@ -46,7 +46,7 @@ class Job extends Element
      * @var string|null
      */
     public ?string $type = 'job';
-    
+
     /**
      * @var int
      */
@@ -67,6 +67,10 @@ class Job extends Element
      * @var string
      */
     public string $cockpitDepartmentId = '';
+    /**
+     * @var string
+     */
+    public string $cockpitContactId = '';
     /**
      * @var string
      */
@@ -213,8 +217,17 @@ class Job extends Element
     // =========================================================================
     public function getDepartment(): ?Department
     {
-        if ($this->id) {
+        if ($this->cockpitDepartmentId) {
             return Department::find()->cockpitId($this->cockpitDepartmentId)->one() ?? null;
+        }
+
+        return null;
+    }
+
+    public function getContact(): ?Contact
+    {
+        if ($this->cockpitContactId) {
+            return Contact::find()->cockpitId($this->cockpitContactId)->one() ?? null;
         }
 
         return null;
@@ -489,13 +502,24 @@ class Job extends Element
      */
     public function getUriFormat(): ?string
     {
-        $departmentSettings = Cockpit::getInstance()->getSettings()->jobSiteSettings ?? [];
+        $settings = Cockpit::getInstance()->getSettings()->jobSiteSettings ?? [];
 
-        if (!isset($departmentSettings[$this->siteId])) {
+        if (!isset($settings[$this->siteId])) {
             return null;
         }
 
-        return $departmentSettings[$this->siteId]['uriFormat'];
+        $hasUrls = $settings[$this->siteId]['hasUrl'] ?? false;
+        $uriFormat = $settings[$this->siteId]['uriFormat'] ?? null;
+
+        if (!$hasUrls) {
+            return null;
+        }
+
+        if (!$uriFormat) {
+            return null;
+        }
+
+        return $settings[$this->siteId]['uriFormat'];
     }
 
     /**
@@ -544,7 +568,7 @@ class Job extends Element
 
         return [
             'templates/render', [
-                'template' => $settings[$siteId]['template'],
+                'template' => $settings[$siteId]['template'] ?? null,
                 'variables' => [
                     'entry' => $this,
                     'job' => $this,
@@ -710,6 +734,7 @@ class Job extends Element
 
             $record->applicationCount = $this->applicationCount;
             $record->cockpitCompanyId = $this->cockpitCompanyId;
+            $record->cockpitContactId = $this->cockpitContactId;
             $record->cockpitDepartmentId = $this->cockpitDepartmentId;
             $record->cockpitId = $this->cockpitId;
             $record->cockpitJobRequestId = $this->cockpitJobRequestId;

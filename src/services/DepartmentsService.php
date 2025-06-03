@@ -58,12 +58,12 @@ class DepartmentsService extends Component
             return false;
         }
 
-        Console::stdout('   > Department ' . $department->get('title') . ' found ' . PHP_EOL);
+        Console::stdout('   > Department ' . $department->get('name') . ' found ' . PHP_EOL);
 
         $success = $this->upsertDepartment($department);
 
         if ($success) {
-            Console::stdout('   > Department added in our system ' . PHP_EOL, Console::FG_GREEN);
+            Console::stdout('   > Department ' . $department->get('name') . ' added / updated in our system ' . PHP_EOL, Console::FG_GREEN);
         } else {
             Console::stdout('   > Couldn\'t add department in our system ' . PHP_EOL, Console::FG_RED);
         }
