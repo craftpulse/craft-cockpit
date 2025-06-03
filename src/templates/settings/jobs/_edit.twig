@@ -44,10 +44,10 @@
                         disabled: readOnly,
                     }),
                     uriFormat: {
-                        value: siteSettings ? siteSettings.uriFormat,
+                        value: siteSettings ? (siteSettings.uriFormat ?? null),
                     },
                     template: not headlessMode ? {
-                        value: siteSettings ? siteSettings.template,
+                        value: siteSettings ? (siteSettings.template ?? null),
                     },
                     enabledByDefault: siteSettings ? siteSettings.enabledByDefault : true,
                 }|filter

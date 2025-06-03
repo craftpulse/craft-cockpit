@@ -4,6 +4,7 @@ namespace craftpulse\cockpit\elements\db;
 
 use Craft;
 use craft\elements\db\ElementQuery;
+use craftpulse\cockpit\db\Table;
 
 /**
  * Contact query
@@ -12,11 +13,11 @@ class ContactQuery extends ElementQuery
 {
     protected function beforePrepare(): bool
     {
-        // todo: join the `contacts` table
-        // $this->joinElementTable('contacts');
+        $this->joinElementTable(Table::CONTACTS);
 
-        // todo: apply any custom query params
-        // ...
+        $this->query->select([
+            'cockpit_contacts.cockpitId',
+        ]);
 
         return parent::beforePrepare();
     }

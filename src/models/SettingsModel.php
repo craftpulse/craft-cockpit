@@ -12,6 +12,7 @@ namespace craftpulse\cockpit\models;
 use Craft;
 use craft\base\Model;
 use craft\behaviors\EnvAttributeParserBehavior;
+use craftpulse\cockpit\elements\Contact;
 use craftpulse\cockpit\elements\Department;
 use craftpulse\cockpit\elements\Job;
 
@@ -50,12 +51,17 @@ class SettingsModel extends Model
     /**
      * @var array the job site settings
      */
-    public ?array $jobSiteSettings = [];
+    public ?array $jobSiteSettings = null;
 
     /**
      * @var array the department site settings
      */
-    public ?array $departmentSiteSettings = [];
+    public ?array $departmentSiteSettings = null;
+
+    /**
+     * @var array the contact site settings
+     */
+    public ?array $contactSiteSettings = null;
 
     // Private Properties
     // =========================================================================
@@ -69,6 +75,52 @@ class SettingsModel extends Model
      * @var mixed
      */
     private mixed $_departmentFieldLayout;
+
+    /**
+     * @var mixed
+     */
+    private mixed $_contactFieldLayout;
+
+    public function __construct($config = [])
+    {
+        parent::__construct($config);
+
+        if ($this->contactSiteSettings === null) {
+            foreach (Craft::$app->sites->getAllSites() as $site) {
+                $this->contactSiteSettings[$site->id] = [
+                    'siteId' => $site->id,
+                    'enabled' => true,
+                    'template' => null,
+                    'uriFormat' => null,
+                    'enabledByDefault' => true,
+                ];
+            }
+        }
+
+        if ($this->departmentSiteSettings === null) {
+            foreach (Craft::$app->sites->getAllSites() as $site) {
+                $this->departmentSiteSettings[$site->id] = [
+                    'siteId' => $site->id,
+                    'enabled' => true,
+                    'template' => null,
+                    'uriFormat' => null,
+                    'enabledByDefault' => true,
+                ];
+            }
+        }
+
+        if ($this->jobSiteSettings === null) {
+            foreach (Craft::$app->sites->getAllSites() as $site) {
+                $this->jobSiteSettings[$site->id] = [
+                    'siteId' => $site->id,
+                    'enabled' => true,
+                    'template' => null,
+                    'uriFormat' => null,
+                    'enabledByDefault' => true,
+                ];
+            }
+        }
+    }
 
     /**
      * @return array[]
@@ -139,5 +191,26 @@ class SettingsModel extends Model
     public function setDepartmentFieldLayout(mixed $fieldLayout): void
     {
         $this->_departmentFieldLayout = $fieldLayout;
+    }
+
+    /**
+     * @return \craft\models\FieldLayout|mixed
+     */
+    public function getContactFieldLayout()
+    {
+        if (!isset($this->_departmentFieldLayout)) {
+            $this->_contactFieldLayout = Craft::$app->getFields()->getLayoutByType(Contact::class);
+        }
+
+        return $this->_contactFieldLayout;
+    }
+
+    /**
+     * @param mixed $fieldLayout
+     * @return void
+     */
+    public function setContactFieldLayout(mixed $fieldLayout): void
+    {
+        $this->_contactFieldLayout = $fieldLayout;
     }
 }

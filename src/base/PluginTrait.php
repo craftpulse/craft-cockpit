@@ -30,6 +30,7 @@ use craft\fieldlayoutelements\users\PhotoField;
 use craft\fieldlayoutelements\users\UsernameField;
 use craft\models\FieldLayout;
 
+use craftpulse\cockpit\elements\Contact;
 use craftpulse\cockpit\elements\Department;
 use craftpulse\cockpit\elements\Job;
 use craftpulse\cockpit\elements\MatchFieldEntry;
@@ -60,16 +61,8 @@ trait PluginTrait
                         $event->fields[] = AddressCoordinates::class;
                         break;
 
-                    case Job::class:
+                    case Contact::class:
                         $event->fields[] = TitleField::class;
-                        $event->fields[] = [
-                            'class' => AddressField::class,
-                            'attribute' => 'address',
-                            'name' => 'address',
-                            'mandatory' => true,
-                            'label' => Craft::t('cockpit', 'Address'),
-                            'width' => '100%',
-                        ];
                         break;
 
                     case Department::class:
@@ -84,6 +77,17 @@ trait PluginTrait
                         ];
                         break;
 
+                    case Job::class:
+                        $event->fields[] = TitleField::class;
+                        $event->fields[] = [
+                            'class' => AddressField::class,
+                            'attribute' => 'address',
+                            'name' => 'address',
+                            'mandatory' => true,
+                            'label' => Craft::t('cockpit', 'Address'),
+                            'width' => '100%',
+                        ];
+                        break;
                     case MatchFieldEntry::class:
                         $event->fields[] = MatchFieldTitleField::class;
                         $event->fields[] = CockpitIdField::class;

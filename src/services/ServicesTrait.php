@@ -32,6 +32,7 @@ trait ServicesTrait
             'components' => [
                 'api' => Api::class,
                 'cleanup' => CleanupService::class,
+                'contacts' => ContactsService::class,
                 'departments' => DepartmentsService::class,
                 'jobs' => JobsService::class,
                 'map' => MapboxService::class,
@@ -64,6 +65,17 @@ trait ServicesTrait
     public function getCleanup(): CleanupService
     {
         return $this->get('cleanup');
+    }
+
+    /**
+     * Returns the contacts service
+     *
+     * @return CleanupService The cleanup service
+     * @throws InvalidConfigException
+     */
+    public function getContacts(): ContactsService
+    {
+        return $this->get('contacts');
     }
 
     /**

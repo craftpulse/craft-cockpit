@@ -2,3 +2,13 @@
 {% set title = 'Contacts'|t('cockpit') %}
 {% set elementType = 'craftpulse\\cockpit\\elements\\Contact' %}
 {% set canHaveDrafts = false %}
+
+{% block actionButton %}
+    {{ tag('a', {
+        class: 'btn submit add icon',
+        href: actionUrl('elements/create', {
+            elementType: elementType
+        }),
+        text: 'New contact'|t('cockpit'),
+    }) }}
+{% endblock %}

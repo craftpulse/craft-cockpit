@@ -46,6 +46,7 @@ class Job extends Element
      * @var string|null
      */
     public ?string $type = 'job';
+    
     /**
      * @var int
      */

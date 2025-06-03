@@ -4,13 +4,16 @@ namespace craftpulse\cockpit\elements;
 
 use Craft;
 use craft\base\Element;
-use craft\elements\User;
 use craft\elements\conditions\ElementConditionInterface;
 use craft\elements\db\ElementQueryInterface;
+use craft\elements\User;
 use craft\helpers\UrlHelper;
+use craft\models\FieldLayout;
 use craft\web\CpScreenResponseBehavior;
+use craftpulse\cockpit\Cockpit;
 use craftpulse\cockpit\elements\conditions\ContactCondition;
 use craftpulse\cockpit\elements\db\ContactQuery;
+use craftpulse\cockpit\records\ContactRecord;
 use yii\web\Response;
 
 /**
@@ -18,6 +21,22 @@ use yii\web\Response;
  */
 class Contact extends Element
 {
+
+    /**
+     * @var FieldLayout|null
+     */
+    private ?FieldLayout $fieldLayout = null;
+
+    /**
+     * @var string|null
+     */
+    public ?string $type = 'contact';
+    /**
+     * @var string
+     */
+    public string $cockpitId = '';
+
+
     public static function displayName(): string
     {
         return Craft::t('cockpit', 'Contact');
@@ -60,12 +79,20 @@ class Contact extends Element
 
     public static function isLocalized(): bool
     {
-        return false;
+        return true;
     }
 
     public static function hasStatuses(): bool
     {
         return true;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getSupportedSites(): array
+    {
+        return Cockpit::$plugin->getSettings()->contactSiteSettings ?? [];
     }
 
     public static function find(): ElementQueryInterface
@@ -151,15 +178,38 @@ class Contact extends Element
 
     protected function defineRules(): array
     {
-        return array_merge(parent::defineRules(), [
-            // ...
-        ]);
+        $rules = parent::defineRules();
+
+        $rules[] = [
+            [
+                'cockpitId',
+            ],
+            'safe'
+        ];
+
+        return $rules;
     }
 
     public function getUriFormat(): ?string
     {
-        // If contacts should have URLs, define their URI format here
-        return null;
+        $contactSettings = Cockpit::getInstance()->getSettings()->contactSiteSettings ?? [];
+
+        if (!isset($contactSettings[$this->siteId])) {
+            return null;
+        }
+
+        $hasUrls = $contactSettings[$this->siteId]['hasUrl'] ?? false;
+        $uriFormat = $contactSettings[$this->siteId]['uriFormat'] ?? null;
+
+        if (!$hasUrls) {
+            return null;
+        }
+
+        if (!$uriFormat) {
+            return null;
+        }
+
+        return $contactSettings[$this->siteId]['uriFormat'];
     }
 
     protected function previewTargets(): array
@@ -179,13 +229,27 @@ class Contact extends Element
 
     protected function route(): array|string|null
     {
-        // Define how contacts should be routed when their URLs are requested
+        // Make sure that the product is actually live
+        if (!$this->previewing && $this->getStatus() != self::STATUS_ENABLED) {
+            return null;
+        }
+
+        // Make sure the product type is set to have URLs for this site
+        $siteId = Craft::$app->getSites()->currentSite->id;
+        $settings = Cockpit::getInstance()->getSettings()->contactSiteSettings ?? [];
+
+        if (!isset($settings[$this->siteId])) {
+            return null;
+        }
+
         return [
-            'templates/render',
-            [
-                'template' => 'site/template/path',
-                'variables' => ['contact' => $this],
-            ]
+            'templates/render', [
+                'template' => $settings[$siteId]['template'] ?? null,
+                'variables' => [
+                    'entry' => $this,
+                    'contact' => $this,
+                ],
+            ],
         ];
     }
 
@@ -195,7 +259,7 @@ class Contact extends Element
             return true;
         }
         // todo: implement user permissions
-        return $user->can('viewContacts');
+        return $user->can('cockpit:view-element');
     }
 
     public function canSave(User $user): bool
@@ -204,7 +268,7 @@ class Contact extends Element
             return true;
         }
         // todo: implement user permissions
-        return $user->can('saveContacts');
+        return $user->can('cockpit:save-element');
     }
 
     public function canDuplicate(User $user): bool
@@ -213,7 +277,7 @@ class Contact extends Element
             return true;
         }
         // todo: implement user permissions
-        return $user->can('saveContacts');
+        return $user->can('cockpit:duplicate-element');
     }
 
     public function canDelete(User $user): bool
@@ -222,22 +286,37 @@ class Contact extends Element
             return true;
         }
         // todo: implement user permissions
-        return $user->can('deleteContacts');
+        return $user->can('cockpit:delete-element');
     }
 
     public function canCreateDrafts(User $user): bool
     {
-        return true;
+        return false;
     }
 
     protected function cpEditUrl(): ?string
     {
-        return sprintf('contacts/%s', $this->getCanonicalId());
+        return sprintf('cockpit/contacts/%s', $this->getCanonicalId());
     }
 
     public function getPostEditUrl(): ?string
     {
-        return UrlHelper::cpUrl('contacts');
+        return UrlHelper::cpUrl('cockpit/contacts');
+    }
+
+    /**
+     * @inheritdoc
+     * @return FieldLayout|null
+     */
+    public function getFieldLayout(): ?FieldLayout
+    {
+        if ($this->fieldLayout !== null) {
+            return $this->fieldLayout;
+        }
+
+        $this->fieldLayout = Craft::$app->getFields()->getLayoutByType(self::class);
+
+        return $this->fieldLayout;
     }
 
     public function prepareEditScreen(Response $response, string $containerId): void
@@ -254,7 +333,36 @@ class Contact extends Element
     public function afterSave(bool $isNew): void
     {
         if (!$this->propagating) {
-            // todo: update the `contacts` table
+            if ($isNew) {
+                $record = new ContactRecord();
+                $record->id = $this->id;
+            } else {
+                $record = ContactRecord::findOne($this->id);
+            }
+
+            $record->fieldLayoutId = $this->fieldLayout->id;
+
+            // Job specific fields
+            $record->cockpitId = $this->cockpitId;
+
+            if (!$record->validate()) {
+                $errors = $record->getErrors();
+                Craft::error(
+                    'Cockpit contact record validation failed: ' . json_encode($errors, JSON_PRETTY_PRINT),
+                    __METHOD__
+                );
+
+                // Add errors to the element
+                foreach ($errors as $attribute => $attributeErrors) {
+                    foreach ($attributeErrors as $error) {
+                        $this->addError($attribute, $error);
+                    }
+                }
+                return;
+            }
+
+            // Save the record
+            $record->save(false);
         }
 
         parent::afterSave($isNew);
