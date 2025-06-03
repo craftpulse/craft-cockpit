@@ -357,7 +357,8 @@ class JobsService extends Component
         $address->addressLine1 = ($publication->get('jobRequest')['data']['location']['street'] ?? null) . ' ' . ($publication->get('jobRequest')['data']['location']['housenumber'] ?? null);
         $address->addressLine2 = ($publication->get('jobRequest')['data']['location']['housenumberSuffix'] ?? null);
         $address->postalCode = ($publication->get('jobRequest')['data']['location']['zipcode'] ?? null);
-        $address->locality = ($publication->get('jobRequest')['data']['location']['city'] ?? null);
+        $city = Cockpit::$plugin->getPostcodes()->mapPostcode($address->postalCode);
+        $address->locality = $city ? $city : ($publication->get('jobRequest')['data']['location']['city'] ?? null);
         $address->countryCode = $publication->get('jobRequest')['data']['location']['countryCode'] ?? null;
 
         if (Cockpit::$plugin->getSettings()->enableMapbox) {

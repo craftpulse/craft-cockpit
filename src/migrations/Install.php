@@ -201,6 +201,20 @@ class Install extends Migration
             ]);
         }
 
+        if(!$this->db->tableExists(Table::POSTCODE_MAPPINGS)) {
+            $this->createTable(
+                TABLE::POSTCODE_MAPPINGS,
+                [
+                    'id' => $this->primaryKey(),
+                    'dateCreated' => $this->dateTime()->notNull(),
+                    'dateUpdated' => $this->dateTime()->notNull(),
+                    'uid' => $this->uid(),
+
+                    'postcodeMapping' => $this->json()->notNull(),
+                ]
+            );
+        }
+
         return true;
     }
 
@@ -281,6 +295,10 @@ class Install extends Migration
         if ($this->db->tableExists(Table::MATCHFIELDS_SITES)) {
             Db::dropAllForeignKeysToTable(Table::MATCHFIELDS_SITES);
         }
+
+        if ($this->db->tableExists(Table::POSTCODE_MAPPINGS)) {
+            Db::dropAllForeignKeysToTable(Table::POSTCODE_MAPPINGS);
+        }
     }
 
     /**
@@ -310,6 +328,10 @@ class Install extends Migration
 
         if (Craft::$app->db->schema->getTableSchema(Table::MATCHFIELDS_SITES)) {
             $this->dropTable(Table::MATCHFIELDS_SITES);
+        }
+
+        if (Craft::$app->db->schema->getTableSchema(Table::POSTCODE_MAPPINGS)) {
+            $this->dropTable(Table::POSTCODE_MAPPINGS);
         }
     }
 

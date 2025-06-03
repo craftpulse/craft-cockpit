@@ -364,6 +364,18 @@ class Job extends Element
                 'orderBy' => 'elements.id',
                 'attribute' => 'id',
             ],
+            [
+                'label' => Craft::t('app', 'Department'),
+                'orderBy' => 'department',
+                'attribute' => 'department',
+                'defaultDir' => 'desc',
+            ],
+            [
+                'label' => Craft::t('app', 'Address'),
+                'orderBy' => 'address',
+                'attribute' => 'address',
+                'defaultDir' => 'desc',
+            ],
             // ...
         ];
     }
@@ -374,10 +386,12 @@ class Job extends Element
     protected static function defineTableAttributes(): array
     {
         return [
+            'address' => ['label' => Craft::t('app', 'Address')],
             'cockpitId' => ['label' => Craft::t('app', 'Cockpit ID')],
             'companyName' => ['label' => Craft::t('app', 'Company')],
             'dateCreated' => ['label' => Craft::t('app', 'Date Created')],
             'dateUpdated' => ['label' => Craft::t('app', 'Date Updated')],
+            'department' => ['label' => Craft::t('app', 'Department')],
             'expiryDate' => ['label' => Craft::t('app', 'Expiry Date')],
             'id' => ['label' => Craft::t('app', 'ID')],
             'link' => ['label' => Craft::t('app', 'Link'), 'icon' => 'world'],
@@ -387,6 +401,33 @@ class Job extends Element
             'uri' => ['label' => Craft::t('app', 'URI')],
             // ...
         ];
+    }
+
+    public function tableAttributeHtml(string $attribute): string
+    {
+        if ($attribute === 'address') {
+            $address = $this->getAddress()->one();
+
+            if (is_array($address)) {
+                return implode(', ', $address);
+            }
+
+            if (is_object($address)) {
+                if (method_exists($address, '__toString')) {
+                    return (string)$address;
+                }
+                // maybe it's a field value object
+                return json_encode($address);
+            }
+
+            return $address ?? '';
+        }
+
+        if ($attribute === 'department') {
+            return $this->getDepartment()?->title ?? '';
+        }
+
+        return parent::tableAttributeHtml($attribute);
     }
 
     /**

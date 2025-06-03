@@ -1,0 +1,45 @@
+{% extends '_layouts/cp' %}
+
+{% import '_includes/forms' as forms %}
+
+{% block actionButton %}
+    <input type="submit" class="btn submit" value="{{ 'Save'|t('app') }}">
+{% endblock %}
+
+{% block content %}
+    <input type="hidden" name="action" value="cockpit/postcodes/save-mapping">
+
+    <div>
+        <div class="flex field">
+            <div class="flex-grow">
+                {% set cols = {
+                    postcode: {
+                        type: 'singleline',
+                        heading: 'Postcode'|t('cockpit'),
+                        placeholder: '2000',
+                        required: true,
+                    },
+                    cityName: {
+                        type: 'singleline',
+                        heading: 'City'|t('cockpit'),
+                        placeholder: "Antwerpen"|t('cockpit'),
+                        required: true,
+                    },
+                } %}
+
+                {{ forms.editableTableField({
+                    label: "Postcode Mappings"|t('cockpit'),
+                    instructions: "Postcode mappings to Job Search.",
+                    name: 'postcodeMapping',
+                    id: 'postcodemapping',
+                    cols: cols,
+                    rows: postcodeMapping,
+                    allowAdd: true,
+                    allowDelete: true,
+                    allowReorder: true,
+                    addRowLabel: "Add a postcode mapping"|t('cockpit'),
+                }) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}

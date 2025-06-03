@@ -201,7 +201,14 @@ class Cockpit extends Plugin
         if ($currentUser->can('cockpit:view-departments')) {
             $subNavs['departments'] = [
                 'label' => Craft::t('cockpit', 'Departments'),
-                'url' => 'cockpit/departments',
+                'url' => 'cockpit/jobs',
+            ];
+        }
+
+        if ($currentUser->can('cockpit:postcode-mapping')) {
+            $subNavs['postcodes'] = [
+                'label' => 'Postcode Mapping',
+                'url' => 'cockpit/postcodes',
             ];
         }
 
@@ -307,6 +314,9 @@ class Cockpit extends Plugin
                 $event->rules['cockpit/departments'] = ['template' => 'cockpit/departments/_index.twig'];
                 $event->rules['cockpit/departments/<elementId:\\d+>'] = 'elements/edit';
 
+                // Postcodes
+                $event->rules['cockpit/postcodes'] = 'cockpit/postcodes/postcode-mapping';
+
                 /*$event->rules['match-field-entries'] = ['template' => 'cockpit/match-field-entries/_index.twig'];
                 $event->rules['match-field-entries/<elementId:\\d+>'] = 'elements/edit';*/
             }
@@ -365,6 +375,9 @@ class Cockpit extends Plugin
                         ],
                         'cockpit:settings-matchfields' => [
                             'label' => Craft::t('cockpit', 'Manage matchfields.'),
+                        ],
+                        'cockpit:postcode-mapping' => [
+                            'label' => Craft::t('ats', 'Manage the Postcode code mapping.'),
                         ],
                     ],
                 ];
