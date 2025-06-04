@@ -272,6 +272,18 @@ class Api extends Component
     }
 
     /**
+     * Posts an application
+     *
+     * @param array $data
+     * @return Collection|null
+     * @throws GuzzleException
+     */
+    public function postApplicationKnwonCandidate(string $id, array $data): ?Collection
+    {
+        return $this->post("Applications/candidate/${$id}", $data);
+    }
+
+    /**
      * @param string $endpoint
      * @param array|null $query
      * @return Response|null

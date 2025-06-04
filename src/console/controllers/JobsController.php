@@ -20,6 +20,7 @@ class JobsController extends Controller
 
     public $publicationId;
     public $jobRequestId;
+    public $candidateId;
 
     public function options($actionID): array
     {
@@ -34,6 +35,8 @@ class JobsController extends Controller
                 break;
             case 'delete-publication':
                 $options[] = 'publicationId';
+            case 'test-application-known-candidate':
+                $options[] = 'candidateId';
                 break;
         }
 
@@ -45,6 +48,7 @@ class JobsController extends Controller
         return [
             'job-request-id' => 'jobRequestId',
             'publication-id' => 'publicationId',
+            'candidate-id' => 'candidateId',
         ];
     }
 
@@ -160,5 +164,30 @@ class JobsController extends Controller
     {
         Console::stdout('Start apply for job'. PHP_EOL, Console::FG_CYAN);
         Cockpit::$plugin->getApplication()->applyForJob();
+    }
+
+    public function actionTestApplicationKnownCandidate(): int
+    {
+        try {
+            // Get the ID from command line options
+            $id = $this->candidateId;
+
+            if (!$id) {
+                Craft::error('Canddiate ID (as --id=x) is required');
+                Console::stderr('   > Error applying, candidate id not provided' . PHP_EOL, Console::FG_RED);
+                return ExitCode::DATAERR;
+            }
+
+            Console::stdout('Start apply for job with known candidate '.$id. PHP_EOL, Console::FG_CYAN);
+            Cockpit::$plugin->getApplication()->applyForJobKnownCandidate($id);
+
+            return ExitCode::OK;
+
+        } catch (\Exception $e) {
+            Console::stderr('   > Error on deleting publication: '.$e->getMessage() . PHP_EOL);
+            Craft::error($e->getMessage());
+        }
+
+        return ExitCode::DATAERR;
     }
 }
