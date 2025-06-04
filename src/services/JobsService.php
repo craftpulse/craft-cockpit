@@ -15,13 +15,13 @@ use Craft;
 use craft\base\Component;
 use craft\elements\Address;
 use craft\events\ConfigEvent;
-use craft\fieldlayoutelements\TextField;
-use craft\fieldlayoutelements\TitleField;
 use craft\helpers\Console;
 use craft\helpers\ProjectConfig;
 use craft\helpers\StringHelper;
 use craft\models\FieldLayout;
 use craftpulse\cockpit\Cockpit;
+use craftpulse\cockpit\elements\Contact;
+use craftpulse\cockpit\elements\Department;
 use craftpulse\cockpit\elements\Job;
 use yii\base\Exception;
 use craftpulse\cockpit\fieldlayoutelements\AddressField;
@@ -47,6 +47,7 @@ class JobsService extends Component
      */
     public function fetchPublicationById(string $id): bool
     {
+        Console::stdout('Start publication fetch ' . $id . PHP_EOL, Console::FG_CYAN);
         if (!$id) {
             Craft::error('Publication ID is required');
             Console::stdout('Error on fetching publication: Publication ID is required' . PHP_EOL, Console::FG_RED);
@@ -64,7 +65,7 @@ class JobsService extends Component
 
 // @TODO: only accept website publications
 
-        Console::stdout('   > Publication ' . $publication->get('title') . ' found ' . PHP_EOL);
+        Console::stdout('   > Publication found: ' . $publication->get('title') . PHP_EOL);
 
         $jobRequestId = $publication->get('jobRequest')['id'] ?? null;
 
@@ -79,10 +80,10 @@ class JobsService extends Component
         $jobRequest = Cockpit::$plugin->getApi()->getJobRequestById($jobRequestId);
         $publication->get('jobRequest')['data'] = $jobRequest;
 
-        $success = $this->upsertJobByCockpitPublication($publication);
+        $success = $this->upsertJob($publication);
 
         if ($success) {
-            Console::stdout('   > Job added in our system ' . PHP_EOL, Console::FG_GREEN);
+            Console::stdout('   > Job ' . $publication->get('title'). ' added / updated in our system ' . PHP_EOL, Console::FG_GREEN);
         } else {
             Console::stdout('   > Couldn\'t add job in our system ' . PHP_EOL, Console::FG_RED);
         }
@@ -101,6 +102,7 @@ class JobsService extends Component
      */
     public function fetchJobRequestById(string $jobRequestId): bool
     {
+        Console::stdout('Start job request fetch ' . $jobRequestId . PHP_EOL, Console::FG_CYAN);
         if (!$jobRequestId) {
             Craft::error('Job request ID is required');
             Console::stdout('Error on fetching job request: Job request ID is required' . PHP_EOL, Console::FG_RED);
@@ -165,17 +167,20 @@ class JobsService extends Component
      * @throws \yii\base\Exception
      * @throws \yii\base\InvalidConfigException
      */
-    public function upsertJobByCockpitPublication(Collection $publication): bool
+    public function upsertJob(Collection $publication): bool
     {
+        // set / create job
         $job = Job::find()->cockpitId($publication->get('id'))->one();
-
         if (!$job) {
             $job = new Job();
         }
 
-        $startDate = $publication->get('publicationDate')['start'] ?? null;
-        $endDate = ($publication->get('publicationDate')['end'] ?? null) ? Carbon::parse($publication->get('publicationDate')['end']) : null;
+        // set dates
+        $startDate = ($publication->get('publicationDate')['start'] ?? null) ? Carbon::parse($publication->get('publicationDate')['start']) : Carbon::now();
+        $calculationDate = $startDate->copy();
+        $endDate = ($publication->get('publicationDate')['end'] ?? null) ? Carbon::parse($publication->get('publicationDate')['end']) : $calculationDate->addMonths(3);
 
+        // if job end date is passed -> don't add
         if ($endDate && $endDate->isPast()) {
             return true;
         }
@@ -184,12 +189,24 @@ class JobsService extends Component
         $job->cockpitCompanyId = $publication->get('jobRequest')['data']['company']['id'] ?? null;
         $job->cockpitId = $publication->get('id');
         $job->cockpitJobRequestId = $publication->get('jobRequest')['id'] ?? null;
-        $job->cockpitOfficeId = $publication->get('owner')['departmentId'] ?? null;
+        $job->cockpitDepartmentId = $publication->get('owner')['departmentId'] ?? null;
+        $job->cockpitContactId = $publication->get('owner')['userId'] ?? null;
         $job->companyName = $publication->get('jobRequest')['data']['company']['name'] ?? null;
         $job->title = $publication->get('title');
         // $job->slug = StringHelper::slugify($publication->get('title') . '-' . $publication->get('id'));
-        $job->postDate = $startDate ? Carbon::parse($startDate) : Carbon::now();
+        $job->postDate = $startDate;
         $job->expiryDate = $endDate;
+
+        // upsert department
+        if ($job->cockpitDepartmentId) {
+            Cockpit::$plugin->getDepartments()->fetchDepartmentByCockpitId($job->cockpitDepartmentId);
+        }
+
+        // upsert contact
+        if ($job->cockpitContactId) {
+            Cockpit::$plugin->getContacts()->fetchContactByCockpitId($job->cockpitContactId);
+        }
+
 
         // save field layout fields
 // @TODO: create a layer in between for mapping data between field layout and publication
@@ -246,6 +263,7 @@ class JobsService extends Component
      */
     public function deleteJobByCockpitId(string $cockpitId): bool
     {
+        Console::stdout('Start publication delete ' . $cockpitId . PHP_EOL, Console::FG_CYAN);
         $job = Job::find()->cockpitId($cockpitId)->one();
 
         if (!$job) {
@@ -278,44 +296,20 @@ class JobsService extends Component
         $job = Job::find()->id($id)->one();
 
         if (!$job) {
+            Console::stdout('   > Error unable to delete job because it doesn\'t exist ' . PHP_EOL, Console::FG_RED);
             Craft::error('Job not found', __METHOD__);
             return false;
         }
 
         if (!Craft::$app->elements->deleteElement($job)) {
+            Console::stdout('   > Error unable to delete job: ' . print_r($job->getErrors(), true) . PHP_EOL, Console::FG_RED);
             Craft::error('Unable to delete job', __METHOD__);
             return false;
         }
 
-        return true;
-    }
+        Console::stdout('   > Job deleted: ' . $title . ' [' . $cockpitId . ']' . PHP_EOL);
 
-    /**
-     * This creates the native fields for the job section
-     * @return array[]|null
-     */
-    public function createFields(): ?array
-    {
-        return [
-            [
-                'class' => TitleField::class,
-                'attribute' => 'title',
-                'name' => 'title',
-                'label' => Craft::t('cockpit', 'Job'),
-                'inputType' => 'text',
-                'mandatory' => true,
-                'required' => true,
-                'width' => '100%',
-            ],
-            [
-                'class' => AddressField::class,
-                'attribute' => 'address',
-                'name' => 'address',
-                'mandatory' => true,
-                'label' => Craft::t('cockpit', 'Address'),
-                'width' => '100%',
-            ],
-        ];
+        return true;
     }
 
     /**
@@ -381,7 +375,8 @@ class JobsService extends Component
         $address->addressLine1 = ($publication->get('jobRequest')['data']['location']['street'] ?? null) . ' ' . ($publication->get('jobRequest')['data']['location']['housenumber'] ?? null);
         $address->addressLine2 = ($publication->get('jobRequest')['data']['location']['housenumberSuffix'] ?? null);
         $address->postalCode = ($publication->get('jobRequest')['data']['location']['zipcode'] ?? null);
-        $address->locality = ($publication->get('jobRequest')['data']['location']['city'] ?? null);
+        $city = Cockpit::$plugin->getPostcodes()->mapPostcode($address->postalCode);
+        $address->locality = $city ? $city : ($publication->get('jobRequest')['data']['location']['city'] ?? null);
         $address->countryCode = $publication->get('jobRequest')['data']['location']['countryCode'] ?? null;
 
         if (Cockpit::$plugin->getSettings()->enableMapbox) {

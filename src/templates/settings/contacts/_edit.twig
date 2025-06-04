@@ -22,23 +22,23 @@
 {% block content %}
 
     {% if not readOnly %}
-        {{ actionInput('cockpit/jobs/save-settings') }}
+        {{ actionInput('cockpit/contacts/save-settings') }}
     {% endif %}
 
     <input type="hidden" name="pluginHandle" value="cockpit">
 
     <div class="flex-fields">
         {% set siteRows = [] %}
-        {% set siteErrors = settings.getErrors('jobSiteSettings') %}
+        {% set siteErrors = settings.getErrors('contactSiteSettings') %}
 
         {% for site in craft.app.sites.getAllSites() %}
-            {% set siteSettings = settings.jobSiteSettings[site.id] ?? null %}
+            {% set siteSettings = settings.contactSiteSettings[site.id] ?? null %}
             {% set siteRows = siteRows|merge({
                 (site.handle): {
                     heading: site.name|t('site')|e,
                     enabled: include('_includes/forms/lightswitch.twig', {
                         name: 'sites['~site.handle~'][enabled]',
-                        on: siteSettings,
+                        on: (siteSettings ?? null) ? siteSettings : true,
                         value: site.id,
                         small: true,
                         disabled: readOnly,
@@ -72,16 +72,16 @@
                 },
                 uriFormat: {
                     type: 'singleline',
-                    heading: "Job URI Format"|t('cockpit'),
-                    info: "What entry URIs should look like for the site. Leave blank if jobs don’t have URLs."|t('cockpit'),
-                    placeholder: 'Leave blank if jobs don’t have URLs'|t('cockpit'),
+                    heading: "Contact URI Format"|t('cockpit'),
+                    info: "What entry URIs should look like for the site. Leave blank if contacts don’t have URLs."|t('cockpit'),
+                    placeholder: 'Leave blank if contacts don’t have URLs'|t('cockpit'),
                     code: true,
                     width: headlessMode ? 500,
                 },
                 template: not headlessMode ? {
                     type: 'template',
                     heading: "Template"|t('app'),
-                    info: "Which template should be loaded when an jobs URL is requested."|t('cockpit'),
+                    info: "Which template should be loaded when an contacts URL is requested."|t('cockpit'),
                     code: true
                 },
                 enabledByDefault: {
@@ -100,7 +100,7 @@
         }) }}
 
         {{ forms.fieldLayoutDesignerField({
-            fieldLayout: settings.getJobFieldLayout(),
+            fieldLayout: settings.getContactFieldLayout(),
         }) }}
     </div>
 {% endblock %}

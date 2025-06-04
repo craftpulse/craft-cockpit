@@ -1,6 +1,6 @@
 {% extends '_layouts/elementindex' %}
-{% set title = 'Contacts'|t('cockpit') %}
-{% set elementType = 'craftpulse\\cockpit\\elements\\Contact' %}
+{% set title = 'Departments'|t('cockpit') %}
+{% set elementType = 'craftpulse\\cockpit\\elements\\Department' %}
 {% set canHaveDrafts = false %}
 
 {% block actionButton %}
@@ -9,6 +9,6 @@
         href: actionUrl('elements/create', {
             elementType: elementType
         }),
-        text: 'New contact'|t('cockpit'),
+        text: 'New department'|t('cockpit'),
     }) }}
 {% endblock %}

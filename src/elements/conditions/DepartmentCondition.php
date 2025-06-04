@@ -6,8 +6,8 @@ use Craft;
 use craft\elements\conditions\ElementCondition;
 
 /**
- * Contact condition
+ * Department condition
  */
-class ContactCondition extends ElementCondition
+class DepartmentCondition extends ElementCondition
 {
 }

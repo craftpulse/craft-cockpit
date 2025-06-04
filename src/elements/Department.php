@@ -4,51 +4,35 @@ namespace craftpulse\cockpit\elements;
 
 use Craft;
 use craft\base\Element;
+use craft\elements\Address;
+use craft\elements\db\AddressQuery;
+use craft\elements\ElementCollection;
+use craft\elements\NestedElementManager;
+use craft\elements\User;
 use craft\elements\conditions\ElementConditionInterface;
 use craft\elements\db\ElementQueryInterface;
-use craft\elements\User;
+use craft\enums\PropagationMethod;
+use craft\helpers\ArrayHelper;
 use craft\helpers\UrlHelper;
 use craft\models\FieldLayout;
+use craft\models\Site;
 use craft\web\CpScreenResponseBehavior;
 use craftpulse\cockpit\Cockpit;
-use craftpulse\cockpit\elements\conditions\ContactCondition;
-use craftpulse\cockpit\elements\db\ContactQuery;
-use craftpulse\cockpit\records\ContactRecord;
-use Illuminate\Support\Collection;
+use craftpulse\cockpit\elements\conditions\DepartmentCondition;
+use craftpulse\cockpit\elements\db\DepartmentQuery;
+use craftpulse\cockpit\records\DepartmentRecord;
+use yii\base\InvalidConfigException;
 use yii\web\Response;
 
 /**
- * Contact element type
+ * Department element type
  */
-class Contact extends Element
+class Department extends Element
 {
-
-    /**
-     * @var FieldLayout|null
-     */
-    private ?FieldLayout $fieldLayout = null;
-
-    /**
-     * @var string|null
-     */
-    public ?string $type = 'contact';
-
     /**
      * @var string
      */
     public string $cockpitId = '';
-
-    public Collection|string|array|null $cockpitDepartmentIds = null;
-
-    /**
-     * @var string
-     */
-    public ?string $firstName = null;
-
-    /**
-     * @var string
-     */
-    public string $lastName = '';
 
     /**
      * @var string
@@ -63,32 +47,52 @@ class Contact extends Element
     /**
      * @var string
      */
-    public ?string $functionTitle = null;
+    public ?string $reference = null;
 
+    /**
+     * @var string|null
+     */
+    public ?string $type = 'department';
+
+    /**
+     * @var ElementCollection<Address> Address
+     * @see getAddres()
+     */
+    private ElementCollection $_address;
+
+    /**
+     * @see getAddressManager()
+     */
+    private NestedElementManager $_addressManager;
+
+    /**
+     * @var FieldLayout|null
+     */
+    private ?FieldLayout $fieldLayout = null;
 
     public static function displayName(): string
     {
-        return Craft::t('cockpit', 'Contact');
+        return Craft::t('cockpit', 'Department');
     }
 
     public static function lowerDisplayName(): string
     {
-        return Craft::t('cockpit', 'contact');
+        return Craft::t('cockpit', 'department');
     }
 
     public static function pluralDisplayName(): string
     {
-        return Craft::t('cockpit', 'Contacts');
+        return Craft::t('cockpit', 'Departments');
     }
 
     public static function pluralLowerDisplayName(): string
     {
-        return Craft::t('cockpit', 'contacts');
+        return Craft::t('cockpit', 'departments');
     }
 
     public static function refHandle(): ?string
     {
-        return 'contact';
+        return 'department';
     }
 
     public static function trackChanges(): bool
@@ -116,22 +120,84 @@ class Contact extends Element
         return true;
     }
 
+    public static function find(): ElementQueryInterface
+    {
+        return Craft::createObject(DepartmentQuery::class, [static::class]);
+    }
+
+    /**
+     * Gets the address.
+     *
+     * @return ElementCollection
+     */
+    public function getAddress(): ElementCollection
+    {
+        if (!isset($this->_address)) {
+            if (!$this->id) {
+                /** @var ElementCollection<Address> */
+                return ElementCollection::make();
+            }
+
+            $this->_address = $this->createAddressQuery()
+                ->andWhere(['fieldId' => null])
+                ->collect();
+        }
+
+        return $this->_address;
+    }
+
     /**
      * @inheritdoc
      */
     public function getSupportedSites(): array
     {
-        return Cockpit::$plugin->getSettings()->contactSiteSettings ?? [];
+        return Cockpit::$plugin->getSettings()->departmentSiteSettings ?? [];
     }
 
-    public static function find(): ElementQueryInterface
+    /**
+     * Returns a nested element manager for the user’s address.
+     *
+     * @return NestedElementManager
+     * @since 5.0.0
+     */
+    public function getAddressManager(): NestedElementManager
     {
-        return Craft::createObject(ContactQuery::class, [static::class]);
+        if (!isset($this->_addressManager)) {
+            $this->_addressManager = new NestedElementManager(
+                Address::class,
+                fn() => $this->createAddressQuery(),
+                [
+                    'attribute' => 'address',
+                    'propagationMethod' => PropagationMethod::None,
+                ],
+            );
+        }
+
+        return $this->_addressManager;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function afterRestore(): void
+    {
+        $this->getAddressManager()->restoreNestedElements($this);
+        parent::afterRestore();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function extraFields(): array
+    {
+        $names = parent::extraFields();
+        $names[] = 'address';
+        return $names;
     }
 
     public static function createCondition(): ElementConditionInterface
     {
-        return Craft::createObject(ContactCondition::class, [static::class]);
+        return Craft::createObject(DepartmentCondition::class, [static::class]);
     }
 
     protected static function defineSources(string $context): array
@@ -139,7 +205,7 @@ class Contact extends Element
         return [
             [
                 'key' => '*',
-                'label' => Craft::t('cockpit', 'All contacts'),
+                'label' => Craft::t('cockpit', 'All departments'),
             ],
         ];
     }
@@ -185,23 +251,23 @@ class Contact extends Element
     protected static function defineTableAttributes(): array
     {
         return [
+            'slug' => ['label' => Craft::t('app', 'Slug')],
+            'uri' => ['label' => Craft::t('app', 'URI')],
+            'link' => ['label' => Craft::t('app', 'Link'), 'icon' => 'world'],
+            'id' => ['label' => Craft::t('app', 'ID')],
+            'uid' => ['label' => Craft::t('app', 'UID')],
             'dateCreated' => ['label' => Craft::t('app', 'Date Created')],
             'dateUpdated' => ['label' => Craft::t('app', 'Date Updated')],
-            'email' => ['label' => Craft::t('app', 'Email')],
-            'id' => ['label' => Craft::t('app', 'ID')],
-            'link' => ['label' => Craft::t('app', 'Link'), 'icon' => 'world'],
-            'phone' => ['label' => Craft::t('app', 'Phone')],
-            'slug' => ['label' => Craft::t('app', 'Slug')],
-            'uid' => ['label' => Craft::t('app', 'UID')],
-            'uri' => ['label' => Craft::t('app', 'URI')],
+            // ...
         ];
     }
 
     protected static function defineDefaultTableAttributes(string $source): array
     {
         return [
-            'departments',
+            'link',
             'dateCreated',
+            // ...
         ];
     }
 
@@ -211,10 +277,8 @@ class Contact extends Element
 
         $rules[] = [
             [
-                'firstName',
-                'lastName',
                 'phone',
-                'functionTitle',
+                'reference',
             ],
             'safe'
         ];
@@ -228,156 +292,6 @@ class Contact extends Element
         }
 
         return $rules;
-    }
-
-    public function getUriFormat(): ?string
-    {
-        $contactSettings = Cockpit::getInstance()->getSettings()->contactSiteSettings ?? [];
-
-        if (!isset($contactSettings[$this->siteId])) {
-            return null;
-        }
-
-        $hasUrls = $contactSettings[$this->siteId]['hasUrl'] ?? false;
-        $uriFormat = $contactSettings[$this->siteId]['uriFormat'] ?? null;
-
-        if (!$hasUrls) {
-            return null;
-        }
-
-        if (!$uriFormat) {
-            return null;
-        }
-
-        return $contactSettings[$this->siteId]['uriFormat'];
-    }
-
-    protected function previewTargets(): array
-    {
-        $previewTargets = [];
-        $url = $this->getUrl();
-        if ($url) {
-            $previewTargets[] = [
-                'label' => Craft::t('app', 'Primary {type} page', [
-                    'type' => self::lowerDisplayName(),
-                ]),
-                'url' => $url,
-            ];
-        }
-        return $previewTargets;
-    }
-
-    protected function route(): array|string|null
-    {
-        // Make sure that the product is actually live
-        if (!$this->previewing && $this->getStatus() != self::STATUS_ENABLED) {
-            return null;
-        }
-
-        // Make sure the product type is set to have URLs for this site
-        $siteId = Craft::$app->getSites()->currentSite->id;
-        $settings = Cockpit::getInstance()->getSettings()->contactSiteSettings ?? [];
-
-        if (!isset($settings[$this->siteId])) {
-            return null;
-        }
-
-        return [
-            'templates/render', [
-                'template' => $settings[$siteId]['template'] ?? null,
-                'variables' => [
-                    'entry' => $this,
-                    'contact' => $this,
-                ],
-            ],
-        ];
-    }
-
-    public function tableAttributeHtml(string $attribute): string
-    {
-        Craft::info("Rendering table attribute: $attribute", __METHOD__);
-
-        if ($attribute === 'departments') {
-            $departments = $this->getDepartments();
-
-            if (!$departments) {
-                return '-';
-            }
-
-            return implode(', ', array_map(fn($d) => $d->title, $departments));
-        }
-
-        return parent::tableAttributeHtml($attribute) ?? '-';
-    }
-
-    public function canView(User $user): bool
-    {
-        if (parent::canView($user)) {
-            return true;
-        }
-        // todo: implement user permissions
-        return $user->can('cockpit:view-element');
-    }
-
-    public function canSave(User $user): bool
-    {
-        if (parent::canSave($user)) {
-            return true;
-        }
-        // todo: implement user permissions
-        return $user->can('cockpit:save-element');
-    }
-
-    public function canDuplicate(User $user): bool
-    {
-        if (parent::canDuplicate($user)) {
-            return true;
-        }
-        // todo: implement user permissions
-        return $user->can('cockpit:duplicate-element');
-    }
-
-    public function canDelete(User $user): bool
-    {
-        if (parent::canSave($user)) {
-            return true;
-        }
-        // todo: implement user permissions
-        return $user->can('cockpit:delete-element');
-    }
-
-    public function canCreateDrafts(User $user): bool
-    {
-        return false;
-    }
-
-    protected function cpEditUrl(): ?string
-    {
-        return sprintf('cockpit/contacts/%s', $this->getCanonicalId());
-    }
-
-    // Public Methods
-    // =========================================================================
-    public function getDepartments(): ?array
-    {
-        if (!$this->cockpitDepartmentIds) {
-            return null;
-        }
-
-        if (is_string($this->cockpitDepartmentIds)) {
-            $this->cockpitDepartmentIds = json_decode($this->cockpitDepartmentIds, true);
-        }
-
-        if ($this->cockpitDepartmentIds) {
-            return Department::find()->cockpitId($this->cockpitDepartmentIds)->all() ?? null;
-        }
-
-        return null;
-    }
-
-    public function getPostEditUrl(): ?string
-    {
-        return UrlHelper::cpUrl('cockpit/contacts');
     }
 
     /**
@@ -395,42 +309,139 @@ class Contact extends Element
         return $this->fieldLayout;
     }
 
+    public function getUriFormat(): ?string
+    {
+        $settings = Cockpit::getInstance()->getSettings()->departmentSiteSettings ?? [];
+
+        $hasUrls = $settings[$this->siteId]['hasUrl'] ?? false;
+        $uriFormat = $settings[$this->siteId]['uriFormat'] ?? null;
+
+        if (!$hasUrls) {
+            return null;
+        }
+
+        if (!$uriFormat) {
+            return null;
+        }
+
+        return $settings[$this->siteId]['uriFormat'];
+    }
+
+    protected function route(): array|string|null
+    {
+        // Make sure that the product is actually live
+        if (!$this->previewing && $this->getStatus() != self::STATUS_ENABLED) {
+            return null;
+        }
+
+        // Make sure the product type is set to have URLs for this site
+        $siteId = Craft::$app->getSites()->currentSite->id;
+        $settings = Cockpit::getInstance()->getSettings()->departmentSiteSettings ?? [];
+
+        if (!isset($settings[$this->siteId])) {
+            return null;
+        }
+
+        return [
+            'templates/render', [
+                'template' => $settings[$siteId]['template'] ?? null,
+                'variables' => [
+                    'entry' => $this,
+                    'department' => $this,
+                ],
+            ],
+        ];
+    }
+
+    public function canView(User $user): bool
+    {
+        if (parent::canView($user)) {
+            return true;
+        }
+        // todo: implement user permissions
+        return $user->can('cockpit:departments');
+    }
+
+    public function canSave(User $user): bool
+    {
+        if (parent::canSave($user)) {
+            return true;
+        }
+        // todo: implement user permissions
+        return $user->can('cockpit:save-departments');
+    }
+
+    public function canDuplicate(User $user): bool
+    {
+        if (parent::canDuplicate($user)) {
+            return true;
+        }
+        // todo: implement user permissions
+        return $user->can('cockpit:save-departments');
+    }
+
+    public function canDelete(User $user): bool
+    {
+        if (parent::canSave($user)) {
+            return true;
+        }
+        // todo: implement user permissions
+        return $user->can('cockpit:delete-departments');
+    }
+
+    public function canCreateDrafts(User $user): bool
+    {
+        return false;
+    }
+
+    protected function cpEditUrl(): ?string
+    {
+        return sprintf('cockpit/departments/%s', $this->getCanonicalId());
+    }
+
+    public function getPostEditUrl(): ?string
+    {
+        return UrlHelper::cpUrl('cockpit/departments');
+    }
+
     public function prepareEditScreen(Response $response, string $containerId): void
     {
         /** @var Response|CpScreenResponseBehavior $response */
         $response->crumbs([
             [
                 'label' => self::pluralDisplayName(),
-                'url' => UrlHelper::cpUrl('cockpit/contacts'),
+                'url' => UrlHelper::cpUrl('cockpit/departments'),
             ],
         ]);
+    }
+    /**
+     * @inheritdoc
+     */
+    public function beforeDelete(): bool
+    {
+        if (!parent::beforeDelete()) {
+            return false;
+        }
+
+        $this->getAddressManager()->deleteNestedElements($this, $this->hardDelete);
+
+        return true;
     }
 
     public function afterSave(bool $isNew): void
     {
         if (!$this->propagating) {
             if ($isNew) {
-                $record = new ContactRecord();
+                $record = new DepartmentRecord();
                 $record->id = $this->id;
             } else {
-                $record = ContactRecord::findOne($this->id);
+                $record = DepartmentRecord::findOne($this->id);
             }
-
-            $record->fieldLayoutId = $this->fieldLayout->id;
-
-            // Job specific fields
-            $record->cockpitId = $this->cockpitId;
-            $record->firstName = $this->firstName;
-            $record->lastName = $this->lastName;
-            $record->email = $this->email;
-            $record->phone = $this->phone;
-            $record->functionTitle = $this->functionTitle;
-            $record->cockpitDepartmentIds = $this->cockpitDepartmentIds;
 
             if (!$record->validate()) {
                 $errors = $record->getErrors();
                 Craft::error(
-                    'Cockpit contact record validation failed: ' . json_encode($errors, JSON_PRETTY_PRINT),
+                    'Cockpit department record validation failed: ' . json_encode($errors, JSON_PRETTY_PRINT),
                     __METHOD__
                 );
 
@@ -443,10 +454,24 @@ class Contact extends Element
                 return;
             }
 
+            // fields
+            $record->cockpitId = $this->cockpitId;
+            $record->email = $this->email;
+            $record->phone = $this->phone;
+            $record->reference = $this->reference;
+            $record->title = $this->title;
+
             // Save the record
             $record->save(false);
         }
 
         parent::afterSave($isNew);
+    }
+
+    private function createAddressQuery(): AddressQuery
+    {
+        return Address::find()
+            ->owner($this)
+            ->orderBy(['id' => SORT_ASC]);
     }
 }

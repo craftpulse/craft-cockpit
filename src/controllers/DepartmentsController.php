@@ -10,7 +10,7 @@ use craft\queue\jobs\ResaveElements;
 use craft\web\Controller;
 use craft\web\UrlManager;
 use craftpulse\cockpit\Cockpit;
-use craftpulse\cockpit\elements\Job;
+use craftpulse\cockpit\elements\Department;
 use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;
 use yii\web\MethodNotAllowedHttpException;
@@ -18,9 +18,9 @@ use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
 /**
- * Jobs Settings controller
+ * Departments Settings controller
  */
-class JobsController extends Controller
+class DepartmentsController extends Controller
 {
     /**
      * @var string
@@ -50,7 +50,7 @@ class JobsController extends Controller
         // Edit the plugin settings
         $variables = [];
         $pluginName = 'Cockpit';
-        $templateTitle = Craft::t('cockpit', 'Jobs settings');
+        $templateTitle = Craft::t('cockpit', 'Department settings');
 
         $variables['fullPageForm'] = true;
         $variables['pluginName'] = $pluginName;
@@ -69,7 +69,7 @@ class JobsController extends Controller
         ];
         $variables['settings'] = Cockpit::$plugin->settings;
 
-        return $this->renderTemplate('cockpit/settings/jobs/_edit', $variables);
+        return $this->renderTemplate('cockpit/settings/departments/_edit', $variables);
     }
 
     /**
@@ -130,7 +130,7 @@ class JobsController extends Controller
             $allSiteSettings[$site->id] = $siteSettings;
         }
 
-        $pluginSettings['jobSiteSettings'] = $allSiteSettings;
+        $pluginSettings['departmentSiteSettings'] = $allSiteSettings;
 
         if (!Craft::$app->getPlugins()->savePluginSettings($plugin, $settings)) {
             Craft::$app->getSession()->setError(Craft::t('app', "Couldn't save plugin settings."));
@@ -147,7 +147,7 @@ class JobsController extends Controller
 
         // Resave all products if the URI format changed
         Craft::$app->getQueue()->push(new ResaveElements([
-            'elementType' => Job::class,
+            'elementType' => Department::class,
             'criteria' => [
                 'siteId' => '*',
                 'unique' => true,
@@ -156,23 +156,13 @@ class JobsController extends Controller
         ]));
 
         $fieldLayout = Craft::$app->getFields()->assembleLayoutFromPost();
-        $fieldLayout->type = Job::class;
+        $fieldLayout->type = Department::class;
 
         $projectConfig = Craft::$app->getProjectConfig();
         $uid = StringHelper::UUID();
         $fieldLayoutConfig = $fieldLayout->getConfig();
-        $projectConfig->set(Cockpit::CONFIG_JOB_FIELD_LAYOUT_KEY, [$uid => $fieldLayoutConfig], 'Save the job field layout');
-        $pluginSettings->setJobFieldLayout($fieldLayout);
-
-        // Resave all products if the URI format changed
-        Craft::$app->getQueue()->push(new ResaveElements([
-            'elementType' => Job::class,
-            'criteria' => [
-                'siteId' => '*',
-                'unique' => true,
-                'status' => null,
-            ],
-        ]));
+        $projectConfig->set(Cockpit::CONFIG_DEPARTMENT_FIELD_LAYOUT_KEY, [$uid => $fieldLayoutConfig], 'Save the department field layout');
+        $pluginSettings->setDepartmentFieldLayout($fieldLayout);
 
         Craft::$app->getSession()->setNotice(Craft::t('app', 'Plugin settings saved.'));
 

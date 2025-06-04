@@ -16,7 +16,7 @@ use yii\console\ExitCode;
  */
 class JobsController extends Controller
 {
-    public $defaultAction = 'index';
+    public $defaultAction = 'publications';
 
     public $publicationId;
     public $jobRequestId;
@@ -46,14 +46,6 @@ class JobsController extends Controller
             'job-request-id' => 'jobRequestId',
             'publication-id' => 'publicationId',
         ];
-    }
-
-    /**
-     * cockpit/jobs command
-     */
-    public function actionIndex(): int
-    {
-        return ExitCode::OK;
     }
 
     /**
@@ -87,8 +79,6 @@ class JobsController extends Controller
         try {
             // Get the ID from command line options
             $id = $this->publicationId;
-
-            Console::stdout('Start publication fetch ' . $id . PHP_EOL, Console::FG_CYAN);
 
             if (!$id) {
                 Craft::error('Publication ID (as --id=x) is required');
@@ -159,7 +149,7 @@ class JobsController extends Controller
             return ExitCode::OK;
 
         } catch (\Exception $e) {
-            Console::stderr('   > Error on fetching publication: '.$e->getMessage() . PHP_EOL);
+            Console::stderr('   > Error on deleting publication: '.$e->getMessage() . PHP_EOL);
             Craft::error($e->getMessage());
         }
 

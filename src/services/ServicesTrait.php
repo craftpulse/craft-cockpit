@@ -20,7 +20,8 @@ use yii\base\InvalidConfigException;
  * @property Api $api
  * @property CleanupService $cleanup
  * @property JobsService $jobs
- * @property OfficeService $offices
+ * @property DepartmentsService $deparments
+ * @property PostcodeService $postcodes
  * @property MatchField $matchFields
  */
 trait ServicesTrait
@@ -31,10 +32,12 @@ trait ServicesTrait
             'components' => [
                 'api' => Api::class,
                 'cleanup' => CleanupService::class,
+                'contacts' => ContactsService::class,
+                'departments' => DepartmentsService::class,
                 'jobs' => JobsService::class,
                 'map' => MapboxService::class,
                 'matchFields' => MatchField::class,
-                'offices' => OfficeService::class,
+                'postcodes' => PostcodeService::class,
             ],
         ];
     }
@@ -65,6 +68,17 @@ trait ServicesTrait
     }
 
     /**
+     * Returns the contacts service
+     *
+     * @return CleanupService The cleanup service
+     * @throws InvalidConfigException
+     */
+    public function getContacts(): ContactsService
+    {
+        return $this->get('contacts');
+    }
+
+    /**
      * Returns the jobs service
      *
      * @return JobsService The jobs service
@@ -76,14 +90,14 @@ trait ServicesTrait
     }
 
     /**
-     * Returns the offices service
+     * Returns the darpartments service
      *
-     * @return OfficeService The offices service
+     * @return DepartmentsService The departments service
      * @throws InvalidConfigException
      */
-    public function getOffices(): OfficeService
+    public function getDepartments(): DepartmentsService
     {
-        return $this->get('offices');
+        return $this->get('departments');
     }
 
     /**
@@ -96,6 +110,18 @@ trait ServicesTrait
     {
         return $this->get('map');
     }
+
+    /**
+     * Returns the postcode service
+     *
+     * @return PostcodeService The postcode service
+     * @throws InvalidConfigException
+     */
+    public function getPostcodes(): PostcodeService
+    {
+        return $this->get('postcodes');
+    }
+
 
     /**
      * Returns the matchField service

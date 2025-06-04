@@ -46,6 +46,7 @@ class Job extends Element
      * @var string|null
      */
     public ?string $type = 'job';
+
     /**
      * @var int
      */
@@ -65,7 +66,11 @@ class Job extends Element
     /**
      * @var string
      */
-    public string $cockpitOfficeId = '';
+    public string $cockpitDepartmentId = '';
+    /**
+     * @var string
+     */
+    public string $cockpitContactId = '';
     /**
      * @var string
      */
@@ -167,7 +172,7 @@ class Job extends Element
      */
     public static function isLocalized(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -198,6 +203,34 @@ class Job extends Element
     public static function find(): ElementQueryInterface
     {
         return Craft::createObject(JobQuery::class, [static::class]);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getSupportedSites(): array
+    {
+        return Cockpit::$plugin->getSettings()->jobSiteSettings ?? [];
+    }
+
+    // Public Methods
+    // =========================================================================
+    public function getDepartment(): ?Department
+    {
+        if ($this->cockpitDepartmentId) {
+            return Department::find()->cockpitId($this->cockpitDepartmentId)->one() ?? null;
+        }
+
+        return null;
+    }
+
+    public function getContact(): ?Contact
+    {
+        if ($this->cockpitContactId) {
+            return Contact::find()->cockpitId($this->cockpitContactId)->one() ?? null;
+        }
+
+        return null;
     }
 
     /**
@@ -345,6 +378,18 @@ class Job extends Element
                 'orderBy' => 'elements.id',
                 'attribute' => 'id',
             ],
+            [
+                'label' => Craft::t('app', 'Department'),
+                'orderBy' => 'department',
+                'attribute' => 'department',
+                'defaultDir' => 'desc',
+            ],
+            [
+                'label' => Craft::t('app', 'Address'),
+                'orderBy' => 'address',
+                'attribute' => 'address',
+                'defaultDir' => 'desc',
+            ],
             // ...
         ];
     }
@@ -355,10 +400,12 @@ class Job extends Element
     protected static function defineTableAttributes(): array
     {
         return [
+            'address' => ['label' => Craft::t('app', 'Address')],
             'cockpitId' => ['label' => Craft::t('app', 'Cockpit ID')],
             'companyName' => ['label' => Craft::t('app', 'Company')],
             'dateCreated' => ['label' => Craft::t('app', 'Date Created')],
             'dateUpdated' => ['label' => Craft::t('app', 'Date Updated')],
+            'department' => ['label' => Craft::t('app', 'Department')],
             'expiryDate' => ['label' => Craft::t('app', 'Expiry Date')],
             'id' => ['label' => Craft::t('app', 'ID')],
             'link' => ['label' => Craft::t('app', 'Link'), 'icon' => 'world'],
@@ -368,6 +415,33 @@ class Job extends Element
             'uri' => ['label' => Craft::t('app', 'URI')],
             // ...
         ];
+    }
+
+    public function tableAttributeHtml(string $attribute): string
+    {
+        if ($attribute === 'address') {
+            $address = $this->getAddress()->one();
+
+            if (is_array($address)) {
+                return implode(', ', $address);
+            }
+
+            if (is_object($address)) {
+                if (method_exists($address, '__toString')) {
+                    return (string)$address;
+                }
+                // maybe it's a field value object
+                return json_encode($address);
+            }
+
+            return $address ?? '';
+        }
+
+        if ($attribute === 'department') {
+            return $this->getDepartment()?->title ?? '';
+        }
+
+        return parent::tableAttributeHtml($attribute);
     }
 
     /**
@@ -399,7 +473,7 @@ class Job extends Element
                 'cockpitCompanyId',
                 'cockpitId',
                 'cockpitJobRequestId',
-                'cockpitOfficeId',
+                'cockpitDepartmentId',
                 'companyName',
                 'expiryDate',
                 'openPositions',
@@ -413,7 +487,7 @@ class Job extends Element
                 'cockpitCompanyId',
                 'cockpitId',
                 'cockpitJobRequestId',
-                'cockpitOfficeId',
+                'cockpitDepartmentId',
                 'companyName',
             ], 'required'];
 
@@ -428,22 +502,24 @@ class Job extends Element
      */
     public function getUriFormat(): ?string
     {
-        // If jobs should have URLs, define their URI format here
-        return Cockpit::getInstance()->getSettings()->jobUriFormat;
-    }
+        $settings = Cockpit::getInstance()->getSettings()->jobSiteSettings ?? [];
 
-    /**
-     * @return array|array[]
-     */
-    protected function previewTargets(): array
-    {
-        if ($uriFormat = $this->getUriFormat()) {
-            return [[
-                'urlFormat' => $uriFormat,
-            ]];
+        if (!isset($settings[$this->siteId])) {
+            return null;
         }
 
-        return [];
+        $hasUrls = $settings[$this->siteId]['hasUrl'] ?? false;
+        $uriFormat = $settings[$this->siteId]['uriFormat'] ?? null;
+
+        if (!$hasUrls) {
+            return null;
+        }
+
+        if (!$uriFormat) {
+            return null;
+        }
+
+        return $settings[$this->siteId]['uriFormat'];
     }
 
     /**
@@ -477,24 +553,28 @@ class Job extends Element
      */
     protected function route(): array|string|null
     {
+        // Make sure that the product is actually live
         if (!$this->previewing && $this->getStatus() != self::STATUS_ENABLED) {
             return null;
         }
 
-        $settings = Cockpit::getInstance()->getSettings();
+        // Make sure the product type is set to have URLs for this site
+        $siteId = Craft::$app->getSites()->currentSite->id;
+        $settings = Cockpit::getInstance()->getSettings()->jobSiteSettings ?? [];
 
-        if ($settings->jobUriFormat) {
-            return [
-                'templates/render', [
-                    'template' => $settings->jobTemplate,
-                    'variables' => [
-                        'entry' => $this,
-                    ],
-                ],
-            ];
+        if (!isset($settings[$this->siteId])) {
+            return null;
         }
 
-        return null;
+        return [
+            'templates/render', [
+                'template' => $settings[$siteId]['template'] ?? null,
+                'variables' => [
+                    'entry' => $this,
+                    'job' => $this,
+                ],
+            ],
+        ];
     }
 
     /**
@@ -654,9 +734,10 @@ class Job extends Element
 
             $record->applicationCount = $this->applicationCount;
             $record->cockpitCompanyId = $this->cockpitCompanyId;
+            $record->cockpitContactId = $this->cockpitContactId;
+            $record->cockpitDepartmentId = $this->cockpitDepartmentId;
             $record->cockpitId = $this->cockpitId;
             $record->cockpitJobRequestId = $this->cockpitJobRequestId;
-            $record->cockpitOfficeId = $this->cockpitOfficeId;
             $record->companyName = $this->companyName;
             $record->openPositions = $this->openPositions;
             $record->title = $this->title;

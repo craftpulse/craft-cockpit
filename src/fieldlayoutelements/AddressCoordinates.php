@@ -8,17 +8,18 @@ use craft\commerce\behaviors\CustomerAddressBehavior;
 use craft\elements\Address;
 use craft\fieldlayoutelements\BaseField;
 use craft\helpers\Cp;
+use craftpulse\cockpit\elements\Department;
 use craftpulse\cockpit\elements\Job;
 use yii\base\InvalidArgumentException;
 
-class JobCoordindates extends BaseField
+class AddressCoordinates extends BaseField
 {
     /**
      * @inheritdoc
      */
     public function attribute(): string
     {
-        return 'jobCoordinates';
+        return 'addressCoordinates';
     }
 
     /**
@@ -47,7 +48,7 @@ class JobCoordindates extends BaseField
      */
     protected function defaultLabel(ElementInterface $element = null, bool $static = false): ?string
     {
-        return Craft::t('cockpit', 'Job Coordinates');
+        return Craft::t('cockpit', 'Address Coordinates');
     }
 
     /**
@@ -56,13 +57,13 @@ class JobCoordindates extends BaseField
     protected function inputHtml(?ElementInterface $element = null, bool $static = false): ?string
     {
         if (!$element instanceof Address) {
-            throw new InvalidArgumentException('Job Coordinates can only be used in the address field layout.');
+            throw new InvalidArgumentException('Address coordinates can only be used in the address field layout.');
         }
 
         /** @var Address|CustomerAddressBehavior $element */
         $owner = $element->getOwner();
 
-        if (!$owner instanceof Job) {
+        if (!$owner instanceof Job && !$owner instanceof Department) {
             return null;
         }
 
@@ -73,18 +74,23 @@ class JobCoordindates extends BaseField
         return
             Cp::textHtml([
                 'name' => 'latitude',
-                'value' => $element->latitude,
-                'type' => 'text',
-                'suffix' => Craft::t('cockpit', 'Latitude'),
                 'size' => '50%',
+                'suffix' => Craft::t('cockpit', 'Latitude'),
+                'type' => 'number',
+                'step' => 'any',
+                'min' => -90,
+                'max' => 90,
+                'value' => $element->latitude,
             ]) .
             Cp::textHtml([
                 'name' => 'longitude',
-                'value' => $element->longitude,
-                'placeholder' => 'Longitude',
-                'type' => 'text',
-                'suffix' => Craft::t('cockpit', 'Longitude'),
                 'size' => '50%',
+                'suffix' => Craft::t('cockpit', 'Longitude'),
+                'type' => 'number',
+                'step' => 'any',
+                'min' => -180,
+                'max' => 180,
+                'value' => $element->longitude,
             ]);
     }
 

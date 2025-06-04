@@ -17,6 +17,12 @@ use InvalidArgumentException;
 
 class AddressField extends BaseNativeField
 {
+    /**
+     * @inheritdoc
+     */
+    public string $attribute = 'address';
+    public string $name = 'address';
+
     public bool $mandatory = true;
 
     /**
@@ -27,7 +33,6 @@ class AddressField extends BaseNativeField
     /**
      * @inheritdoc
      */
-    public ?string $name = null;
 
     public string $field = '';
 
