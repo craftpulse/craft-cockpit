@@ -13,7 +13,7 @@
                 {% include '_includes/forms/elementSelect.twig' with {
                     allowAdd: false,
                     allowRemove: false,
-                    elements: element.department ?? [] ? [element.department] : [],
+                    elements: element.department.all() ?? null,
                     elementType: 'craftpulse\\cockpit\\elements\\Department',
                     limit: 1,
                     single: true,
@@ -30,7 +30,7 @@
                 {% include '_includes/forms/elementSelect.twig' with {
                     allowAdd: false,
                     allowRemove: false,
-                    elements: element.contact ?? [] ? [element.contact] : [],
+                    elements: element.contact.all() ?? null,
                     elementType: 'craftpulse\\cockpit\\elements\\Contact',
                     limit: 1,
                     single: true,

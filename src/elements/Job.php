@@ -92,9 +92,21 @@ class Job extends Element
 
     /**
      * @var ElementCollection<Address> Address
-     * @see getAddres()
+     * @see getAddress()
      */
     private ElementCollection $_address;
+
+    /**
+     * @var ElementCollection<Department> Department
+     * @see getDepartment()
+     */
+    private ElementCollection $_department;
+
+    /**
+     * @var ElementCollection<Contact> Contact
+     * @see getContact()
+     */
+    private ElementCollection $_contact;
 
     /**
      * @see getAddressManager()
@@ -215,23 +227,6 @@ class Job extends Element
 
     // Public Methods
     // =========================================================================
-    public function getDepartment(): ?Department
-    {
-        if ($this->cockpitDepartmentId) {
-            return Department::find()->cockpitId($this->cockpitDepartmentId)->one() ?? null;
-        }
-
-        return null;
-    }
-
-    public function getContact(): ?Contact
-    {
-        if ($this->cockpitContactId) {
-            return Contact::find()->cockpitId($this->cockpitContactId)->one() ?? null;
-        }
-
-        return null;
-    }
 
     /**
      * Gets the address.
@@ -252,6 +247,34 @@ class Job extends Element
         }
 
         return $this->_address;
+    }
+
+    public function getDepartment(): ElementCollection
+    {
+        if (!isset($this->_department)) {
+            if (!$this->cockpitDepartmentId) {
+                /** @var ElementCollection<Department> */
+                return ElementCollection::make();
+            }
+
+            $this->_department = Department::find()->cockpitId($this->cockpitDepartmentId)->collect();
+        }
+
+        return $this->_department;
+    }
+
+    public function getContact(): ElementCollection
+    {
+        if (!isset($this->_contact)) {
+            if (!$this->cockpitContactId) {
+                /** @var ElementCollection<Contact> */
+                return ElementCollection::make();
+            }
+
+            $this->_contact = Contact::find()->cockpitId($this->cockpitContactId)->collect();
+        }
+
+        return $this->_contact;
     }
 
     /**
@@ -508,7 +531,7 @@ class Job extends Element
             return null;
         }
 
-        $hasUrls = $settings[$this->siteId]['hasUrl'] ?? false;
+        $hasUrls = $settings[$this->siteId]['hasUrls'] ?? false;
         $uriFormat = $settings[$this->siteId]['uriFormat'] ?? null;
 
         if (!$hasUrls) {
@@ -519,7 +542,7 @@ class Job extends Element
             return null;
         }
 
-        return $settings[$this->siteId]['uriFormat'];
+        return $uriFormat;
     }
 
     /**
