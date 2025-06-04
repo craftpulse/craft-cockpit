@@ -10,6 +10,8 @@
 
 namespace craftpulse\cockpit\services;
 
+use craftpulse\cockpit\assetbundles\cockpit\CockpitCpAsset;
+use nystudio107\pluginvite\services\VitePluginService;
 use yii\base\InvalidConfigException;
 
 /**
@@ -20,9 +22,10 @@ use yii\base\InvalidConfigException;
  * @property Api $api
  * @property CleanupService $cleanup
  * @property JobsService $jobs
- * @property DepartmentsService $deparments
+ * @property DepartmentsService $departments
  * @property PostcodeService $postcodes
  * @property MatchField $matchFields
+ * @property MatchFieldEntries $matchFieldEntries
  */
 trait ServicesTrait
 {
@@ -37,7 +40,18 @@ trait ServicesTrait
                 'jobs' => JobsService::class,
                 'map' => MapboxService::class,
                 'matchFields' => MatchField::class,
+                'matchFieldEntries' => MatchFieldEntries::class,
                 'postcodes' => PostcodeService::class,
+                'vite' => [
+                    'assetClass' => CockpitCpAsset::class,
+                    'checkDevServer' => true,
+                    'useForAllRequests' => true,
+                    'class' => VitePluginService::class,
+                    'devServerInternal' => 'http://craft-cockpit-v5-buildchain-dev:3005',
+                    'devServerPublic' => 'http://localhost:3005',
+                    'errorEntry' => 'src/js/Cockpit.js',
+                    'useDevServer' => true,
+                ],
             ],
         ];
     }
@@ -112,18 +126,6 @@ trait ServicesTrait
     }
 
     /**
-     * Returns the postcode service
-     *
-     * @return PostcodeService The postcode service
-     * @throws InvalidConfigException
-     */
-    public function getPostcodes(): PostcodeService
-    {
-        return $this->get('postcodes');
-    }
-
-
-    /**
      * Returns the matchField service
      *
      * @return MatchField The matchField service
@@ -132,5 +134,27 @@ trait ServicesTrait
     public function getMatchFields(): MatchField
     {
         return $this->get('matchFields');
+    }
+
+    /**
+     * Returns the matchFieldEntries service
+     *
+     * @return MatchFieldEntries The matchFieldEntries service
+     * @throws InvalidConfigException
+     */
+    public function getMatchFieldEntries(): MatchFieldEntries
+    {
+        return $this->get('matchFieldEntries');
+    }
+
+    /**
+     * Returns the postcode service
+     *
+     * @return PostcodeService The postcode service
+     * @throws InvalidConfigException
+     */
+    public function getPostcodes(): PostcodeService
+    {
+        return $this->get('postcodes');
     }
 }

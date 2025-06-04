@@ -14,6 +14,7 @@ use Craft;
 use craft\base\MemoizableArray;
 use craft\db\Query;
 use craft\db\Table as CraftTable;
+use craft\elements\User;
 use craft\enums\PropagationMethod;
 use craft\errors\SiteNotFoundException;
 use craft\errors\StructureNotFoundException;
@@ -48,7 +49,6 @@ use yii\db\Exception;
 
 /**
  * The MatchField service provides APIs for managing match fields.
- *
  */
 class MatchField extends Component
 {
@@ -117,6 +117,7 @@ class MatchField extends Component
      * Returns all of the match fields IDs that are editable by the current user.
      *
      * @return int[] All the editable match fields’ IDs.
+     * @throws Throwable
      */
     public function getEditableMatchFieldIds(): array
     {
@@ -205,6 +206,47 @@ class MatchField extends Component
     public function getAllMatchFields(): array
     {
         return $this->_matchFields()->all();
+    }
+
+    /**
+     * Returns all product type IDs that are creatable by the current user.
+     *
+     * @return array
+     * @throws InvalidConfigException
+     * @throws Throwable
+     */
+    public function getCreatableMatchFieldIds(): array
+    {
+        $creatableIds = [];
+        $user = Craft::$app->getUser()->getIdentity();
+        $allMatchFieldTypes = $this->getAllMatchFields();
+
+        foreach ($allMatchFieldTypes as $matchFieldType) {
+            if ($this->hasPermission($user, $matchFieldType, 'cockpit:create-match-field-entries')) {
+                $creatableIds[] = $matchFieldType->id;
+            }
+        }
+
+        return $creatableIds;
+    }
+
+    /**
+     * Returns all creatable match field types.
+     * @return array
+     * @throws InvalidConfigException
+     */
+    public function getCreatableMatchFields(): array
+    {
+        $creatableMatchFieldTypeIds = $this->getCreatableProductTypeIds();
+        $creatableMatchFieldTypes = [];
+
+        foreach ($this->getAllMatchFields() as $matchFieldTypes) {
+            if (in_array($matchFieldTypes->id, $creatableMatchFieldTypeIds)) {
+                $creatableMatchFieldTypes[] = $matchFieldTypes;
+            }
+        }
+
+        return $creatableMatchFieldTypes;
     }
 
     /**
@@ -764,5 +806,40 @@ class MatchField extends Component
         /** @noinspection PhpIncompatibleReturnTypeInspection */
         /** @var MatchFieldRecord */
         return $query->one() ?? new MatchFieldRecord();
+    }
+
+    /**
+     * Check if user has match field type permission.
+     *
+     * @param User $user
+     * @param MatchFieldModel $matchFieldType
+     * @param string|null $checkPermissionName detailed product type permission.
+     * @return bool
+     */
+    public function hasPermission(User $user, MatchFieldModel $matchFieldType, ?string $checkPermissionName = null): bool
+    {
+        if ($user->admin) {
+            return true;
+        }
+
+        $permissions = Craft::$app->getUserPermissions()->getPermissionsByUserId($user->id);
+
+        $suffix = ':' . $matchFieldType->uid;
+
+        if ($checkPermissionName !== null) {
+            $checkPermissionName = strtolower($checkPermissionName . $suffix);
+            if (!in_array(strtolower($checkPermissionName), $permissions)) {
+                return false;
+            }
+        }
+
+        // Required for create and delete permission.
+        $editMatchFieldType = strtolower('cockpit:edit-match-field-entries' . $suffix);
+
+        if (!in_array($editMatchFieldType, $permissions)) {
+            return false;
+        }
+
+        return true;
     }
 }

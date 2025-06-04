@@ -369,8 +369,14 @@ class Cockpit extends Plugin
                         'cockpit:view-contacts' => [
                             'label' => Craft::t('cockpit', 'View contacts'),
                         ],
+                        'cockpit:create-contacts' => [
+                            'label' => Craft::t('cockpit', 'Create contacts'),
+                        ],
                         'cockpit:save-contacts' => [
                             'label' => Craft::t('cockpit', 'Save contacts'),
+                        ],
+                        'cockpit:edit-contacts' => [
+                            'label' => Craft::t('cockpit', 'Edit contacts'),
                         ],
                         'cockpit:duplicate-contacts' => [
                             'label' => Craft::t('cockpit', 'Duplicate contacts'),
@@ -381,8 +387,14 @@ class Cockpit extends Plugin
                         'cockpit:view-jobs' => [
                             'label' => Craft::t('cockpit', 'View jobs'),
                         ],
+                        'cockpit:create-jobs' => [
+                            'label' => Craft::t('cockpit', 'Create jobs'),
+                        ],
                         'cockpit:save-jobs' => [
                             'label' => Craft::t('cockpit', 'Save jobs'),
+                        ],
+                        'cockpit:edit-jobs' => [
+                            'label' => Craft::t('cockpit', 'Edit jobs'),
                         ],
                         'cockpit:duplicate-jobs' => [
                             'label' => Craft::t('cockpit', 'Duplicate jobs'),
@@ -393,20 +405,32 @@ class Cockpit extends Plugin
                         'cockpit:view-offices' => [
                             'label' => Craft::t('cockpit', 'View offices'),
                         ],
+                        'cockpit:create-offices' => [
+                            'label' => Craft::t('cockpit', 'Create offices'),
+                        ],
                         'cockpit:save-offices' => [
-                            'label' => Craft::t('cockpit', 'View offices'),
+                            'label' => Craft::t('cockpit', 'Save offices'),
+                        ],
+                        'cockpit:edit-offices' => [
+                            'label' => Craft::t('cockpit', 'Edit offices'),
                         ],
                         'cockpit:duplicate-offices' => [
                             'label' => Craft::t('cockpit', 'Duplicate offices'),
                         ],
                         'cockpit:delete-offices' => [
-                            'label' => Craft::t('cockpit', 'View offices'),
+                            'label' => Craft::t('cockpit', 'Delete offices'),
                         ],
                         'cockpit:view-departments' => [
                             'label' => Craft::t('cockpit', 'View departments'),
                         ],
+                        'cockpit:create-departments' => [
+                            'label' => Craft::t('cockpit', 'Create departments'),
+                        ],
                         'cockpit:save-departments' => [
                             'label' => Craft::t('cockpit', 'Save departments'),
+                        ],
+                        'cockpit:edit-departments' => [
+                            'label' => Craft::t('cockpit', 'Edit departments'),
                         ],
                         'cockpit:duplicate-departments' => [
                             'label' => Craft::t('cockpit', 'Duplicate departments'),
@@ -414,16 +438,22 @@ class Cockpit extends Plugin
                         'cockpit:delete-departments' => [
                             'label' => Craft::t('cockpit', 'Delete departments'),
                         ],
-                        'cockpit:view:match-field-entries' => [
+                        'cockpit:view-match-field-entries' => [
                             'label' => Craft::t('cockpit', 'View match fields'),
                         ],
-                        'cockpit:save:match-field-entries' => [
+                        'cockpit:create-match-field-entries' => [
+                            'label' => Craft::t('cockpit', 'Create match fields'),
+                        ],
+                        'cockpit:save-match-field-entries' => [
                             'label' => Craft::t('cockpit', 'Save match fields'),
                         ],
-                        'cockpit:duplicate:match-field-entries' => [
+                        'cockpit:edit-match-field-entries' => [
+                            'label' => Craft::t('cockpit', 'Edit match fields'),
+                        ],
+                        'cockpit:duplicate-match-field-entries' => [
                             'label' => Craft::t('cockpit', 'Duplicate match fields'),
                         ],
-                        'cockpit:delete:match-field-entries' => [
+                        'cockpit:delete-match-field-entries' => [
                             'label' => Craft::t('cockpit', 'Delete match fields'),
                         ],
                         // @TODO: add all the setting permissions
