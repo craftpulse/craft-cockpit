@@ -155,4 +155,10 @@ class JobsController extends Controller
 
         return ExitCode::DATAERR;
     }
+
+    public function actionTestApplication(): void
+    {
+        Console::stdout('Start apply for job'. PHP_EOL, Console::FG_CYAN);
+        Cockpit::$plugin->getApplication()->applyForJob();
+    }
 }
