@@ -1,4 +1,12 @@
 {% extends '_layouts/elementindex' %}
 {% set title = 'Match field entries'|t('app') %}
 {% set elementType = 'craftpulse\\cockpit\\elements\\MatchFieldEntry' %}
+{% set selectedTab = 'match-field-entries' %}
+{% set selectedSubnavItem = 'match-field-entries' %}
 {% set canHaveDrafts = true %}
+
+{% if matchFieldTypeHandle is defined %}
+    {% js %}
+        window.defaultMatchFieldTypeHandle = '{{ matchFieldTypeHandle }}';
+    {% endjs %}
+{% endif %}

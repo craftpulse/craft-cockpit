@@ -12,6 +12,10 @@ namespace craftpulse\cockpit;
 
 use Craft;
 use craft\base\Element;
+use craft\elements\Address;
+use craft\elements\Entry;
+use craft\events\DefineBehaviorsEvent;
+use craft\events\DefineFieldLayoutFieldsEvent;
 use craft\events\DefineAttributeHtmlEvent;
 use craft\events\DefineHtmlEvent;
 use craftpulse\cockpit\base\PluginTrait;
@@ -186,13 +190,6 @@ class Cockpit extends Plugin
             $editableSettings = false;
         }
 
-        if ($currentUser->can('cockpit:view-contacts')) {
-            $subNavs['contacts'] = [
-                'label' => Craft::t('cockpit', 'Contacts'),
-                'url' => 'cockpit/contacts',
-            ];
-        }
-
         if ($currentUser->can('cockpit:view-jobs')) {
             $subNavs['jobs'] = [
                 'label' => Craft::t('cockpit', 'Jobs'),
@@ -211,6 +208,20 @@ class Cockpit extends Plugin
             $subNavs['postcodes'] = [
                 'label' => 'Postcode Mapping',
                 'url' => 'cockpit/postcodes',
+            ];
+        }
+
+        if ($currentUser->can('cockpit:view-contacts')) {
+            $subNavs['contacts'] = [
+                'label' => Craft::t('cockpit', 'Contacts'),
+                'url' => 'cockpit/contacts',
+            ];
+        }
+
+        if ($currentUser->can('cockpit:view-match-field-entries')) {
+            $subNavs['match-field-entries'] = [
+                'label' => Craft::t('cockpit', 'Match field entries'),
+                'url' => 'cockpit/match-field-entries',
             ];
         }
 
@@ -300,6 +311,8 @@ class Cockpit extends Plugin
                 $event->rules['cockpit/settings/matchfields'] = 'cockpit/match-fields/match-field-index';
                 $event->rules['cockpit/settings/matchfields/<matchFieldId:\d+>'] = 'cockpit/match-fields/edit-match-field';
                 $event->rules['cockpit/settings/matchfields/new'] = 'cockpit/match-fields/edit-match-field';
+                $event->rules['cockpit/match-field-entries'] = ['template' => 'cockpit/match-field-entries/_index.twig'];
+                $event->rules['cockpit/match-field-entries/<elementId:\\d+>'] = 'elements/edit';
 
                 // Contact Elements
                 $event->rules['cockpit/settings/contacts'] = 'cockpit/contacts/edit-settings';
@@ -317,11 +330,12 @@ class Cockpit extends Plugin
                 $event->rules['cockpit/departments'] = ['template' => 'cockpit/departments/_index.twig'];
                 $event->rules['cockpit/departments/<elementId:\\d+>'] = 'elements/edit';
 
+                // Office Elements
+                $event->rules['cockpit/offices'] = ['template' => 'cockpit/offices/_index.twig'];
+                $event->rules['cockpit/offices/<elementId:\\d+>'] = 'elements/edit';
+
                 // Postcodes
                 $event->rules['cockpit/postcodes'] = 'cockpit/postcodes/postcode-mapping';
-
-                /*$event->rules['match-field-entries'] = ['template' => 'cockpit/match-field-entries/_index.twig'];
-                $event->rules['match-field-entries/<elementId:\\d+>'] = 'elements/edit';*/
             }
         );
     }
@@ -352,32 +366,72 @@ class Cockpit extends Plugin
                 $event->permissions[] = [
                     'heading' => 'Cockpit',
                     'permissions' => [
-                        'cockpit:contacts' => [
-                            'label' => Craft::t('cockpit', 'Contacts.'),
+                        'cockpit:view-contacts' => [
+                            'label' => Craft::t('cockpit', 'View contacts'),
                         ],
-                        'cockpit:jobs' => [
-                            'label' => Craft::t('cockpit', 'View Jobs.'),
+                        'cockpit:save-contacts' => [
+                            'label' => Craft::t('cockpit', 'Save contacts'),
+                        ],
+                        'cockpit:duplicate-contacts' => [
+                            'label' => Craft::t('cockpit', 'Duplicate contacts'),
+                        ],
+                        'cockpit:delete-contacts' => [
+                            'label' => Craft::t('cockpit', 'Delete contacts'),
+                        ],
+                        'cockpit:view-jobs' => [
+                            'label' => Craft::t('cockpit', 'View jobs'),
                         ],
                         'cockpit:save-jobs' => [
-                            'label' => Craft::t('cockpit', 'Save Jobs.'),
+                            'label' => Craft::t('cockpit', 'Save jobs'),
+                        ],
+                        'cockpit:duplicate-jobs' => [
+                            'label' => Craft::t('cockpit', 'Duplicate jobs'),
                         ],
                         'cockpit:delete-jobs' => [
-                            'label' => Craft::t('cockpit', 'Delete Jobs.'),
+                            'label' => Craft::t('cockpit', 'Delete jobs'),
                         ],
-                        'cockpit:departments' => [
-                            'label' => Craft::t('cockpit', 'View Departments.'),
+                        'cockpit:view-offices' => [
+                            'label' => Craft::t('cockpit', 'View offices'),
+                        ],
+                        'cockpit:save-offices' => [
+                            'label' => Craft::t('cockpit', 'View offices'),
+                        ],
+                        'cockpit:duplicate-offices' => [
+                            'label' => Craft::t('cockpit', 'Duplicate offices'),
+                        ],
+                        'cockpit:delete-offices' => [
+                            'label' => Craft::t('cockpit', 'View offices'),
+                        ],
+                        'cockpit:view-departments' => [
+                            'label' => Craft::t('cockpit', 'View departments'),
                         ],
                         'cockpit:save-departments' => [
-                            'label' => Craft::t('cockpit', 'Save Departments.'),
+                            'label' => Craft::t('cockpit', 'Save departments'),
+                        ],
+                        'cockpit:duplicate-departments' => [
+                            'label' => Craft::t('cockpit', 'Duplicate departments'),
                         ],
                         'cockpit:delete-departments' => [
-                            'label' => Craft::t('cockpit', 'Delete Departments.'),
+                            'label' => Craft::t('cockpit', 'Delete departments'),
                         ],
+                        'cockpit:view:match-field-entries' => [
+                            'label' => Craft::t('cockpit', 'View match fields'),
+                        ],
+                        'cockpit:save:match-field-entries' => [
+                            'label' => Craft::t('cockpit', 'Save match fields'),
+                        ],
+                        'cockpit:duplicate:match-field-entries' => [
+                            'label' => Craft::t('cockpit', 'Duplicate match fields'),
+                        ],
+                        'cockpit:delete:match-field-entries' => [
+                            'label' => Craft::t('cockpit', 'Delete match fields'),
+                        ],
+                        // @TODO: add all the setting permissions
                         'cockpit:settings' => [
-                            'label' => Craft::t('cockpit', 'Manage plugin settings.'),
+                            'label' => Craft::t('cockpit', 'Manage plugin settings'),
                         ],
                         'cockpit:settings-matchfields' => [
-                            'label' => Craft::t('cockpit', 'Manage matchfields.'),
+                            'label' => Craft::t('cockpit', 'Manage match fields.'),
                         ],
                         'cockpit:postcode-mapping' => [
                             'label' => Craft::t('ats', 'Manage the Postcode code mapping.'),

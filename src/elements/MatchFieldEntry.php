@@ -9,21 +9,28 @@ use craft\base\ExpirableElementInterface;
 use craft\base\Iconic;
 use craft\base\NestedElementInterface;
 use craft\base\NestedElementTrait;
+use craft\db\Query;
+use craft\db\Table as CraftTable;
 use craft\elements\User;
 use craft\elements\conditions\ElementConditionInterface;
-use craft\elements\db\ElementQueryInterface;
 use craft\enums\Color;
+use craft\errors\OperationAbortedException;
+use craft\helpers\Db;
 use craft\helpers\UrlHelper;
 use craft\models\FieldLayout;
 use craft\services\ElementSources;
+use craft\services\Structures;
 use craft\web\CpScreenResponseBehavior;
 
 use craftpulse\cockpit\Cockpit;
+use craftpulse\cockpit\db\Table;
 use craftpulse\cockpit\elements\conditions\MatchFieldEntryCondition;
 use craftpulse\cockpit\elements\db\MatchFieldEntryQuery;
 use craftpulse\cockpit\models\MatchField as MatchFieldModel;
+use craftpulse\cockpit\records\MatchFieldEntry as MatchFieldEntryRecord;
 
 use DateTime;
+use Exception;
 use Throwable;
 use yii\base\InvalidConfigException;
 use yii\web\Response;
@@ -42,8 +49,6 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
 
     // Public Properties
     // =========================================================================
-
-    public ?DateTime $expiryDate = null;
 
     public const STATUS_ENABLED = 'enabled';
 
@@ -161,8 +166,16 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
 
         if ($context === ElementSources::CONTEXT_INDEX) {
             $matchFields = Cockpit::$plugin->getMatchFields()->getEditableMatchFields();
+            $editable = true;
         } else {
             $matchFields = Cockpit::$plugin->getMatchFields()->getAllMatchFields();
+            $editable = false;
+        }
+
+        $matchFieldIds = [];
+
+        foreach ($matchFields as $matchField) {
+            $matchFieldIds[] = $matchField->id;
         }
 
         foreach ($matchFields as $matchField) {
@@ -170,7 +183,10 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
                 'key' => 'matchfield:' . $matchField->uid,
                 'label' => Craft::t('site', $matchField->name),
                 'data' => ['handle' => $matchField->handle],
-                'criteria' => ['groupId' => $matchField->id],
+                'criteria' => [
+                    'matchFieldId' => $matchFieldIds,
+                    'editable' => $editable,
+                ],
                 'structureId' => $matchField->structureId,
                 'structureEditable' => Craft::$app->getRequest()->getIsConsoleRequest() || Craft::$app->getUser()->checkPermission("cockpit:view-match-fields:$matchField->uid"),
             ];
@@ -258,12 +274,26 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
         ];
     }
 
-    protected function defineRules(): array
-    {
-        return array_merge(parent::defineRules(), [
-            // ...
-        ]);
-    }
+    /**
+     * @var DateTime|null Post date
+     */
+    public ?DateTime $postDate = null;
+
+    /**
+     * @var DateTime|null Expiry date
+     */
+    public ?DateTime $expiryDate = null;
+
+    /**
+     * @var int|null Match field ID
+     */
+    public ?int $matchFieldId = null;
+
+    /**
+     * @var bool Whether the category was deleted along with its group
+     * @see beforeDelete()
+     */
+    public bool $deletedWithGroup = false;
 
     public function getUriFormat(): ?string
     {
@@ -308,6 +338,9 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
         ];
     }
 
+    /**
+     * @inheritdoc
+     */
     public function canView(User $user): bool
     {
         if (parent::canView($user)) {
@@ -317,6 +350,9 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
         return $user->can('cockpit:view-match-field-entries');
     }
 
+    /**
+     * @inheritdoc
+     */
     public function canSave(User $user): bool
     {
         if (parent::canSave($user)) {
@@ -326,6 +362,9 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
         return $user->can('cockpit:save-match-field-entries');
     }
 
+    /**
+     * @inheritdoc
+     */
     public function canDuplicate(User $user): bool
     {
         if (parent::canDuplicate($user)) {
@@ -335,6 +374,9 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
         return $user->can('cockpit:duplicate-match-field-entries');
     }
 
+    /**
+     * @inheritdoc
+     */
     public function canDelete(User $user): bool
     {
         if (parent::canSave($user)) {
@@ -344,16 +386,25 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
         return $user->can('cockpit:delete-match-field-entries');
     }
 
+    /**
+     * @inheritdoc
+     */
     public function canCreateDrafts(User $user): bool
     {
         return true;
     }
 
+    /**
+     * @inheritdoc
+     */
     protected function cpEditUrl(): ?string
     {
         return sprintf('match-field-entries/%s', $this->getCanonicalId());
     }
 
+    /**
+     * @inheritdoc
+     */
     public function getPostEditUrl(): ?string
     {
         return UrlHelper::cpUrl('match-field-entries');
@@ -371,6 +422,9 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
         }
     }
 
+    /**
+     * @inheritdoc
+     */
     public function prepareEditScreen(Response $response, string $containerId): void
     {
         /** @var Response|CpScreenResponseBehavior $response */
@@ -380,15 +434,6 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
                 'url' => UrlHelper::cpUrl('match-field-entries'),
             ],
         ]);
-    }
-
-    public function afterSave(bool $isNew): void
-    {
-        if (!$this->propagating) {
-            // todo: update the `matchfieldentries` table
-        }
-
-        parent::afterSave($isNew);
     }
 
     /**
@@ -416,7 +461,7 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
     }
 
     /**
-     * Returns the match field.
+     * Returns the match field entry type
      *
      * @return MatchFieldModel
      * @throws InvalidConfigException if [[groupId]] is missing or invalid
@@ -427,12 +472,247 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
             throw new InvalidConfigException('Match field is missing its match field ID');
         }
 
-        $matchFields = Cockpit::$plugin->getMatchFields()->getMatchFieldById($this->matchFieldId);
+        $matchField = Cockpit::$plugin->getMatchFields()->getMatchFieldById($this->matchFieldId);
 
-        if (!$matchFields) {
+        if (!$matchField) {
             throw new InvalidConfigException('Invalid match field ID: ' . $this->matchFieldId);
         }
 
-        return $matchFields;
+        return $matchField;
+    }
+
+    // Events
+    // -------------------------------------------------------------------------
+
+    /**
+     * @inheritdoc
+     * @throws Exception if reasons
+     * @throws InvalidConfigException
+     */
+    public function beforeSave(bool $isNew): bool
+    {
+        // Set the structure ID for Element::attributes() and afterSave()
+        $this->structureId = $this->getMatchField()->structureId;
+
+        // Has the match field been assigned a new parent?
+        if (!$this->duplicateOf && $this->hasNewParent()) {
+            if ($parentId = $this->getParentId()) {
+                // getCategories - should this fetch my match fields or match field entries?
+                $parentMatchField = Craft::$app->getCategories()->getCategoryById($parentId, $this->siteId, [
+                    'drafts' => null,
+                    'draftOf' => false,
+                ]);
+
+                if (!$parentMatchField) {
+                    throw new InvalidConfigException("Invalid match field ID: $parentId");
+                }
+            } else {
+                $parentMatchField = null;
+            }
+
+            $this->setParent($parentMatchField);
+        }
+
+        return parent::beforeSave($isNew);
+    }
+
+    /**
+     * @inheritdoc
+     * @throws InvalidConfigException
+     * @throws \yii\db\Exception
+     */
+    public function afterSave(bool $isNew): void
+    {
+        if (!$this->propagating) {
+            $matchField = $this->getMatchField();
+
+            // Get the match field entry record
+            if (!$isNew) {
+                $record = MatchFieldEntryRecord::findOne($this->id);
+
+                if (!$record) {
+                    throw new InvalidConfigException("Invalid match field ID: $this->id");
+                }
+            } else {
+                $record = new MatchFieldEntryRecord();
+                $record->id = (int)$this->id;
+            }
+
+            $record->matchFieldId = (int)$this->matchFieldId;
+            $record->save(false);
+
+            if (!$this->duplicateOf) {
+                // Has the parent changed?
+                if ($this->hasNewParent()) {
+                    $this->_placeInStructure($isNew, $matchField);
+                }
+
+                // Update the category's descendants, who may be using this category's URI in their own URIs
+                if (!$isNew && $this->getIsCanonical()) {
+                    Craft::$app->getElements()->updateDescendantSlugsAndUris($this, true, true);
+                }
+            }
+        }
+
+        parent::afterSave($isNew);
+    }
+
+    /**
+     * @throws \yii\base\Exception
+     */
+    private function _placeInStructure(bool $isNew, MatchFieldModel $group): void
+    {
+        $parentId = $this->getParentId();
+        $structuresService = Craft::$app->getStructures();
+
+        // If this is a provisional draft and its new parent matches the canonical entry’s, just drop it from the structure
+        if ($this->isProvisionalDraft) {
+            $canonicalParentId = self::find()
+                ->select(['elements.id'])
+                ->ancestorOf($this->getCanonicalId())
+                ->ancestorDist(1)
+                ->status(null)
+                ->scalar();
+
+            if ($parentId == $canonicalParentId) {
+                $structuresService->remove($this->structureId, $this);
+                return;
+            }
+        }
+
+        $mode = $isNew ? Structures::MODE_INSERT : Structures::MODE_AUTO;
+
+        if (!$parentId) {
+            if ($group->defaultPlacement === MatchFieldModel::DEFAULT_PLACEMENT_BEGINNING) {
+                $structuresService->prependToRoot($this->structureId, $this, $mode);
+            } else {
+                $structuresService->appendToRoot($this->structureId, $this, $mode);
+            }
+        } else {
+            if ($group->defaultPlacement === MatchFieldModel::DEFAULT_PLACEMENT_BEGINNING) {
+                $structuresService->prepend($this->structureId, $this, $this->getParent(), $mode);
+            } else {
+                $structuresService->append($this->structureId, $this, $this->getParent(), $mode);
+            }
+        }
+    }
+
+    /**
+     * @inheritdoc
+     * @throws \yii\db\Exception
+     */
+    public function beforeDelete(): bool
+    {
+        if (!parent::beforeDelete()) {
+            return false;
+        }
+
+        // Update the category record
+        $data = [
+            'deletedWithGroup' => $this->deletedWithGroup,
+            'parentId' => null,
+        ];
+
+        if ($this->structureId) {
+            // Remember the parent ID, in case the category needs to be restored later
+            $parentId = $this->ancestors()
+                ->ancestorDist(1)
+                ->status(null)
+                ->select(['elements.id'])
+                ->scalar();
+            if ($parentId) {
+                $data['parentId'] = $parentId;
+            }
+        }
+
+        Db::update(Table::MATCHFIELDS_ENTRIES, $data, [
+            'id' => $this->id,
+        ], [], false);
+
+        return true;
+    }
+
+    /**
+     * @inheritdoc
+     * @throws InvalidConfigException|\yii\base\Exception
+     */
+    public function afterRestore(): void
+    {
+        $structureId = $this->getMatchField()->structureId;
+
+        // Add the match field back into its structure
+        /** @var self|null $parent */
+        $parent = self::find()
+            ->structureId($structureId)
+            ->innerJoin(['j' => Table::MATCHFIELDS_ENTRIES], '[[j.parentId]] = [[elements.id]]')
+            ->andWhere(['j.id' => $this->id])
+            ->one();
+
+        if (!$parent) {
+            Craft::$app->getStructures()->appendToRoot($structureId, $this);
+        } else {
+            Craft::$app->getStructures()->append($structureId, $this, $parent);
+        }
+
+        parent::afterRestore();
+    }
+
+    /**
+     * @inheritdoc
+     * @param int $structureId
+     * @throws InvalidConfigException
+     * @throws OperationAbortedException
+     * @throws \yii\db\Exception
+     */
+    public function afterMoveInStructure(int $structureId): void
+    {
+        // Was the category moved within its group's structure?
+        if ($this->getMatchField()->structureId == $structureId) {
+            // Update its URI
+            Craft::$app->getElements()->updateElementSlugAndUri($this, true, true, true);
+
+            // Make sure that each of the category's ancestors are related wherever the category is related
+            $newRelationValues = [];
+
+            $ancestorIds = $this->ancestors()
+                ->status(null)
+                ->ids();
+
+            $sources = (new Query())
+                ->select(['fieldId', 'sourceId', 'sourceSiteId'])
+                ->from([CraftTable::RELATIONS])
+                ->where(['targetId' => $this->id])
+                ->all();
+
+            foreach ($sources as $source) {
+                $existingAncestorRelations = (new Query())
+                    ->select(['targetId'])
+                    ->from([CraftTable::RELATIONS])
+                    ->where([
+                        'fieldId' => $source['fieldId'],
+                        'sourceId' => $source['sourceId'],
+                        'sourceSiteId' => $source['sourceSiteId'],
+                        'targetId' => $ancestorIds,
+                    ])
+                    ->column();
+
+                $missingAncestorRelations = array_diff($ancestorIds, $existingAncestorRelations);
+
+                foreach ($missingAncestorRelations as $categoryId) {
+                    $newRelationValues[] = [
+                        $source['fieldId'],
+                        $source['sourceId'],
+                        $source['sourceSiteId'],
+                        $categoryId,
+                    ];
+                }
+            }
+
+            if (!empty($newRelationValues)) {
+                Db::batchInsert(CraftTable::RELATIONS, ['fieldId', 'sourceId', 'sourceSiteId', 'targetId'], $newRelationValues);
+            }
+        }
+
+        parent::afterMoveInStructure($structureId);
     }
 }
