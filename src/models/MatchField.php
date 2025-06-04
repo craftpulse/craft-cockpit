@@ -111,6 +111,11 @@ class MatchField extends Model implements
     public bool $enableVersioning = true;
 
     /**
+     * @var bool trigger API data fetch
+     */
+    public bool $syncMatchFields = true;
+
+    /**
      * @var PropagationMethod Propagation method
      *
      * This will be set to one of the following:
@@ -235,6 +240,7 @@ class MatchField extends Model implements
         $fieldLayout = $this->getFieldLayout();
         $fieldLayout->reservedFieldHandles = [
             'matchfield',
+            'cockpitId',
         ];
 
         if (!$fieldLayout->validate()) {

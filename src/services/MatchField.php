@@ -240,6 +240,40 @@ class MatchField extends Component
     }
 
     /**
+     * Returns a match field entry by its ID.
+     *
+     * @param int $matchFieldId
+     * @param int|int[]|string|null $siteId
+     * @param array $criteria
+     * @return MatchFieldModel|null
+     */
+    public function getMatchFieldEntryById(int $matchFieldId, mixed $siteId = null, array $criteria = []): ?MatchFieldModel
+    {
+        if (!$matchFieldId) {
+            return null;
+        }
+
+        // Get the structure ID
+        if (!isset($criteria['structureId'])) {
+            $criteria['structureId'] = (new Query())
+                ->select(['cockpit_matchfields.structureId'])
+                ->from(['cockpit_matchfields_entries' => Table::MATCHFIELDS_ENTRIES])
+                ->innerJoin(['cockpit_matchfields' => Table::MATCHFIELDS], '[[cockpit_matchfields.id]] = [[cockpit_matchfields_entries.matchFieldId]]')
+                ->where(['cockpit_matchfields_entries.id' => $matchFieldId])
+                ->scalar();
+        }
+
+        // All match fields are part of a structure
+        if (!$criteria['structureId']) {
+            return null;
+        }
+
+        //  return Craft::$app->getElements()->getElementById($matchFieldId, MatchFieldEntry::class, $siteId, $criteria);
+
+        return $this->_matchFields()->firstWhere('id', $matchFieldId);
+    }
+
+    /**
      * Gets a match field by its UID.
      *
      * @param string $uid
@@ -643,7 +677,6 @@ class MatchField extends Component
                 'name' => $label,
                 'url' => $matchField->getCpEditUrl(),
                 'handle' => $matchField->handle,
-                // @TODO: add type data from API
                 'type' => $matchField->type,
             ];
         }

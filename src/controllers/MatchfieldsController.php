@@ -21,6 +21,8 @@ use craftpulse\cockpit\errors\MatchFieldNotFoundException;
 use craftpulse\cockpit\models\MatchField as MatchFieldModel;
 use craftpulse\cockpit\models\MatchField_SiteSettings as MatchField_SiteSettingsModel;
 
+use craftpulse\cockpit\models\SettingsModel;
+use Exception;
 use GuzzleHttp\Exception\GuzzleException;
 use Throwable;
 use yii\base\ExitException;
@@ -34,6 +36,21 @@ use yii\web\Response;
 class MatchFieldsController extends Controller
 {
     private bool $readOnly;
+
+    /**
+     * @var SettingsModel
+     */
+    private SettingsModel $settings;
+
+    /**
+     * @inheritdoc
+     * @throws Exception
+     */
+    public function init(): void
+    {
+        parent::init();
+        $this->settings = Cockpit::$plugin->settings;
+    }
 
     /**
      * @inheritdoc
@@ -64,6 +81,7 @@ class MatchFieldsController extends Controller
      * @param array $variables
      * @return Response The rendering result
      * @throws InvalidConfigException
+     * @throws Throwable
      */
     public function actionMatchFieldIndex(): Response
     {
@@ -87,6 +105,7 @@ class MatchFieldsController extends Controller
         $variables['title'] = $templateTitle;
         $variables['readOnly'] = $this->readOnly;
         $variables['docTitle'] = "{$pluginName} - {$templateTitle}";
+        $variables['fullPageForm'] = true;
         $variables['crumbs'] = [
             [
                 'label' => $pluginName,
@@ -145,11 +164,15 @@ class MatchFieldsController extends Controller
             $variables['title'] = Craft::t('cockpit', 'Create a new match field');
         }
 
-        // This needs to fetch data from the API
-        $typeOptions = Cockpit::$plugin->getApi()->getMatchFieldTypes();
+        $typeOptions = null;
 
-        if (!$matchField->type) {
-            $matchField->type = $typeOptions->keys()->first();
+        // This needs to fetch data from the API - need to safeguard this!
+        if ($this->settings->apiKey && $this->settings->apiUrl) {
+            $typeOptions = Cockpit::$plugin->getApi()->getMatchFieldTypes();
+
+            if (!$matchField->type) {
+                $matchField->type = $typeOptions->keys()->first();
+            }
         }
 
         $variables['matchField'] = $matchField;

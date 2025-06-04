@@ -63,29 +63,29 @@ class MatchField_SiteSettings extends Model
     /**
      * @var MatchField|null
      */
-    private ?MatchField $_matchfield = null;
+    private ?MatchField $_matchField = null;
 
     /**
-     * Returns the matchfield.
+     * Returns the match field.
      *
      * @return MatchField
      * @throws InvalidConfigException if [[matchFieldId]] is missing or invalid
      */
     public function getMatchField(): MatchField
     {
-        if (isset($this->_matchfield)) {
-            return $this->_matchfield;
+        if (isset($this->_matchField)) {
+            return $this->_matchField;
         }
 
         if (!$this->matchFieldId) {
             throw new InvalidConfigException('Match field site settings model is missing its match field ID');
         }
 
-        if (($this->_matchfield = Cockpit::$plugin->getMatchFields()->getMatchFieldById($this->matchFieldId)) === null) {
+        if (($this->_matchField = Cockpit::$plugin->getMatchFields()->getMatchFieldById($this->matchFieldId)) === null) {
             throw new InvalidConfigException('Invalid match field ID: ' . $this->matchFieldId);
         }
 
-        return $this->_matchfield;
+        return $this->_matchField;
     }
 
     /**
@@ -95,7 +95,7 @@ class MatchField_SiteSettings extends Model
      */
     public function setMatchField(MatchField $matchField): void
     {
-        $this->_matchfield = $matchField;
+        $this->_matchField = $matchField;
     }
 
     /**

@@ -121,7 +121,6 @@ class Install extends Migration
                     'cockpitJobRequestId' => $this->string()->notNull(),
                     'cockpitOfficeId' => $this->string()->notNull(),
                     'companyName' => $this->string()->notNull(),
-                    'expiryDate' => $this->dateTime(),
                     'openPositions' => $this->integer(),
                 ]
             );
@@ -218,7 +217,7 @@ class Install extends Migration
         $this->createIndex(null, Table::MATCHFIELDS_ENTRIES, ['postDate'], false);
         $this->createIndex(null, Table::MATCHFIELDS_ENTRIES, ['expiryDate'], false);
         $this->createIndex(null, Table::MATCHFIELDS_ENTRIES, ['status'], false);
-        $this->createIndex(null, Table::MATCHFIELDS_ENTRIES, ['matchFieldId'], false);
+        $this->createIndex(null, Table::MATCHFIELDS_ENTRIES, 'matchFieldId', false);
         $this->createIndex(null, Table::MATCHFIELDS_ENTRIES, ['primaryOwnerId'], false);
         $this->createIndex(null, Table::MATCHFIELDS_ENTRIES, ['fieldId'], false);
         $this->createIndex(null, Table::MATCHFIELDS_SITES, ['matchFieldId', 'siteId'], true);
