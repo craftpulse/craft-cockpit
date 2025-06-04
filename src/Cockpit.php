@@ -341,7 +341,7 @@ class Cockpit extends Plugin
 
                 // User
                 $event->rules['users/<userId:\d+>/cockpit'] = 'cockpit/candidate/index';
-                $event->rules['myaccount/cockpit'] = 'cockpit/candidate/index';
+                $event->rules['myaccount/cockpit'] = 'cockpit/candidate/current';
             }
         );
     }

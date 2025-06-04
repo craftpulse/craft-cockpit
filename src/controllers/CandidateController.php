@@ -41,7 +41,7 @@ class CandidateController extends BaseFrontEndController
             'name' => 'cockpitId',
             'id' => 'cockpitId',
             'type' => 'text',
-            'value' => $candidate ? $candidate->cockpitId : null,
+            'value' => $candidate->cockpitId ?? null,
         ]);
 
         $content = Cp::fieldHtml($input, [
@@ -54,6 +54,43 @@ class CandidateController extends BaseFrontEndController
 
         return $response->contentHtml($content);
     }
+
+    /**
+     * cockpit/user action
+     */
+    public function actionCurrent(?int $userId = null): Response
+    {
+        $user = Craft::$app->getUser()->getIdentity();
+        $userId = $user->id;
+
+        /** @var Response|CpScreenResponseBehavior $response */
+        $response = $this->asEditUserScreen($user, self::SCREEN_COCKPIT);
+
+        // Set the form action to your custom save route
+        $response->action('cockpit/candidate/save');
+
+        $candidate = Cockpit::$plugin->getCandidates()->getCandidateByUserId($userId);
+
+        $input = Cp::textHtml([
+            'title' => Craft::t('cockpit', 'Cockpit Candidate ID'),
+            'label' => Craft::t('cockpit', 'Cockpit Candidate ID'),
+            'name' => 'cockpitId',
+            'id' => 'cockpitId',
+            'type' => 'text',
+            'value' => $candidate->cockpitId ?? null,
+        ]);
+
+        $content = Cp::fieldHtml($input, [
+            'label' => Craft::t('cockpit', 'Cockpit Candidate ID'),
+            'instructions' => Craft::t('cockpit', 'Enter the candidate ID associated with this user.'),
+            'id' => 'cockpitCandidateId',
+        ]);
+
+        $content .= '<input type="hidden" name="userId" value="'.$userId.'"/>';
+
+        return $response->contentHtml($content);
+    }
+
     public function actionSave(): Response
     {
         $request = Craft::$app->getRequest();
