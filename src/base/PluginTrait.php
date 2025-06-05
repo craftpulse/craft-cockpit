@@ -80,9 +80,9 @@ trait PluginTrait
 //                case User::class:
 //                    $event->fields[] = [
 //                        'class' => TextField::class,
-//                        'attribute' => 'cockpitCandidateId',
-//                        'name' => 'cockpitCandidateId',
-//                        'mandatory' => false,
+//                        'attribute' => 'cockpitId',
+//                        'name' => 'cockpitId',
+//                        'mandatory' => true,
 //                        'label' => Craft::t('cockpit', 'Cockpit Candidate ID'),
 //                        'width' => '100%',
 //                    ];
