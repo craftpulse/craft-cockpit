@@ -46,7 +46,7 @@ class ContactsService extends Component
         }
 
         // Get contact by ID
-        $contact = Cockpit::$plugin->getApi()->getContactById($id);
+        $contact = Cockpit::$plugin->getApi()->getUserById($id);
 
         if (!$contact) {
             Craft::error('Contact not found');

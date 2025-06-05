@@ -58,7 +58,7 @@ class CandidateController extends BaseFrontEndController
     /**
      * cockpit/user action
      */
-    public function actionCurrent(?int $userId = null): Response
+    public function actionCurrent(): Response
     {
         $user = Craft::$app->getUser()->getIdentity();
         $userId = $user->id;
