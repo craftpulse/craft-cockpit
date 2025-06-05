@@ -11,16 +11,9 @@
 namespace craftpulse\cockpit;
 
 use Craft;
-use craft\base\Element;
 use craft\base\Model;
 use craft\base\Plugin;
-use craft\elements\Address;
-use craft\elements\Entry;
 use craft\elements\User;
-use craft\events\DefineAttributeHtmlEvent;
-use craft\events\DefineBehaviorsEvent;
-use craft\events\DefineFieldLayoutFieldsEvent;
-use craft\events\DefineHtmlEvent;
 use craft\events\PluginEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
@@ -28,6 +21,7 @@ use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\Json;
 use craft\log\MonologTarget;
 use craft\services\Elements;
+use craft\services\Fields;
 use craft\services\Plugins;
 use craft\services\UserPermissions;
 use craft\services\Utilities;
@@ -35,11 +29,12 @@ use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 
 use craftpulse\cockpit\base\PluginTrait;
-use craftpulse\cockpit\behaviors\CandidateBehaviour;
+//use craftpulse\cockpit\behaviors\CandidateBehaviour;
 use craftpulse\cockpit\elements\Contact;
 use craftpulse\cockpit\elements\Department;
 use craftpulse\cockpit\elements\Job;
 use craftpulse\cockpit\elements\MatchFieldEntry;
+use craftpulse\cockpit\fields\MatchFields as MatchFieldsField;
 use craftpulse\cockpit\models\SettingsModel;
 use craftpulse\cockpit\services\ServicesTrait;
 use craftpulse\cockpit\variables\CockpitVariable;
@@ -48,6 +43,7 @@ use Monolog\Formatter\LineFormatter;
 use Psr\Log\LogLevel;
 use Throwable;
 use yii\base\Event;
+use yii\base\InvalidConfigException;
 use yii\base\InvalidRouteException;
 use yii\log\Dispatcher;
 use yii\log\Logger;
@@ -136,6 +132,7 @@ class Cockpit extends Plugin
             $this->_registerElements();
             $this->_registerSidebarPanels();
             $this->_registerUserFields();
+            $this->_registerFieldTypes();
         }
 
         // Log that the plugin has loaded
@@ -276,6 +273,7 @@ class Cockpit extends Plugin
 
     /**
      * @return void
+     * @throws InvalidConfigException
      */
     protected function installEventHandlers(): void
     {
@@ -379,7 +377,6 @@ class Cockpit extends Plugin
             }
         );
     }
-
 
     /**
      * Registers user permissions
@@ -505,6 +502,18 @@ class Cockpit extends Plugin
         Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITIES,
             function(RegisterComponentTypesEvent $event) {
                 //$event->types[] = ???::class;
+            }
+        );
+    }
+
+    /**
+     * Registers Field Types
+     */
+    private function _registerFieldTypes(): void
+    {
+        Event::on(Fields::class, Fields::EVENT_REGISTER_FIELD_TYPES,
+            static function(RegisterComponentTypesEvent $event) {
+                $event->types[] = MatchFieldsField::class;
             }
         );
     }
