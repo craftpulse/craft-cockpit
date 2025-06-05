@@ -313,7 +313,7 @@ class Department extends Element
     {
         $settings = Cockpit::getInstance()->getSettings()->departmentSiteSettings ?? [];
 
-        $hasUrls = $settings[$this->siteId]['hasUrl'] ?? false;
+        $hasUrls = $settings[$this->siteId]['hasUrls'] ?? false;
         $uriFormat = $settings[$this->siteId]['uriFormat'] ?? null;
 
         if (!$hasUrls) {

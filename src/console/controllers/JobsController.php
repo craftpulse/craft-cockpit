@@ -20,6 +20,7 @@ class JobsController extends Controller
 
     public $publicationId;
     public $jobRequestId;
+    public $userId;
 
     public function options($actionID): array
     {
@@ -34,6 +35,8 @@ class JobsController extends Controller
                 break;
             case 'delete-publication':
                 $options[] = 'publicationId';
+            case 'test-application':
+                $options[] = 'userId';
                 break;
         }
 
@@ -45,6 +48,7 @@ class JobsController extends Controller
         return [
             'job-request-id' => 'jobRequestId',
             'publication-id' => 'publicationId',
+            'user-id' => 'userId',
         ];
     }
 
@@ -150,6 +154,44 @@ class JobsController extends Controller
 
         } catch (\Exception $e) {
             Console::stderr('   > Error on deleting publication: '.$e->getMessage() . PHP_EOL);
+            Craft::error($e->getMessage());
+        }
+
+        return ExitCode::DATAERR;
+    }
+
+    public function actionTestApplication(): int
+    {
+        try {
+            // Get the ID from command line options
+            $id = $this->userId ?? null;
+
+            Console::stdout('Start apply for job '.$id. PHP_EOL, Console::FG_CYAN);
+            Cockpit::$plugin->getApplication()->applyForJob($id);
+
+            return ExitCode::OK;
+
+        } catch (\Exception $e) {
+            Console::stderr('   > Error on testing known application: '.$e->getMessage() . PHP_EOL);
+            Craft::error($e->getMessage());
+        }
+
+        return ExitCode::DATAERR;
+    }
+
+    public function actionTestSpontaneousApplication(): int
+    {
+        try {
+            // Get the ID from command line options
+            $id = $this->userId ?? null;
+
+            Console::stdout('Start apply for sponteanous job '.$id. PHP_EOL, Console::FG_CYAN);
+            Cockpit::$plugin->getApplication()->applyForSpontaneousJob($id);
+
+            return ExitCode::OK;
+
+        } catch (\Exception $e) {
+            Console::stderr('   > Error on testing sponteanous application: '.$e->getMessage() . PHP_EOL);
             Craft::error($e->getMessage());
         }
 

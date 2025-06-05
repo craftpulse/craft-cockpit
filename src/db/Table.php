@@ -22,4 +22,5 @@ abstract class Table
     public const MATCHFIELDS_ENTRIES = "{{%cockpit_matchfields_entries}}";
     public const MATCHFIELDS_SITES = "{{%cockpit_matchfields_sites}}";
     public const POSTCODE_MAPPINGS = "{{%cockpit_postcode_mappings}}";
+    public const CANDIDATES = "{{%cockpit_candidates}}";
 }

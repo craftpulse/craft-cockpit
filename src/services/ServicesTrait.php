@@ -20,12 +20,16 @@ use yii\base\InvalidConfigException;
  * @since     5.0.0
  *
  * @property Api $api
+ * @property ApplicationService $application
+ * @property CandidateService $candidates
  * @property CleanupService $cleanup
- * @property JobsService $jobs
+ * @property ContactsService $contacts
  * @property DepartmentsService $departments
- * @property PostcodeService $postcodes
+ * @property JobsService $jobs
+ * @property MapboxService $mapboxService
  * @property MatchField $matchFields
  * @property MatchFieldEntries $matchFieldEntries
+ * @property PostcodeService $postcodes
  */
 trait ServicesTrait
 {
@@ -34,6 +38,8 @@ trait ServicesTrait
         return [
             'components' => [
                 'api' => Api::class,
+                'application' => ApplicationService::class,
+                'candidates' => CandidateService::class,
                 'cleanup' => CleanupService::class,
                 'contacts' => ContactsService::class,
                 'departments' => DepartmentsService::class,
@@ -69,6 +75,29 @@ trait ServicesTrait
     {
         return $this->get('api');
     }
+
+    /**
+     * Returns the api service
+     *
+     * @return Api The api service
+     * @throws InvalidConfigException
+     */
+    public function getApplication(): ApplicationService
+    {
+        return $this->get('application');
+    }
+
+    /**
+     * Returns the candidate service
+     *
+     * @return Api The api service
+     * @throws InvalidConfigException
+     */
+    public function getCandidates(): CandidateService
+    {
+        return $this->get('candidates');
+    }
+
 
     /**
      * Returns the cleanup service

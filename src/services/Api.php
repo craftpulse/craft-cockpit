@@ -232,9 +232,21 @@ class Api extends Component
      * @return Collection|null
      * @throws GuzzleException
      */
-    public function getContactById(string $id): ?Collection
+    public function getUserById(string $id): ?Collection
     {
         return $this->get("Users/$id");
+    }
+
+    /**
+     * Returns the departments by ID
+     *
+     * @param string $id
+     * @return Collection|null
+     * @throws GuzzleException
+     */
+    public function getCandidateById(string $id): ?Collection
+    {
+        return $this->get("Candidates/$id");
     }
 
     /**
@@ -260,6 +272,42 @@ class Api extends Component
     }
 
     /**
+     * Posts an application
+     *
+     * @param array $data
+     * @return Collection|null
+     * @throws GuzzleException
+     */
+    public function postApplication(array $data): ?Collection
+    {
+        return $this->post("Applications", $data);
+    }
+
+    /**
+     * Posts an application
+     *
+     * @param array $data
+     * @return Collection|null
+     * @throws GuzzleException
+     */
+    public function postApplicationKnownCandidate(string $id, array $data): ?Collection
+    {
+        return $this->post("Applications/candidate/$id", $data);
+    }
+
+    /**
+     * Posts an application
+     *
+     * @param array $data
+     * @return Collection|null
+     * @throws GuzzleException
+     */
+    public function postSpontaneousApplication(array $data): ?Collection
+    {
+        return $this->post("CandidateEnrollments", $data);
+    }
+
+    /**
      * @param string $endpoint
      * @param array|null $query
      * @return Response|null
@@ -277,10 +325,10 @@ class Api extends Component
      * @return Response|null
      * @throws GuzzleException
      */
-    public function post(string $endpoint, array $data): ?array
+    public function post(string $endpoint, array $data): ?Collection
     {
-        $response = $this->getClient()->request('GET', $endpoint, ['query' => $data]);
-        return $this->_getContent($response);
+        $response = $this->getClient()->request('POST', $endpoint, ['json' => $data]);
+        return Collection::make($this->_getContent($response))->recursive();
     }
 
     // Private Methods

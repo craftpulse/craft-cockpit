@@ -57,7 +57,8 @@ class AddressCoordinates extends BaseField
     protected function inputHtml(?ElementInterface $element = null, bool $static = false): ?string
     {
         if (!$element instanceof Address) {
-            throw new InvalidArgumentException('Address coordinates can only be used in the address field layout.');
+//            throw new InvalidArgumentException('Address coordinates can only be used in the address field layout.');
+            return null;
         }
 
         /** @var Address|CustomerAddressBehavior $element */
