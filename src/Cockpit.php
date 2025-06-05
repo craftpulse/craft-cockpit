@@ -18,7 +18,9 @@ use craft\events\DefineBehaviorsEvent;
 use craft\events\DefineFieldLayoutFieldsEvent;
 use craft\events\DefineAttributeHtmlEvent;
 use craft\events\DefineHtmlEvent;
+use craft\web\twig\variables\CraftVariable;
 use craftpulse\cockpit\base\PluginTrait;
+use craftpulse\cockpit\variables\CockpitVariable;
 use Monolog\Formatter\LineFormatter;
 use Psr\Log\LogLevel;
 use Throwable;
@@ -286,6 +288,19 @@ class Cockpit extends Plugin
             }
         );
 
+        Event::on(
+            CraftVariable::class,
+            CraftVariable::EVENT_INIT,
+            function(Event $event) {
+                /** @var CraftVariable $variable */
+                $variable = $event->sender;
+                $variable->set('cockpit', [
+                    'class' => CockpitVariable::class,
+                    'viteService' => $this->vite,
+                ]);
+            }
+        );
+
         $this->_registerFieldLayoutListener();
         $this->_registerUserPermissions();
         $this->_registerUtilities();
@@ -311,8 +326,10 @@ class Cockpit extends Plugin
                 $event->rules['cockpit/settings/matchfields'] = 'cockpit/match-fields/match-field-index';
                 $event->rules['cockpit/settings/matchfields/<matchFieldId:\d+>'] = 'cockpit/match-fields/edit-match-field';
                 $event->rules['cockpit/settings/matchfields/new'] = 'cockpit/match-fields/edit-match-field';
-                $event->rules['cockpit/match-field-entries'] = ['template' => 'cockpit/match-field-entries/_index.twig'];
-                $event->rules['cockpit/match-field-entries/<elementId:\\d+>'] = 'elements/edit';
+                $event->rules['cockpit/match-field-entries'] = 'cockpit/match-field-entries/match-field-entry-index';
+                $event->rules['cockpit/match-field-entries/<matchFieldTypeHandle:{handle}>'] = 'cockpit/match-field-entries/match-field-entry-index';
+                $event->rules['cockpit/match-field-entries/<matchFieldType:{handle}>/new'] = 'cockpit/match-field-entries/create';
+                $event->rules['cockpit/match-field-entries/<matchFieldTypeHandle:{handle}>/<elementId:\d+><slug:(?:-[^\/]*)?>'] = 'elements/edit';
 
                 // Contact Elements
                 $event->rules['cockpit/settings/contacts'] = 'cockpit/contacts/edit-settings';

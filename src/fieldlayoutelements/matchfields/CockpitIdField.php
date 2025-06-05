@@ -30,7 +30,7 @@ class CockpitIdField extends TextField
     /**
      * @inheritdoc
      */
-    public string $attribute = 'cockpitFieldId';
+    public string $attribute = 'cockpitId';
 
     /**
      * @var bool Whether the input should get a `readonly` attribute.

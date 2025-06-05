@@ -10,8 +10,8 @@
 
 namespace craftpulse\cockpit\assetbundles\cockpit;
 
-//use ??;
 use craft\web\AssetBundle;
+use craft\web\assets\cp\CpAsset;
 
 /**
  * Class MatchFieldAsset
@@ -23,5 +23,20 @@ use craft\web\AssetBundle;
  */
 class MatchFieldAsset extends AssetBundle
 {
+// Public Methods
+    // =========================================================================
 
+    /**
+     * @inheritdoc
+     */
+    public function init(): void
+    {
+        $this->sourcePath = '@craftpulse/cockpit/web/assets/dist/';
+        $this->depends = [
+            CpAsset::class,
+            CockpitCpAsset::class,
+        ];
+
+        parent::init();
+    }
 }

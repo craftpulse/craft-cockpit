@@ -239,8 +239,9 @@ class MatchField extends Model implements
     {
         $fieldLayout = $this->getFieldLayout();
         $fieldLayout->reservedFieldHandles = [
-            'matchfield',
+            'matchField',
             'cockpitId',
+            'matchFieldId',
         ];
 
         if (!$fieldLayout->validate()) {

@@ -290,6 +290,11 @@ class MatchFieldEntry extends Element implements NestedElementInterface, Expirab
     public ?int $matchFieldId = null;
 
     /**
+     * @var string|null Cockpit ID
+     */
+    public ?string $cockpitId = null;
+
+    /**
      * @var bool Whether the category was deleted along with its group
      * @see beforeDelete()
      */

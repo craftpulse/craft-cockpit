@@ -16,6 +16,7 @@ use yii\db\ActiveQueryInterface;
  * @property int $matchFieldId Group ID
  * @property Element $element Element
  * @property MatchField $matchField Group
+ * @property string $cockpitId
  */
 class MatchFieldEntry extends ActiveRecord
 {

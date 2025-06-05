@@ -189,6 +189,7 @@ class Install extends Migration
                 'deletedWithMatchField' => $this->boolean()->null(),
                 'dateCreated' => $this->dateTime()->notNull(),
                 'dateUpdated' => $this->dateTime()->notNull(),
+                'cockpitId' => $this->string()->notNull()->defaultValue(''),
                 'PRIMARY KEY([[id]])',
             ]);
         }

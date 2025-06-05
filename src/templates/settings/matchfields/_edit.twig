@@ -83,6 +83,14 @@
             disabled: readOnly,
         }) }}
 
+        {{ forms.lightswitchField({
+            label: 'Synchronise the match fields after saving the match field type.'|t('cockpit'),
+            id: 'syncMatchFields',
+            name: 'syncMatchFields',
+            on: matchField.syncMatchFields,
+            disabled: readOnly,
+        }) }}
+
         <hr>
 
         {% set siteRows = [] %}

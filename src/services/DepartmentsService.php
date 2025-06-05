@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Craft;
 use craft\base\Component;
 use craft\elements\Address;
+use craft\errors\ElementNotFoundException;
 use craft\events\ConfigEvent;
 use craft\fieldlayoutelements\TextField;
 use craft\fieldlayoutelements\TitleField;
@@ -23,7 +24,11 @@ use craft\models\FieldLayout;
 use craftpulse\cockpit\Cockpit;
 use craftpulse\cockpit\elements\Department;
 use craftpulse\cockpit\fieldlayoutelements\AddressField;
+use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Collection;
+use Throwable;
+use yii\base\Exception;
+use yii\base\InvalidConfigException;
 
 /**
  * Class DepartmentSerivce
@@ -38,8 +43,11 @@ class DepartmentsService extends Component
     /**
      * @param string $id
      * @return bool
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     * @throws \yii\base\InvalidConfigException
+     * @throws ElementNotFoundException
+     * @throws Exception
+     * @throws GuzzleException
+     * @throws Throwable
+     * @throws InvalidConfigException
      */
     public function fetchDepartmentByCockpitId(string $id): bool
     {
@@ -72,12 +80,11 @@ class DepartmentsService extends Component
     }
 
     /**
-     * @param Collection $publication
+     * @param Collection $data
      * @return bool
-     * @throws \Throwable
-     * @throws \craft\errors\ElementNotFoundException
-     * @throws \yii\base\Exception
-     * @throws \yii\base\InvalidConfigException
+     * @throws Throwable
+     * @throws ElementNotFoundException
+     * @throws Exception
      */
     public function upsertDepartment(Collection $data): bool
     {
@@ -129,7 +136,7 @@ class DepartmentsService extends Component
     /**
      * @param string $cockpitId
      * @return bool
-     * @throws \Throwable
+     * @throws Throwable
      * @throws \yii\base\InvalidConfigException
      */
     public function deleteDepartmentByCockpitId(string $cockpitId): bool
@@ -158,7 +165,7 @@ class DepartmentsService extends Component
     /**
      * @param int $id
      * @return bool
-     * @throws \Throwable
+     * @throws Throwable
      * @throws \yii\base\InvalidConfigException
      */
     public function deleteJobById(int $id): bool

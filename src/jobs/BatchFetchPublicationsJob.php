@@ -1,4 +1,12 @@
 <?php
+/**
+ * Cockpit ATS plugin for Craft CMS
+ *
+ * This plugin fully synchronises with the Cockpit ATS system.
+ *
+ * @link      https://craft-pulse.com
+ * @copyright Copyright (c) 2025 CraftPulse
+ */
 
 namespace craftpulse\cockpit\jobs;
 
@@ -7,15 +15,18 @@ use craftpulse\cockpit\Cockpit;
 use craftpulse\cockpit\models\FetchBatch;
 use craft\queue\BaseBatchedJob;
 use craft\base\Batchable;
+use GuzzleHttp\Exception\GuzzleException;
+use yii\base\InvalidConfigException;
 
+/**
+ * Class BatchFetchPublicationsJob
+ *
+ * @author      CraftPulse
+ * @package     Cockpit
+ * @since       5.0.0
+ */
 class BatchFetchPublicationsJob extends BaseBatchedJob
 {
-    private array $publications = [];
-
-    public function init(): void
-    {
-        parent::init();
-    }
 
     public function batchSize(): int
     {
@@ -25,13 +36,14 @@ class BatchFetchPublicationsJob extends BaseBatchedJob
     public function loadData(): Batchable
     {
         try {
-            $results = Cockpit::$plugin->getApi()->getPublications()['results'] ?? collect([]);
+            $results = Cockpit::$plugin->getApi()->getMatchFieldsByType();
 
             if ($results->isEmpty()) {
                 Craft::error('No publications found');
                 return new FetchBatch([]); // empty batch to avoid failure
             }
 
+            $publications = [];
             $publications = $results->map(fn($p) => [
                 'id' => $p->get('id'),
                 'name' => $p->get('name'),
@@ -47,6 +59,10 @@ class BatchFetchPublicationsJob extends BaseBatchedJob
         }
     }
 
+    /**
+     * @throws GuzzleException
+     * @throws InvalidConfigException
+     */
     public function processItem(mixed $item): void
     {
         $id = $item['id'];

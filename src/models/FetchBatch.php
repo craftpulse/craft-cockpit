@@ -4,11 +4,9 @@ namespace craftpulse\cockpit\models;
 
 use craft\base\Batchable;
 
-class FetchBatch implements Batchable
+readonly class FetchBatch implements Batchable
 {
-    public function __construct(public readonly array $items) {
-
-    }
+    public function __construct(public array $items) {}
 
     public function count(): int
     {

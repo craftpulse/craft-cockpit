@@ -9,6 +9,7 @@ use craft\helpers\Queue;
 use craftpulse\cockpit\Cockpit;
 use craftpulse\cockpit\jobs\BatchFetchDepartmentsJob;
 use yii\console\ExitCode;
+use yii\helpers\BaseConsole;
 
 /**
  * Departments controller
@@ -22,10 +23,8 @@ class DepartmentsController extends Controller
     {
         $options = parent::options($actionID);
         switch ($actionID) {
-            case 'department':
-                $options[] = 'departmentId';
-                break;
             case 'delete-department':
+            case 'department':
                 $options[] = 'departmentId';
                 break;
         }
@@ -71,7 +70,7 @@ class DepartmentsController extends Controller
             // Get the ID from command line options
             $id = $this->departmentId;
 
-            Console::stdout('Start department fetch ' . $id . PHP_EOL, Console::FG_CYAN);
+            Console::stdout('Start department fetch ' . $id . PHP_EOL, BaseConsole::FG_CYAN);
 
             if (!$id) {
                 Craft::error('Department ID (as --id=x) is required');

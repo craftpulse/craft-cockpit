@@ -2,4 +2,11 @@
 
 {% block head %}
     {{ parent() }}
+    {% set tagOptions = {
+        'depends': [
+            'craftpulse\\cockpit\\assetbundles\\cockpit\\CockpitCpAsset'
+        ],
+    } %}
+
+    {{ craft.cockpit.register('src/js/Cockpit.js', false, tagOptions, tagOptions) }}
 {% endblock %}

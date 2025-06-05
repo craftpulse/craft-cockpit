@@ -12,12 +12,14 @@ namespace craftpulse\cockpit\controllers;
 
 use Craft;
 use craft\enums\PropagationMethod;
+use craft\helpers\Queue;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
 
 use craftpulse\cockpit\Cockpit;
 use craftpulse\cockpit\elements\MatchFieldEntry;
 use craftpulse\cockpit\errors\MatchFieldNotFoundException;
+use craftpulse\cockpit\jobs\BatchFetchMatchFieldsJob;
 use craftpulse\cockpit\models\MatchField as MatchFieldModel;
 use craftpulse\cockpit\models\MatchField_SiteSettings as MatchField_SiteSettingsModel;
 use craftpulse\cockpit\models\SettingsModel;
@@ -88,7 +90,7 @@ class MatchFieldsController extends Controller
         // Ensure they have permission to edit the plugin settings
         $currentUser = Craft::$app->getUser()->getIdentity();
         if (!$currentUser->can('cockpit:settings-matchfields')) {
-            throw new ForbiddenHttpException('You do not have permission to view the Matchfield settings.');
+            throw new ForbiddenHttpException('You do not have permission to view the Match field settings.');
         }
 
         $general = Craft::$app->getConfig()->getGeneral();
@@ -259,6 +261,11 @@ class MatchFieldsController extends Controller
             return null;
         }
 
+        // Sync it if the sync is enabled
+        if ($matchField->syncMatchFields) {
+            $this->actionMatchFieldsByType($matchField->type, $matchField->handle);
+        }
+
         $this->setSuccessFlash(Craft::t('app', 'Match field saved.'));
         return $this->redirectToPostedUrl($matchField);
     }
@@ -315,5 +322,34 @@ class MatchFieldsController extends Controller
             'pagination' => $pagination,
             'data' => $tableData,
         ]);
+    }
+
+    /**
+     * fetch all match fields by type from Cockpit
+     * @throws InvalidConfigException
+     */
+    public function actionMatchFieldsByType(string $matchFieldType, string $handle): Response
+    {
+        $matchField = Cockpit::$plugin->getMatchFields()->getMatchFieldByHandle($handle);
+
+        try {
+            // @TODO make ttr custom
+            // @TODO make priority custom
+            Queue::push(
+                job: new BatchFetchMatchFieldsJob([
+                    'type' => $matchFieldType,
+                    'matchFieldId' => $matchField->id,
+                ]),
+                priority: 2,
+                ttr: 1000,
+                queue: Cockpit::$plugin->queue
+            );
+
+            return $this->asSuccess();
+        } catch (\Throwable $e) {
+            Craft::error($e->getMessage(), __METHOD__);
+
+            return $this->asFailure();
+        }
     }
 }

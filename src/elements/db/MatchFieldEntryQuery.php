@@ -2,9 +2,7 @@
 
 namespace craftpulse\cockpit\elements\db;
 
-use Craft;
 use craft\db\Query;
-use craft\db\QueryAbortedException;
 use craft\elements\db\ElementQuery;
 use craft\helpers\ArrayHelper;
 use craft\helpers\Db;
@@ -12,13 +10,10 @@ use craft\helpers\Db;
 use craft\helpers\StringHelper;
 use craftpulse\cockpit\Cockpit;
 use craftpulse\cockpit\db\Table;
-use craftpulse\cockpit\elements\MatchFieldEntry;
 use craftpulse\cockpit\models\MatchField as MatchFieldModel;
 
-use DateTime;
+use Throwable;
 use yii\base\InvalidConfigException;
-use yii\db\Connection;
-use yii\db\Expression;
 
 /**
  * Match Field Entry query
@@ -46,7 +41,13 @@ class MatchFieldEntryQuery extends ElementQuery
     public mixed $matchFieldId = null;
 
     /**
+     * @var mixed The match field ID(s) that the resulting match fields must have in Cockpit.
+     */
+    public mixed $cockpitId = null;
+
+    /**
      * @inheritdoc
+     * @throws InvalidConfigException
      */
     public function __set($name, $value)
     {
@@ -128,8 +129,22 @@ class MatchFieldEntryQuery extends ElementQuery
     }
 
     /**
+     * Narrows the query results based on the match field types the match fields belong to, per the cockpit ID.
+     *
+     * @param mixed $value The property value
+     * @return static self reference
+     * @uses $groupId
+     */
+    public function cockpitId(mixed $value): static
+    {
+        $this->cockpitId = $value;
+        return $this;
+    }
+
+    /**
      * @inheritdoc
      * @throws InvalidConfigException
+     * @throws Throwable
      */
     protected function beforePrepare(): bool
     {
@@ -160,7 +175,7 @@ class MatchFieldEntryQuery extends ElementQuery
     /**
      * Applies the 'editable' param to the query being prepared.
      *
-     * @throws InvalidConfigException
+     * @throws InvalidConfigException|Throwable
      */
     private function _applyEditableParam(): void
     {

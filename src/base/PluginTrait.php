@@ -40,6 +40,7 @@ use craftpulse\cockpit\fieldlayoutelements\matchfields\MatchFieldTitleField;
 
 use craftpulse\cockpit\services\MatchField;
 use yii\base\Event;
+use yii\base\InvalidConfigException;
 
 trait PluginTrait
 {
@@ -64,19 +65,8 @@ trait PluginTrait
                     $event->fields[] = TitleField::class;
                     break;
 
-                case Department::class:
-                    $event->fields[] = TitleField::class;
-                    $event->fields[] = [
-                        'class' => AddressField::class,
-                        'attribute' => 'address',
-                        'name' => 'address',
-                        'mandatory' => true,
-                        'label' => Craft::t('cockpit', 'Address'),
-                        'width' => '100%',
-                    ];
-                    break;
-
                 case Job::class:
+                case Department::class:
                     $event->fields[] = TitleField::class;
                     $event->fields[] = [
                         'class' => AddressField::class,
@@ -98,6 +88,7 @@ trait PluginTrait
 
     /**
      * Register Cockpit’s project config event listeners
+     * @throws InvalidConfigException
      */
     private function _registerProjectConfigEventListeners(): void
     {

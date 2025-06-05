@@ -19,6 +19,7 @@ use craft\web\View;
 use craftpulse\cockpit\Cockpit;
 use craftpulse\cockpit\models\MatchField as MatchFieldModel;
 
+use Throwable;
 use yii\base\InvalidConfigException;
 use yii\web\JqueryAsset;
 
@@ -50,6 +51,7 @@ class CockpitCpAsset extends AssetBundle
     /**
      * @inheritdoc
      * @throws InvalidConfigException
+     * @throws Throwable
      */
     public function registerAssetFiles($view): void
     {
@@ -69,7 +71,7 @@ JS;
     }
 
     /**
-     * @throws InvalidConfigException
+     * @throws InvalidConfigException|Throwable
      */
     private function _cockpitData(): array
     {
