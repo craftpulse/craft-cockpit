@@ -222,6 +222,22 @@ class Install extends Migration
             );
         }
 
+        if(!$this->db->tableExists(Table::CANDIDATES)) {
+            $this->createTable(
+                TABLE::CANDIDATES,
+                [
+                    'id' => $this->primaryKey(),
+                    'dateCreated' => $this->dateTime()->notNull(),
+                    'dateUpdated' => $this->dateTime()->notNull(),
+                    'uid' => $this->uid(),
+                    'userId' => $this->string()->notNull(),
+
+                    'cockpitId' => $this->string()->notNull(),
+                    'userId' => $this->integer()->notNull(),
+                ]
+            );
+        }
+
         return true;
     }
 
@@ -251,6 +267,8 @@ class Install extends Migration
         $this->createIndex(null, Table::MATCHFIELDS_ENTRIES, ['fieldId'], false);
         $this->createIndex(null, Table::MATCHFIELDS_SITES, ['matchFieldId', 'siteId'], true);
         $this->createIndex(null, Table::MATCHFIELDS_SITES, ['siteId'], false);
+        $this->createIndex(null, Table::CANDIDATES, 'cockpitId', false);
+        $this->createIndex(null, Table::CANDIDATES, 'userId', false);
     }
 
         /**
@@ -272,6 +290,7 @@ class Install extends Migration
         $this->addForeignKey(null, Table::MATCHFIELDS_ENTRIES, ['primaryOwnerId'], CraftTable::ELEMENTS, ['id'], 'CASCADE', null);
         $this->addForeignKey(null, Table::MATCHFIELDS_SITES, ['siteId'], CraftTable::SITES, ['id'], 'CASCADE', 'CASCADE');
         $this->addForeignKey(null, Table::MATCHFIELDS_SITES, ['matchFieldId'], Table::MATCHFIELDS, ['id'], 'CASCADE', null);
+        $this->addForeignKey(null, Table::CANDIDATES, 'userId', CraftTable::ELEMENTS, 'id', 'CASCADE', null);
     }
 
     /**
@@ -306,6 +325,10 @@ class Install extends Migration
         if ($this->db->tableExists(Table::POSTCODE_MAPPINGS)) {
             Db::dropAllForeignKeysToTable(Table::POSTCODE_MAPPINGS);
         }
+
+        if ($this->db->tableExists(Table::CANDIDATES)) {
+            Db::dropAllForeignKeysToTable(Table::CANDIDATES);
+        }
     }
 
     /**
@@ -339,6 +362,10 @@ class Install extends Migration
 
         if (Craft::$app->db->schema->getTableSchema(Table::POSTCODE_MAPPINGS)) {
             $this->dropTable(Table::POSTCODE_MAPPINGS);
+        }
+
+        if (Craft::$app->db->schema->getTableSchema(Table::CANDIDATES)) {
+            $this->dropTable(Table::CANDIDATES);
         }
     }
 

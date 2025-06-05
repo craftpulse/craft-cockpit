@@ -238,7 +238,7 @@ class Contact extends Element
             return null;
         }
 
-        $hasUrls = $contactSettings[$this->siteId]['hasUrl'] ?? false;
+        $hasUrls = $settings[$this->siteId]['hasUrls'] ?? false;
         $uriFormat = $contactSettings[$this->siteId]['uriFormat'] ?? null;
 
         if (!$hasUrls) {
