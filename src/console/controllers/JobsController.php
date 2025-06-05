@@ -20,7 +20,7 @@ class JobsController extends Controller
 
     public $publicationId;
     public $jobRequestId;
-    public $candidateId;
+    public $userId;
 
     public function options($actionID): array
     {
@@ -35,8 +35,8 @@ class JobsController extends Controller
                 break;
             case 'delete-publication':
                 $options[] = 'publicationId';
-            case 'test-application-known-candidate':
-                $options[] = 'candidateId';
+            case 'test-application':
+                $options[] = 'userId';
                 break;
         }
 
@@ -48,7 +48,7 @@ class JobsController extends Controller
         return [
             'job-request-id' => 'jobRequestId',
             'publication-id' => 'publicationId',
-            'candidate-id' => 'candidateId',
+            'user-id' => 'userId',
         ];
     }
 
@@ -160,31 +160,38 @@ class JobsController extends Controller
         return ExitCode::DATAERR;
     }
 
-    public function actionTestApplication(): void
-    {
-        Console::stdout('Start apply for job'. PHP_EOL, Console::FG_CYAN);
-        Cockpit::$plugin->getApplication()->applyForJob();
-    }
-
-    public function actionTestApplicationKnownCandidate(): int
+    public function actionTestApplication(): int
     {
         try {
             // Get the ID from command line options
-            $id = $this->candidateId;
+            $id = $this->userId ?? null;
 
-            if (!$id) {
-                Craft::error('Canddiate ID (as --id=x) is required');
-                Console::stderr('   > Error applying, candidate id not provided' . PHP_EOL, Console::FG_RED);
-                return ExitCode::DATAERR;
-            }
-
-            Console::stdout('Start apply for job with known candidate '.$id. PHP_EOL, Console::FG_CYAN);
-            Cockpit::$plugin->getApplication()->applyForJobKnownCandidate($id);
+            Console::stdout('Start apply for job '.$id. PHP_EOL, Console::FG_CYAN);
+            Cockpit::$plugin->getApplication()->applyForJob($id);
 
             return ExitCode::OK;
 
         } catch (\Exception $e) {
-            Console::stderr('   > Error on deleting publication: '.$e->getMessage() . PHP_EOL);
+            Console::stderr('   > Error on testing known application: '.$e->getMessage() . PHP_EOL);
+            Craft::error($e->getMessage());
+        }
+
+        return ExitCode::DATAERR;
+    }
+
+    public function actionTestSpontaneousApplication(): int
+    {
+        try {
+            // Get the ID from command line options
+            $id = $this->userId ?? null;
+
+            Console::stdout('Start apply for sponteanous job '.$id. PHP_EOL, Console::FG_CYAN);
+            Cockpit::$plugin->getApplication()->applyForSpontaneousJob($id);
+
+            return ExitCode::OK;
+
+        } catch (\Exception $e) {
+            Console::stderr('   > Error on testing sponteanous application: '.$e->getMessage() . PHP_EOL);
             Craft::error($e->getMessage());
         }
 

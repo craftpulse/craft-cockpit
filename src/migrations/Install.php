@@ -308,7 +308,38 @@ class Install extends Migration
 
         if ($this->db->tableExists(Table::DEPARTMENTS)) {
             Db::dropAllForeignKeysToTable(Table::DEPARTMENTS);
+        }        if ($this->db->tableExists(TABLE::CONTACTS)) {
+        Db::dropAllForeignKeysToTable(TABLE::CONTACTS);
+    }
+
+        if ($this->db->tableExists(TABLE::JOBS)) {
+            Db::dropAllForeignKeysToTable(TABLE::JOBS);
         }
+
+        if ($this->db->tableExists(Table::DEPARTMENTS)) {
+            Db::dropAllForeignKeysToTable(Table::DEPARTMENTS);
+        }
+
+        if ($this->db->tableExists(Table::MATCHFIELDS)) {
+            Db::dropAllForeignKeysToTable(Table::MATCHFIELDS);
+        }
+
+        if ($this->db->tableExists(Table::MATCHFIELDS_ENTRIES)) {
+            Db::dropAllForeignKeysToTable(Table::MATCHFIELDS_ENTRIES);
+        }
+
+        if ($this->db->tableExists(Table::MATCHFIELDS_SITES)) {
+            Db::dropAllForeignKeysToTable(Table::MATCHFIELDS_SITES);
+        }
+
+        if ($this->db->tableExists(Table::POSTCODE_MAPPINGS)) {
+            Db::dropAllForeignKeysToTable(Table::POSTCODE_MAPPINGS);
+        }
+
+        if ($this->db->tableExists(Table::CANDIDATES)) {
+            Db::dropAllForeignKeysToTable(Table::CANDIDATES);
+        }
+
 
         if ($this->db->tableExists(Table::MATCHFIELDS)) {
             Db::dropAllForeignKeysToTable(Table::MATCHFIELDS);

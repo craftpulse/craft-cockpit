@@ -232,9 +232,21 @@ class Api extends Component
      * @return Collection|null
      * @throws GuzzleException
      */
-    public function getContactById(string $id): ?Collection
+    public function getUserById(string $id): ?Collection
     {
         return $this->get("Users/$id");
+    }
+
+    /**
+     * Returns the departments by ID
+     *
+     * @param string $id
+     * @return Collection|null
+     * @throws GuzzleException
+     */
+    public function getCandidateById(string $id): ?Collection
+    {
+        return $this->get("Candidates/$id");
     }
 
     /**
@@ -278,9 +290,21 @@ class Api extends Component
      * @return Collection|null
      * @throws GuzzleException
      */
-    public function postApplicationKnwonCandidate(string $id, array $data): ?Collection
+    public function postApplicationKnownCandidate(string $id, array $data): ?Collection
     {
-        return $this->post("Applications/candidate/${$id}", $data);
+        return $this->post("Applications/candidate/$id", $data);
+    }
+
+    /**
+     * Posts an application
+     *
+     * @param array $data
+     * @return Collection|null
+     * @throws GuzzleException
+     */
+    public function postSpontaneousApplication(array $data): ?Collection
+    {
+        return $this->post("CandidateEnrollments", $data);
     }
 
     /**

@@ -4,8 +4,10 @@ namespace craftpulse\cockpit\services;
 
 use Carbon\Carbon;
 use Craft;
+use craft\elements\User;
 use craft\helpers\Console;
 use craftpulse\cockpit\Cockpit;
+use craftpulse\cockpit\records\Candidate;
 use GuzzleHttp\Client;
 use yii\base\Component;
 
@@ -17,29 +19,27 @@ class ApplicationService extends Component
     public function applyForJob(): void
     {
         $cv = $this->_getCv('https://cdn.craft.cloud/c2e071f6-cc94-4bea-8d47-104743b4ff12/assets/documents/cv/lo%CC%80re%CC%81m-ipsu%CC%82m-2_2025-03-14-101545_wfzb.pdf');
-        $email = 'stefanie.gevaert+1@pau.be';
+        $email = 'stefanie.gevaert+dev15@pau.be';
+        $cockpitCandidateId = null;
+
+        $user = User::find()->email($email)->one();
+
+        if ($user) {
+            $candidate = Cockpit::$plugin->getCandidates()->getCandidateByUserId($user->id);
+            $cockpitCandidateId = $candidate->cockpitId ?? null;
+        }
 
         $data = [
             'publication' => [
-                'id' => 'publications-4-A'
+                'id' => 'publications-73-A'
             ],
             'applicationDate' => Carbon::now()->toIso8601String(),
             'owner' => [
-                'departmentId' => 'departments-875-A',
+                'departmentId' => 'departments-876-C',
             ],
             'allowEmailCommunication' => [
                 'consentGiven' => true,
                 'timestamp' => Carbon::now()->toIso8601String(),
-            ],
-            'candidate' => [
-                'firstName' => 'Go4',
-                'lastName' => 'Jobs',
-                'primaryEmailAddress' => $email,
-                'softSkills' => null,
-                'allowMediation' => [
-                    'consentGiven' => true,
-                    'timestamp' => Carbon::now()->toIso8601String(),
-                ]
             ],
             'curriculumVitae' => $cv ?? null,
             'campaignSource' => [
@@ -51,27 +51,57 @@ class ApplicationService extends Component
             ],
         ];
 
-        $response = Cockpit::$plugin->getApi()->postApplication($data);
+        if (!$cockpitCandidateId) {
+            $data['candidate'] = [
+                'firstName' => 'Stefanie (DEV)',
+                'lastName' => 'Gevaert',
+                'primaryEmailAddress' => $email,
+                'primaryMobilePhoneNumber' => [
+                    'number' => '0498666666',
+                    'countryCode' => 'BE'
+                ],
+                'softSkills' => null,
+                'allowMediation' => [
+                    'consentGiven' => true,
+                    'timestamp' => Carbon::now()->toIso8601String(),
+                ]
+            ];
+        }
+
+        if ($cockpitCandidateId) {
+            $response = Cockpit::$plugin->getApi()->postApplicationKnownCandidate($cockpitCandidateId, $data);
+        } else {
+            $response = Cockpit::$plugin->getApi()->postApplication($data);
+
+            // register user
+            if ($response) {
+
+                $cockpitUser = Cockpit::$plugin->getApi()->getCandidateById( $response['candidate']['id']);
+
+                Cockpit::$plugin->getCandidates()->registerUser($email, $cockpitUser);
+
+                Craft::dd($cockpitUser);
+            }
+        }
 
         Craft::dd($response);
     }
 
-    public function applyForJobKnownCandidate(string $cockpitCandidateId): void
+    public function applyForSpontaneousJob(): void
     {
+        $cv = $this->_getCv('https://cdn.craft.cloud/c2e071f6-cc94-4bea-8d47-104743b4ff12/assets/documents/cv/lo%CC%80re%CC%81m-ipsu%CC%82m-2_2025-03-14-101545_wfzb.pdf');
+        $email = 'stefanie.gevaert+dev18@pau.be';
 
         $data = [
-            'publication' => [
-                'id' => 'publications-4-A'
-            ],
             'applicationDate' => Carbon::now()->toIso8601String(),
             'owner' => [
-                'departmentId' => 'departments-875-A',
+                'departmentId' => 'departments-876-C',
             ],
             'allowEmailCommunication' => [
                 'consentGiven' => true,
                 'timestamp' => Carbon::now()->toIso8601String(),
             ],
-            'curriculumVitae' => null,
+            'curriculumVitae' => $cv ?? null,
             'campaignSource' => [
                 'source' => 'go4jobs',
                 'medium' => 'website',
@@ -79,9 +109,33 @@ class ApplicationService extends Component
                 'term' => 'go4jobs',
                 'content' => 'go4jobs'
             ],
+            'candidate' => [
+                'firstName' => 'Stefanie (DEV)',
+                'lastName' => 'Gevaert',
+                'primaryEmailAddress' => $email,
+                'primaryMobilePhoneNumber' => [
+                    'number' => '0498666688',
+                    'countryCode' => 'BE'
+                ],
+                'softSkills' => null,
+                'allowMediation' => [
+                    'consentGiven' => true,
+                    'timestamp' => Carbon::now()->toIso8601String(),
+                ]
+            ]
         ];
 
-        $response = Cockpit::$plugin->getApi()->postApplicationKnownCandidate($cockpitCandidateId, $data);
+        $response = Cockpit::$plugin->getApi()->postSpontaneousApplication($data);
+
+        if ($response) {
+            $cockpitCandidateId = null;
+
+            $user = User::find()->email($email)->one();
+
+            if (!$user) {
+                Cockpit::$plugin->getCandidates()->registerUser($email, $response);
+            }
+        }
 
         Craft::dd($response);
     }
@@ -93,7 +147,6 @@ class ApplicationService extends Component
         try {
             $response = $client->request('GET', $url, [
                 'headers' => [
-                    'User-Agent' => 'CraftCMS File Fetcher',
                     'Accept' => '*/*',
                 ],
                 'http_errors' => true,
