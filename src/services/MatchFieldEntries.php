@@ -11,6 +11,7 @@
 namespace craftpulse\cockpit\services;
 
 use Craft;
+use craft\db\Query;
 use craft\errors\ElementNotFoundException;
 use craft\events\SiteEvent;
 use craft\helpers\Queue;

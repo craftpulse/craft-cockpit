@@ -324,14 +324,16 @@ class Cockpit extends Plugin
                 $event->rules['cockpit/settings/general'] = 'cockpit/settings/edit';
                 $event->rules['cockpit/plugins/cockpit'] = 'cockpit/settings/edit';
 
-                // Match Field Types
-                $event->rules['cockpit/settings/matchfields'] = 'cockpit/match-fields/match-field-index';
-                $event->rules['cockpit/settings/matchfields/<matchFieldId:\d+>'] = 'cockpit/match-fields/edit-match-field';
-                $event->rules['cockpit/settings/matchfields/new'] = 'cockpit/match-fields/edit-match-field';
+                // Match Fields
                 $event->rules['cockpit/match-field-entries'] = 'cockpit/match-field-entries/match-field-entry-index';
                 $event->rules['cockpit/match-field-entries/<matchFieldTypeHandle:{handle}>'] = 'cockpit/match-field-entries/match-field-entry-index';
                 $event->rules['cockpit/match-field-entries/<matchFieldType:{handle}>/new'] = 'cockpit/match-field-entries/create';
                 $event->rules['cockpit/match-field-entries/<matchFieldTypeHandle:{handle}>/<elementId:\d+><slug:(?:-[^\/]*)?>'] = 'elements/edit';
+
+                // Match Field Types
+                $event->rules['cockpit/settings/matchfields'] = 'cockpit/match-fields/match-field-index';
+                $event->rules['cockpit/settings/matchfields/<matchFieldId:\d+>'] = 'cockpit/match-fields/edit-match-field';
+                $event->rules['cockpit/settings/matchfields/new'] = 'cockpit/match-fields/edit-match-field';
 
                 // Contact Elements
                 $event->rules['cockpit/settings/contacts'] = 'cockpit/contacts/edit-settings';

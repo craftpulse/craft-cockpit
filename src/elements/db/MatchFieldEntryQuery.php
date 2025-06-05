@@ -2,7 +2,9 @@
 
 namespace craftpulse\cockpit\elements\db;
 
+use Craft;
 use craft\db\Query;
+use craft\db\QueryAbortedException;
 use craft\elements\db\ElementQuery;
 use craft\helpers\ArrayHelper;
 use craft\helpers\Db;
@@ -51,7 +53,7 @@ class MatchFieldEntryQuery extends ElementQuery
      */
     public function __set($name, $value)
     {
-        if ($name === 'matchField') {
+        if ($name === 'group') {
             $this->matchField($value);
         } else {
             parent::__set($name, $value);
@@ -182,7 +184,7 @@ class MatchFieldEntryQuery extends ElementQuery
         if ($this->editable) {
             // Limit the query to only the category groups the user has permission to edit
             $this->subQuery->andWhere([
-                'cockpit_matchfields_entries.matchFieldId' => Cockpit::$plugin->getMatchFields()->getEditableMatchFieldIds(),
+                'cockpit_matchfield_entries.matchFieldId' => Cockpit::$plugin->getMatchFields()->getEditableMatchFieldIds(),
             ]);
         }
     }
@@ -273,7 +275,7 @@ class MatchFieldEntryQuery extends ElementQuery
         $tags = [];
         if ($this->matchFieldId) {
             foreach ($this->matchFieldId as $matchFieldId) {
-                $tags[] = "group:$matchFieldId";
+                $tags[] = "matchField:$matchFieldId";
             }
         }
         return $tags;

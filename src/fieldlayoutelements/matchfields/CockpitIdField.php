@@ -33,9 +33,29 @@ class CockpitIdField extends TextField
     public string $attribute = 'cockpitId';
 
     /**
+     * @var bool Whether the input should get a `disabled` attribute.
+     */
+    public bool $disabled = true;
+
+    /**
      * @var bool Whether the input should get a `readonly` attribute.
      */
     public bool $readonly = true;
+
+    /**
+     * @var bool Whether the field is required.
+     */
+    public bool $required = true;
+
+    /**
+     * @var string|null The input’s `title` attribute value.
+     */
+    public ?string $label = 'Cockpit ID';
+
+    /**
+     * @var bool Whether the input should be mandatory.
+     */
+    public bool $mandatory = true;
 
     /**
      * @inheritdoc

@@ -419,6 +419,7 @@ class MatchField extends Model implements
         if (!$this->id || !Craft::$app->getUser()->getIsAdmin()) {
             return null;
         }
+
         return UrlHelper::cpUrl("cockpit/settings/matchfields/$this->id");
     }
 

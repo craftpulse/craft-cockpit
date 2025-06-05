@@ -272,7 +272,7 @@ class MatchField extends Component
             return [];
         }
 
-        return ArrayHelper::where($this->getAllMatchFields(), fn(MatchFieldModel $matchField) => $user->can("cockpit:view-match-fields:$matchField->uid"), true, true, false);
+        return ArrayHelper::where($this->getAllMatchFields(), fn(MatchFieldModel $matchField) => $user->can("cockpit:view-match-field-entries:$matchField->uid"), true, true, false);
     }
 
     /**
