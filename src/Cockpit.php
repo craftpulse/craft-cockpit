@@ -11,6 +11,7 @@
 namespace craftpulse\cockpit;
 
 use Craft;
+use craftpulse\cockpit\integrations\formie\Example;
 use Monolog\Formatter\LineFormatter;
 use Psr\Log\LogLevel;
 use Throwable;
@@ -43,10 +44,13 @@ use craftpulse\cockpit\elements\Job;
 use craftpulse\cockpit\elements\MatchFieldEntry;
 use craftpulse\cockpit\models\SettingsModel;
 use craftpulse\cockpit\services\ServicesTrait;
+use verbb\formie\events\RegisterIntegrationsEvent;
+use verbb\formie\services\Integrations;
 use yii\base\Event;
 use yii\base\InvalidRouteException;
 use yii\log\Dispatcher;
 use yii\log\Logger;
+use craftpulse\cockpit\integrations\formie\Cockpit as CockpitFormie;
 
 /**
  * Class Cockpit
@@ -132,6 +136,11 @@ class Cockpit extends Plugin
             $this->_registerElements();
             $this->_registerSidebarPanels();
             $this->_registerUserFields();
+        }
+
+        // Register our Formie event handlers
+        if (class_exists(Integrations::class)) {
+            $this->_registerFormieEventHandlers();
         }
 
         // Log that the plugin has loaded
@@ -486,6 +495,17 @@ class Cockpit extends Plugin
         Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITIES,
             function(RegisterComponentTypesEvent $event) {
                 //$event->types[] = ???::class;
+            }
+        );
+    }
+
+    private function _registerFormieEventHandlers(): void
+    {
+        Event::on(
+            Integrations::class,
+            Integrations::EVENT_REGISTER_INTEGRATIONS,
+            function (RegisterIntegrationsEvent $event) {
+                $event->crm[] = CockpitFormie::class;
             }
         );
     }
