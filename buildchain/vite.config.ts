@@ -12,6 +12,7 @@ export default defineConfig(({command}) => ({
         outDir: '../src/web/assets/dist',
         rollupOptions: {
             input: {
+                'cockpit': 'src/js/cockpit.js',
                 'matchfields': 'src/js/Matchfields.js',
             },
         },
@@ -20,27 +21,6 @@ export default defineConfig(({command}) => ({
     plugins: [
         viteCompressionPlugin({
             filter: /\.(js|mjs|json|css|map)$/i
-        }),
-        checker({
-            eslint: {
-                lintCommand: 'eslint "./src/**/*.{js,ts}"',
-                useFlatConfig: true,
-                dev: {
-                    overrideConfig: {
-                        cache: true,
-                    }
-                }
-            },
-            stylelint: {
-                lintCommand: 'stylelint ./src/**/*.{css,scss,sass,pcss} --fix',
-                dev: {
-                    overrideConfig: {
-                        cache: true,
-                    }
-                }
-            },
-            typescript: true,
-            vueTsc: true,
         }),
     ],
     resolve: {
