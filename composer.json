@@ -32,6 +32,7 @@
     "php": "^8.2.0",
     "craftcms/cms": "^5.0.0",
     "nesbot/carbon": "^2.0.0",
+    "illuminate/support": "^10.0",
     "nystudio107/craft-plugin-vite": "^5.0.0"
   },
   "require-dev":{
