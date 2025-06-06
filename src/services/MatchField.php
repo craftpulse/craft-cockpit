@@ -662,7 +662,7 @@ class MatchField extends Component
                 ->andWhere(['cockpit_matchfield_entries.deletedWithMatchField' => true])
                 ->all();
             /** @var MatchFieldEntry[][] $matchFieldEntriesByType */
-            $matchFieldEntriesByType = ArrayHelper::index($matchFieldEntries, null, ['typeId']);
+            $matchFieldEntriesByType = ArrayHelper::index($matchFieldEntries, null, ['matchFieldId']);
             foreach ($matchFieldEntriesByType as $typeEntries) {
                 try {
                     array_walk($typeEntries, function(MatchFieldEntry $matchFieldEntry) {
