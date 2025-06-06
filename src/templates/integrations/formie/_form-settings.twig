@@ -6,6 +6,7 @@
 {% set mapToApplication = form.settings.integrations[handle].mapToApplication ?? '' %}
 {% set mapToApplicationCandidate = form.settings.integrations[handle].mapToApplicationCandidate ?? '' %}
 {% set mapToSpontaneousApplication = form.settings.integrations[handle].mapToSpontaneousApplication ?? '' %}
+{% set mapToSpontaneousCandidateApplication = form.settings.integrations[handle].mapToSpontaneousCandidateApplication ?? '' %}
 
 <integration-form-settings handle="{{ handle }}" :form-settings="{{ formSettings | json_encode }}">
     <template v-slot="{ get, isEmpty, input, settings, sourceId, loading, refresh, error, errorMessage, getSourceFields }">
@@ -53,9 +54,9 @@
                 label="{{ 'Application Field Mapping' | t('formie') }}"
                 instructions="{{ 'Choose how your form fields should map to your {name} Application fields.' | t('formie', { name: integration.displayName() }) }}"
                 name-label="{{ integration.displayName() }}"
-                id="application-candidate-field-mapping"
-                name="applicationCandidateFieldMapping"
-                :value="get(form, 'settings.integrations.{{ handle }}.applicationCanddiateFieldMappings')"
+                id="application-candidate-field-mappings"
+                name="applicationCandidateFieldMappings"
+                :value="get(form, 'settings.integrations.{{ handle }}.applicationCandidateFieldMappings')"
                 :rows="get(settings, 'application-candidate')"
             ></integration-field-mapping>
         </div>
@@ -72,12 +73,33 @@
         <div id="map-to-spontaneous-application" class="{{ not mapToSpontaneousApplication ? 'hidden' }}">
             <integration-field-mapping
                 label="{{ 'Application Field Mapping' | t('formie') }}"
-                instructions="{{ 'Choose how your form fields should map to your {name} spontaneous application fields.' | t('formie', { name: integration.displayName() }) }}"
+                instructions="{{ 'Choose how your form fields should map to your {name} spontaneous application for unknown candidates fields.' | t('formie', { name: integration.displayName() }) }}"
                 name-label="{{ integration.displayName() }}"
-                id="application-sponteaneous-field-mapping"
-                name="$applicationSpontaneousFieldMappings"
+                id="application-spontaneous-field-mappings"
+                name="applicationSpontaneousFieldMappings"
                 :value="get(form, 'settings.integrations.{{ handle }}.applicationSpontaneousFieldMappings')"
                 :rows="get(settings, 'application-spontaneous')"
+            ></integration-field-mapping>
+        </div>
+
+        {{ forms.lightswitchField({
+            label: 'Map to Spontaneous Candidate Application' | t('formie'),
+            instructions: 'Whether to map form data to {name} spontaneous apllication for known candidates.' | t('formie', { name: integration.displayName() }),
+            id: 'mapToSpontaneousCandidateApplication',
+            name: 'mapToSpontaneousCandidateApplication',
+            on: mapToSpontaneousCandidateApplication,
+            toggle: 'map-to-spontaneous-candidate-application',
+        }) }}
+
+        <div id="map-to-spontaneous-candidate-application" class="{{ not mapToSpontaneousCandidateApplication ? 'hidden' }}">
+            <integration-field-mapping
+                label="{{ 'Application Field Mapping' | t('formie') }}"
+                instructions="{{ 'Choose how your form fields should map to your {name} spontaneous application for known candidate fields.' | t('formie', { name: integration.displayName() }) }}"
+                name-label="{{ integration.displayName() }}"
+                id="application-spontaneous-candidate-field-mappings"
+                name="applicationSpontaneousCandidateFieldMappings"
+                :value="get(form, 'settings.integrations.{{ handle }}.applicationSpontaneousCandidateFieldMappings')"
+                :rows="get(settings, 'application-spontaneous-candidate')"
             ></integration-field-mapping>
         </div>
 

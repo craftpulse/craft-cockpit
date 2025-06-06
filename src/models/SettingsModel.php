@@ -63,6 +63,16 @@ class SettingsModel extends Model
      */
     public ?array $contactSiteSettings = null;
 
+    /**
+     * @var bool if we want to register users
+     */
+    public bool $registerUsers = true;
+
+    /**
+     * @var string register to user group
+     */
+    public string $userGroup = 'applicants';
+
     // Private Properties
     // =========================================================================
 

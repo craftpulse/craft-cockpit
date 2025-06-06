@@ -159,7 +159,7 @@ class Cockpit extends Plugin
      * Logs a message
      * @throws Throwable
      */
-    public function log(string $message, array $params = [], int $type = Logger::LEVEL_INFO): void
+    public function log(string $message, array $params = [], int $type = Logger::LEVEL_INFO, $category = 'cockpit'): void
     {
         /** @var User|null $user */
         $user = Craft::$app->getUser()->getIdentity();
@@ -172,9 +172,8 @@ class Cockpit extends Plugin
 
         $message = Craft::t('cockpit', $message . ' ' . $encoded_params, $params);
 
-        Craft::getLogger()->log($message, $type, 'cockpit');
+        Craft::getLogger()->log($message, $type, $category);
     }
-
     /**
      * @inheritdoc
      * @throws InvalidRouteException
@@ -521,6 +520,19 @@ class Cockpit extends Plugin
             Craft::getLogger()->dispatcher->targets[] = new MonologTarget([
                 'name' => 'cockpit',
                 'categories' => ['cockpit'],
+                'level' => LogLevel::INFO,
+                'logContext' => false,
+                'allowLineBreaks' => true,
+                'formatter' => new LineFormatter(
+                    format: "%datetime% [%channel%.%level_name%] %message% %context%\n",
+                    dateFormat: 'Y-m-d H:i:s',
+                ),
+            ]);
+
+            // 'cockpit-applications' log target
+            Craft::getLogger()->dispatcher->targets[] = new MonologTarget([
+                'name' => 'cockpit-application',
+                'categories' => ['cockpit-application'],
                 'level' => LogLevel::INFO,
                 'logContext' => false,
                 'allowLineBreaks' => true,

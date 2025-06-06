@@ -22,12 +22,14 @@ class Cockpit extends Crm
      * @var array|null
      */
     public ?array $applicationFieldMappings = null;
-    public ?array $applicationCanddiateFieldMappings = null;
+    public ?array $applicationCandidateFieldMappings = null;
     public ?array $applicationSpontaneousFieldMappings = null;
+    public ?array $applicationSpontaneousCandidateFieldMappings = null;
 
     public bool $mapToApplication = false;
     public bool $mapToApplicationCandidate = false;
     public bool $mapToSpontaneousApplication = false;
+    public bool $mapToSpontaneousCandidateApplication = false;
 
     public static function displayName(): string
     {
@@ -71,7 +73,6 @@ class Cockpit extends Crm
         $settings = [];
 
         try {
-
             $candidateFields = [
                 new IntegrationField([
                     'handle' => 'firstName',
@@ -90,7 +91,7 @@ class Cockpit extends Crm
                 ]),
                 new IntegrationField([
                     'handle' => 'phoneCountry',
-                    'name' => Craft::t('formie', 'Candidate phone country code'),
+                    'name' => Craft::t('formie', 'Candidate phone country code (ISO)'),
                     'required' => true,
                 ]),
                 new IntegrationField([
@@ -155,6 +156,11 @@ class Cockpit extends Crm
             if ($this->mapToApplicationCandidate) {
                 $settings['application-candidate'] = array_merge([
                     new IntegrationField([
+                        'handle' => 'candidateId',
+                        'name' => Craft::t('formie', 'Candidate ID'),
+                        'required' => true,
+                    ]),
+                    new IntegrationField([
                         'handle' => 'publicationId',
                         'name' => Craft::t('formie', 'Publication ID'),
                         'required' => true,
@@ -164,6 +170,16 @@ class Cockpit extends Crm
 
             if ($this->mapToSpontaneousApplication) {
                 $settings['application-spontaneous'] = array_merge($candidateFields,$applicationFields);
+            }
+
+            if ($this->mapToSpontaneousCandidateApplication) {
+                $settings['application-spontaneous-candidate'] = array_merge([
+                    new IntegrationField([
+                        'handle' => 'candidateId',
+                        'name' => Craft::t('formie', 'Candidate ID'),
+                        'required' => true,
+                    ]),
+                ],$applicationFields);
             }
         } catch (Throwable $e) {
             Integration::apiError($this, $e);
@@ -178,11 +194,14 @@ class Cockpit extends Crm
             $response = null;
 
             Console::stdout(PHP_EOL.PHP_EOL);
+            Console::stdout('Send payload from Formie to Cockpit'.PHP_EOL);
 
             $applicationValues = $this->getFieldMappingValues($submission, $this->applicationFieldMappings, 'application');
-            $applicationCandidateValues = $this->getFieldMappingValues($submission, $this->applicationCanddiateFieldMappings, 'application-candidate');
+            $applicationCandidateValues = $this->getFieldMappingValues($submission, $this->applicationCandidateFieldMappings, 'application-candidate');
             $applicationSpontaneousValues = $this->getFieldMappingValues($submission, $this->applicationSpontaneousFieldMappings, 'application-spontaneous');
+            $applicationSpontaneousCandidateValues = $this->getFieldMappingValues($submission, $this->applicationSpontaneousCandidateFieldMappings, 'application-spontaneous-candidate');
 
+            // application unknown canddiate
             if ($this->mapToApplication) {
                 if ($applicationValues['cv'] ?? null) {
                     $cvField = preg_match('/\{field:(.*?)\}/', $this->applicationFieldMappings['cv'], $matches);
@@ -196,9 +215,63 @@ class Cockpit extends Crm
                     }
                 }
 
-
-                Console::stdout('Start apply for job '.$applicationValues['publicationId'].PHP_EOL,Console::FG_CYAN);
+                Console::stdout('Start apply for job'.$applicationValues['publicationId'].PHP_EOL,Console::FG_CYAN);
                 $response = Plugin::$plugin->getApplication()->applyForJob($applicationValues);
+            }
+
+            // application known candidate
+            if ($this->mapToApplicationCandidate) {
+                if ($applicationCandidateValues['cv'] ?? null) {
+                    $cvField = preg_match('/\{field:(.*?)\}/', $this->applicationCandidateFieldMappings['cv'], $matches);
+                    $fieldHandle = $matches[1] ?? null;
+
+                    if ($fieldHandle) {
+                        $fieldValue = $submission->getFieldValue($fieldHandle);
+
+                        $cv = $fieldValue->one()->id ?? null;
+                        $applicationCandidateValues['cv'] = $cv;
+                    }
+                }
+
+                Console::stdout('Start apply for job known candidate '.$applicationCandidateValues['publicationId'].PHP_EOL,Console::FG_CYAN);
+                $response = Plugin::$plugin->getApplication()->applyForJob($applicationCandidateValues);
+            }
+
+            // spontaneous application known candidate
+            if ($this->mapToSpontaneousCandidateApplication) {
+                if ($applicationSpontaneousCandidateValues['cv'] ?? null) {
+                    $cvField = preg_match('/\{field:(.*?)\}/', $this->applicationSpontaneousCandidateValues['cv'], $matches);
+                    $fieldHandle = $matches[1] ?? null;
+
+                    if ($fieldHandle) {
+                        $fieldValue = $submission->getFieldValue($fieldHandle);
+
+                        $cv = $fieldValue->one()->id ?? null;
+                        $applicationSpontaneousCandidateValues['cv'] = $cv;
+                    }
+                }
+
+                Console::stdout('Start apply for spontaneous job known candidate '.$applicationSpontaneousCandidateValues['candidateId'].PHP_EOL,Console::FG_CYAN);
+                $response = Plugin::$plugin->getApplication()->applyForSpontaneousJob($applicationSpontaneousCandidateValues);
+            }
+
+
+            // spontaneouspplication unknown canddiate
+            if ($this->mapToSpontaneousApplication) {
+                if ($applicationSpontaneousValues['cv'] ?? null) {
+                    $cvField = preg_match('/\{field:(.*?)\}/', $this->applicationSpontaneousFieldMappings['cv'], $matches);
+                    $fieldHandle = $matches[1] ?? null;
+
+                    if ($fieldHandle) {
+                        $fieldValue = $submission->getFieldValue($fieldHandle);
+
+                        $cv = $fieldValue->one()->id ?? null;
+                        $applicationSpontaneousValues['cv'] = $cv;
+                    }
+                }
+
+                Console::stdout('Start apply for spontaneous job unkown candidate'.$applicationSpontaneousValues['email'].PHP_EOL,Console::FG_CYAN);
+                $response = Plugin::$plugin->getApplication()->applyForSpontaneousJob($applicationSpontaneousValues);
             }
 
             if ($response) {
@@ -207,12 +280,9 @@ class Cockpit extends Crm
             }
 
             Console::stdout(PHP_EOL.PHP_EOL);
-
-            return false;
         } catch (Throwable $e) {
             Integration::apiError($this, $e);
-
-            return false;
+            Console::stdout('Formie error: '.$e->getMessage().PHP_EOL, Console::FG_RED);
         }
 
         return true;

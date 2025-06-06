@@ -13,6 +13,7 @@ namespace craftpulse\cockpit\services;
 use Craft;
 use craft\base\Component;
 use craft\helpers\App;
+use craft\helpers\Console;
 use craft\helpers\Json;
 
 use craftpulse\cockpit\Cockpit;
@@ -25,7 +26,9 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Psr\Http\Message\ResponseInterface;
 use yii\base\ExitException;
+use yii\log\Logger;
 use yii\web\Response;
+use function PHPUnit\Framework\throwException;
 
 /**
  * Class Api
@@ -315,8 +318,22 @@ class Api extends Component
      */
     public function get(string $endpoint, ?array $query = null): ?Collection
     {
-        $response = $this->getClient()->request('GET', $endpoint, $query ? ['query' => $query] : []);
-        return Collection::make($this->_getContent($response))->recursive();
+        try {
+            $response = $this->getClient()->request('GET', $endpoint, $query ? ['query' => $query] : []);
+            return Collection::make($this->_getContent($response))->recursive();
+        } catch (GuzzleException $e) {
+            // You can log full response for debugging
+            $statusCode = $e->getResponse()?->getStatusCode();
+            $body = $e->getResponse()?->getBody()?->getContents();
+
+            Cockpit::$plugin->log("HTTP $statusCode when getting to $endpoint", [], Logger::LEVEL_ERROR, 'cockpit');
+
+            if ($query) {
+                Cockpit::$plugin->log('', $query, Logger::LEVEL_INFO, 'cockpit');
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -327,8 +344,42 @@ class Api extends Component
      */
     public function post(string $endpoint, array $data): ?Collection
     {
-        $response = $this->getClient()->request('POST', $endpoint, ['json' => $data]);
-        return Collection::make($this->_getContent($response))->recursive();
+        try {
+            $response = $this->getClient()->request('POST', $endpoint, ['json' => $data]);
+            $statusCode = $response->getStatusCode();
+
+            $message = "HTTP $statusCode when posting to $endpoint";
+
+            switch ($statusCode) {
+                case 200:
+                    $message .= " - OK";
+                    break;
+                case 201:
+                    $message .= " - Created";
+                    break;
+                case 202:
+                    $message .= " - Accepted";
+                    break;
+                case 204:
+                    $message .= " - No Content";
+                    break;
+                default:
+                    $message .= "";
+            }
+
+            Console::stdout($message . PHP_EOL, Console::FG_GREEN);
+            return Collection::make($this->_getContent($response))->recursive();
+        } catch (GuzzleException $e) {
+            // You can log full response for debugging
+            $statusCode = $e->getResponse()?->getStatusCode();
+            $body = $e->getResponse()?->getBody()?->getContents();
+
+            Console::stdout("HTTP $statusCode when posting to $endpoint: $body".PHP_EOL, Console::FG_RED);
+            Cockpit::$plugin->log("HTTP $statusCode when posting to $endpoint: $body", [], Logger::LEVEL_ERROR, 'cockpit-application');
+            Cockpit::$plugin->log('', $data, Logger::LEVEL_INFO, 'cockpit-application');
+        }
+
+        return null;
     }
 
     // Private Methods
