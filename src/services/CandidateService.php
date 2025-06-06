@@ -44,7 +44,13 @@ class CandidateService extends Component
 
     public function registerUser(string $email, Collection $data): ?User
     {
-        $user = User::find()->where(['email' => $email])->one() ?? new User();
+        $user = User::find()->where(['email' => $email])->one();
+        $isNew = false;
+
+        if (!$user) {
+            $isNew = true;
+            $user = new User();
+        }
 
         $user->email = $email;
         $user->username = $email;
@@ -75,7 +81,7 @@ class CandidateService extends Component
         }
 
         if (Craft::$app->getElements()->saveElement($user)) {
-            if (Cockpit::$plugin->getSettings()->userGroup) {
+            if ($isNew && Cockpit::$plugin->getSettings()->userGroup) {
                 $userGroup = Craft::$app->userGroups->getGroupByHandle(Cockpit::$plugin->getSettings()->userGroup);
 
                 if (!Craft::$app->getUsers()->assignUserToGroups($user->id, [$userGroup->id])) {

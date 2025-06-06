@@ -35,4 +35,19 @@ class CockpitVariable implements ViteVariableInterface
 
         return Cockpit::$plugin->getPostcodes()->mapPostcode($postcode);
     }
+
+    public function getCandidateIdByUserId(?int $id): ?string
+    {
+        if (!$id) {
+            return null;
+        }
+
+        $candidate = Cockpit::$plugin->getCandidates()->getCandidateByUserId($id);
+
+        if ($candidate) {
+            return $candidate->cockpitId;
+        }
+
+        return null;
+    }
 }

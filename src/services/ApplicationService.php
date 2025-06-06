@@ -122,7 +122,7 @@ class ApplicationService extends Component
                 // register user
                 if ($response && Cockpit::$plugin->getSettings()->registerUsers) {
                     $cockpitUser = Cockpit::$plugin->getApi()->getCandidateById($response['candidate']['id']);
-                    Console::stdout('Register/update candidate on our system: '. var_dump($cockpitUser) .PHP_EOL);
+                    Console::stdout('Register/update candidate on our system' .PHP_EOL);
 
                     Cockpit::$plugin->getCandidates()->registerUser($email, $cockpitUser);
                 }
