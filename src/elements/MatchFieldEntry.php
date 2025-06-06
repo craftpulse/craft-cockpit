@@ -24,7 +24,6 @@ use craft\elements\db\ElementQuery;
 use craft\elements\db\ElementQueryInterface;
 use craft\elements\User;
 use craft\elements\conditions\ElementConditionInterface;
-use craft\enums\Color;
 use craft\enums\PropagationMethod;
 use craft\errors\OperationAbortedException;
 use craft\errors\SiteNotFoundException;
@@ -712,7 +711,7 @@ class MatchFieldEntry extends Element
     public function getSupportedSites(): array
     {
         if (!isset($this->matchFieldId)) {
-            throw new InvalidConfigException('Require `typeId` must be set on the product.');
+            throw new InvalidConfigException('Require `matchFieldId` must be set on the match field.');
         }
 
         $matchFieldType = $this->getMatchField();
@@ -881,7 +880,7 @@ class MatchFieldEntry extends Element
     {
         $parentOptionCriteria = [
             'siteId' => $this->siteId,
-            'typeId' => $matchFieldType->id,
+            'matchFieldId' => $matchFieldType->id,
             'status' => null,
             'drafts' => null,
             'draftOf' => false,

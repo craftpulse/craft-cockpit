@@ -12,7 +12,7 @@ export default defineConfig(({command}) => ({
         outDir: '../src/web/assets/dist',
         rollupOptions: {
             input: {
-                'cockpit': 'src/js/cockpit.js',
+                'cockpit': 'src/js/Cockpit.js',
                 'matchfields': 'src/js/MatchFields.js',
             },
         },

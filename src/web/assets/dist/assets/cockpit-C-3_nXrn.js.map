@@ -1,0 +1,1 @@
+{"version":3,"file":"cockpit-C-3_nXrn.js","sources":["../../../../../buildchain/src/js/Cockpit.js"],"sourcesContent":["(function ($) {\n    if (typeof Craft.Cockpit === typeof undefined) {\n        Craft.Cockpit = {};\n    }\n})(jQuery);\n"],"names":["$"],"mappings":"CAAC,SAAUA,EAAG,CACN,OAAO,MAAM,QAAY,MACzB,MAAM,QAAU,CAAE,EAE1B,GAAG,MAAM"}

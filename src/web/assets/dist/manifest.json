@@ -1,0 +1,14 @@
+{
+  "src/js/Cockpit.js": {
+    "file": "assets/cockpit-C-3_nXrn.js",
+    "name": "cockpit",
+    "src": "src/js/Cockpit.js",
+    "isEntry": true
+  },
+  "src/js/MatchFields.js": {
+    "file": "assets/matchfields-DGk2W9Ci.js",
+    "name": "matchfields",
+    "src": "src/js/MatchFields.js",
+    "isEntry": true
+  }
+}
