@@ -17,17 +17,12 @@ use craft\elements\Address;
 use craft\events\ConfigEvent;
 use craft\helpers\Console;
 use craft\helpers\ProjectConfig;
-use craft\helpers\StringHelper;
 use craft\models\FieldLayout;
 use craftpulse\cockpit\Cockpit;
-use craftpulse\cockpit\elements\Contact;
-use craftpulse\cockpit\elements\Department;
 use craftpulse\cockpit\elements\Job;
 use yii\base\Exception;
-use craftpulse\cockpit\fieldlayoutelements\AddressField;
 use DateTime;
 use Illuminate\Support\Collection;
-use yii\console\ExitCode;
 
 /**
  * Class JobsService
@@ -212,26 +207,26 @@ class JobsService extends Component
             Cockpit::$plugin->getContacts()->fetchContactByCockpitId($job->cockpitContactId);
         }
 
-
         // save field layout fields
 // @TODO: create a layer in between for mapping data between field layout and publication
         $mappings = collect([
-            'offer' => $publication->get('descriptions')['offerDescription'] ?? null,
-            'taskAndProfiles' => $publication->get('descriptions')['functionDescription'] ?? null,
-            'summary' => $publication->get('descriptions')['summary'] ?? null,
-            'skills' => $publication->get('descriptions')['requirementsDescriptions'] ?? null,
+            'contractTypes' => null, // @TODO: match fields-> $publication->get('preferences')['contactTypes']
+            'description' => $publication->get('descriptions')['summary'] ?? null,
+            'educationLevels' => null, // @TODO: match fields -> $publication->get('preferences')['educationLevels']
+            'employmentTypes' => null, // @TODO: match fields -> $publication->get('preferences')['employmentTypes']
+            'experienceLevels' => null, // @TODO: match fields -> $publication->get('preferences')['experienceLevels']
             'extra' => $publication->get('descriptions')['extra'] ?? null,
             'fulltimeHours' => $publication->get('preferences')['hoursPerWeek']['max'] ?? null,
+            'offer' => $publication->get('descriptions')['clientDescription'] ?? null,
             'parttimeHours' => $publication->get('preferences')['hoursPerWeek']['min'] ?? null,
-            'employmentTypes' => null, // @TODO: match fields -> $publication->get('preferences')['employmentTypes']
-            'contractTypes' => null, // @TODO: match fields-> $publication->get('preferences')['contactTypes']
-            'shift' => null, // @TODO: match fields -> $publication->get('preferences')['shiftServices']
-            'educationLevels' => null, // @TODO: match fields -> $publication->get('preferences')['educationLevels']
-            'experienceLevels' => null, // @TODO: match fields -> $publication->get('preferences')['experienceLevels']
-            'salaryPeriod' => $publication->get('preferences')['salaryPeriod'] ?? null,
+            'reference' => '?',
             'salaryMax' => $publication->get('preferences')['salary']['max'] ?? null,
             'salaryMin' => $publication->get('preferences')['salary']['min'] ?? null,
-            'description' => $publication->get('descriptions')['summary'] ?? null,
+            'salaryPeriod' => $publication->get('preferences')['salaryPeriod'] ?? null,
+            'shift' => null, // @TODO: match fields -> $publication->get('preferences')['shiftServices']
+            'skills' => $publication->get('descriptions')['requirementsDescriptions'] ?? null,
+            'summary' => $publication->get('descriptions')['summary'] ?? null,
+            'tasksAndProfiles' => $publication->get('descriptions')['functionDescription'] ?? null,
         ]);
 
         // loop through mappings to add the Cockpit data

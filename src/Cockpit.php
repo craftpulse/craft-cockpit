@@ -306,6 +306,7 @@ class Cockpit extends Plugin
                     'class' => CockpitVariable::class,
                     'viteService' => $this->vite,
                 ]);
+                $variable->set('jobs', Job::class);
             }
         );
 

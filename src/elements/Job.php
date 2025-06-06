@@ -75,6 +75,7 @@ class Job extends Element
      * @var string
      */
     public string $companyName = '';
+
     /**
      * @var int
      */
