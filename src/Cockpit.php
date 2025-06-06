@@ -11,6 +11,10 @@
 namespace craftpulse\cockpit;
 
 use Craft;
+use Monolog\Formatter\LineFormatter;
+use Psr\Log\LogLevel;
+use Throwable;
+use craft\base\Element;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\elements\User;
@@ -29,7 +33,6 @@ use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 
 use craftpulse\cockpit\base\PluginTrait;
-//use craftpulse\cockpit\behaviors\CandidateBehaviour;
 use craftpulse\cockpit\elements\Contact;
 use craftpulse\cockpit\elements\Department;
 use craftpulse\cockpit\elements\Job;
@@ -37,11 +40,9 @@ use craftpulse\cockpit\elements\MatchFieldEntry;
 use craftpulse\cockpit\fields\MatchFields as MatchFieldsField;
 use craftpulse\cockpit\models\SettingsModel;
 use craftpulse\cockpit\services\ServicesTrait;
+use verbb\formie\events\RegisterIntegrationsEvent;
+use verbb\formie\services\Integrations;
 use craftpulse\cockpit\variables\CockpitVariable;
-
-use Monolog\Formatter\LineFormatter;
-use Psr\Log\LogLevel;
-use Throwable;
 use yii\base\Event;
 use yii\base\InvalidConfigException;
 use yii\base\InvalidRouteException;
@@ -513,6 +514,9 @@ class Cockpit extends Plugin
         );
     }
 
+    /**
+     * @return void
+     */
     private function _registerFormieEventHandlers(): void
     {
         Event::on(
