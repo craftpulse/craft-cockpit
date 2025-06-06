@@ -13,7 +13,7 @@ export default defineConfig(({command}) => ({
         rollupOptions: {
             input: {
                 'cockpit': 'src/js/cockpit.js',
-                'matchfields': 'src/js/Matchfields.js',
+                'matchfields': 'src/js/MatchFields.js',
             },
         },
         sourcemap: true

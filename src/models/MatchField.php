@@ -239,8 +239,9 @@ class MatchField extends Model implements
     {
         $fieldLayout = $this->getFieldLayout();
         $fieldLayout->reservedFieldHandles = [
-            'matchfield',
+            'matchField',
             'cockpitId',
+            'matchFieldId',
         ];
 
         if (!$fieldLayout->validate()) {
@@ -418,6 +419,7 @@ class MatchField extends Model implements
         if (!$this->id || !Craft::$app->getUser()->getIsAdmin()) {
             return null;
         }
+
         return UrlHelper::cpUrl("cockpit/settings/matchfields/$this->id");
     }
 

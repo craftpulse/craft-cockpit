@@ -22,6 +22,7 @@ use craft\errors\UnsupportedSiteException;
 use craft\events\ConfigEvent;
 use craft\helpers\AdminTable;
 use craft\helpers\ArrayHelper;
+use craft\helpers\Console;
 use craft\helpers\Db;
 use craft\helpers\Json;
 use craft\helpers\ProjectConfig as ProjectConfigHelper;
@@ -33,6 +34,7 @@ use craft\models\Structure;
 use craft\queue\jobs\ApplyNewPropagationMethod;
 use craft\queue\jobs\ResaveElements;
 
+use craftpulse\cockpit\Cockpit;
 use craftpulse\cockpit\db\Table;
 use craftpulse\cockpit\elements\MatchFieldEntry;
 use craftpulse\cockpit\errors\MatchFieldNotFoundException;
@@ -42,8 +44,10 @@ use craftpulse\cockpit\models\MatchField_SiteSettings;
 use craftpulse\cockpit\records\MatchField as MatchFieldRecord;
 use craftpulse\cockpit\records\MatchField_SiteSettings as MatchField_SiteSettingsRecord;
 
+use GuzzleHttp\Exception\GuzzleException;
 use Throwable;
 use yii\base\Component;
+use yii\base\ExitException;
 use yii\base\InvalidConfigException;
 use yii\db\Exception;
 
@@ -234,10 +238,11 @@ class MatchField extends Component
      * Returns all creatable match field types.
      * @return array
      * @throws InvalidConfigException
+     * @throws Throwable
      */
     public function getCreatableMatchFields(): array
     {
-        $creatableMatchFieldTypeIds = $this->getCreatableProductTypeIds();
+        $creatableMatchFieldTypeIds = $this->getCreatableMatchFieldIds();
         $creatableMatchFieldTypes = [];
 
         foreach ($this->getAllMatchFields() as $matchFieldTypes) {
@@ -267,7 +272,7 @@ class MatchField extends Component
             return [];
         }
 
-        return ArrayHelper::where($this->getAllMatchFields(), fn(MatchFieldModel $matchField) => $user->can("cockpit:view-match-fields:$matchField->uid"), true, true, false);
+        return ArrayHelper::where($this->getAllMatchFields(), fn(MatchFieldModel $matchField) => $user->can("cockpit:view-match-field-entries:$matchField->uid"), true, true, false);
     }
 
     /**
@@ -841,5 +846,27 @@ class MatchField extends Component
         }
 
         return true;
+    }
+
+    /**
+     * @throws GuzzleException
+     * @throws InvalidConfigException|ExitException
+     */
+    public function fetchMatchFieldsByType(string $type): bool
+    {
+        $request = Craft::$app->getRequest();
+
+        if (!$type) {
+            Craft::error('Match field type is required');
+            if ($request->getIsConsoleRequest()) {
+                Console::stdout('Error on fetching match field: Match field type is required' . PHP_EOL, Console::FG_RED);
+            }
+
+            $matchFields = Cockpit::$plugin->getApi()->getMatchFieldsByType($type);
+
+            Craft::dd($matchFields);
+
+            return false;
+        }
     }
 }

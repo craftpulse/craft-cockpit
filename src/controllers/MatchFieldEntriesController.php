@@ -19,9 +19,9 @@ use craft\helpers\UrlHelper;
 use craft\web\Controller;
 
 use craftpulse\cockpit\Cockpit;
-use craftpulse\cockpit\assetbundles\cockpit\MatchFieldAsset;
 use craftpulse\cockpit\elements\MatchFieldEntry;
 
+use Throwable;
 use yii\base\Exception;
 use yii\base\InvalidConfigException;
 use yii\base\InvalidRouteException;
@@ -40,18 +40,18 @@ use yii\web\Response;
 class MatchFieldEntriesController extends Controller
 {
     /**
-     * @throws InvalidConfigException
+     * @param string|null $matchFieldTypeHandle
+     * @return Response
      */
     public function actionMatchFieldEntryIndex(?string $matchFieldTypeHandle = null): Response
     {
-        $this->getView()->registerAssetBundle(MatchFieldAsset::class);
         return $this->renderTemplate('cockpit/match-field-entries/_index', [
             'matchFieldTypeHandle' => $matchFieldTypeHandle,
         ]);
     }
 
     /**
-     * @throws \Throwable
+     * @throws Throwable
      * @throws InvalidRouteException
      * @throws InvalidConfigException
      * @throws Exception

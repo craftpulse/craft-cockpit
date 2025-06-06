@@ -12,10 +12,10 @@ use craftpulse\cockpit\db\Table;
  */
 class DepartmentQuery extends ElementQuery
 {
-    /** @var string|string[]|null */
-    public string|array|null $cockpitId = null;
+    /** @var mixed */
+    public mixed $cockpitId = null;
 
-    public function cockpitId($value)
+    public function cockpitId(mixed $value): static
     {
         $this->cockpitId = $value;
         return $this;

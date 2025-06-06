@@ -33,6 +33,11 @@ class MatchFieldTitleField extends TitleField
     public string $attribute = 'title';
 
     /**
+     * @var bool Whether the input should be mandatory.
+     */
+    public bool $mandatory = true;
+
+    /**
      * @inheritdoc
      */
     public function inputHtml(?ElementInterface $element = null, bool $static = false): ?string

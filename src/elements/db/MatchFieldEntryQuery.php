@@ -12,13 +12,10 @@ use craft\helpers\Db;
 use craft\helpers\StringHelper;
 use craftpulse\cockpit\Cockpit;
 use craftpulse\cockpit\db\Table;
-use craftpulse\cockpit\elements\MatchFieldEntry;
 use craftpulse\cockpit\models\MatchField as MatchFieldModel;
 
-use DateTime;
+use Throwable;
 use yii\base\InvalidConfigException;
-use yii\db\Connection;
-use yii\db\Expression;
 
 /**
  * Match Field Entry query
@@ -46,11 +43,17 @@ class MatchFieldEntryQuery extends ElementQuery
     public mixed $matchFieldId = null;
 
     /**
+     * @var mixed The match field ID(s) that the resulting match fields must have in Cockpit.
+     */
+    public mixed $cockpitId = null;
+
+    /**
      * @inheritdoc
+     * @throws InvalidConfigException
      */
     public function __set($name, $value)
     {
-        if ($name === 'matchField') {
+        if ($name === 'group') {
             $this->matchField($value);
         } else {
             parent::__set($name, $value);
@@ -128,8 +131,22 @@ class MatchFieldEntryQuery extends ElementQuery
     }
 
     /**
+     * Narrows the query results based on the match field types the match fields belong to, per the cockpit ID.
+     *
+     * @param mixed $value The property value
+     * @return static self reference
+     * @uses $groupId
+     */
+    public function cockpitId(mixed $value): static
+    {
+        $this->cockpitId = $value;
+        return $this;
+    }
+
+    /**
      * @inheritdoc
      * @throws InvalidConfigException
+     * @throws Throwable
      */
     protected function beforePrepare(): bool
     {
@@ -160,14 +177,14 @@ class MatchFieldEntryQuery extends ElementQuery
     /**
      * Applies the 'editable' param to the query being prepared.
      *
-     * @throws InvalidConfigException
+     * @throws InvalidConfigException|Throwable
      */
     private function _applyEditableParam(): void
     {
         if ($this->editable) {
             // Limit the query to only the category groups the user has permission to edit
             $this->subQuery->andWhere([
-                'cockpit_matchfields_entries.matchFieldId' => Cockpit::$plugin->getMatchFields()->getEditableMatchFieldIds(),
+                'cockpit_matchfield_entries.matchFieldId' => Cockpit::$plugin->getMatchFields()->getEditableMatchFieldIds(),
             ]);
         }
     }
@@ -258,7 +275,7 @@ class MatchFieldEntryQuery extends ElementQuery
         $tags = [];
         if ($this->matchFieldId) {
             foreach ($this->matchFieldId as $matchFieldId) {
-                $tags[] = "group:$matchFieldId";
+                $tags[] = "matchField:$matchFieldId";
             }
         }
         return $tags;

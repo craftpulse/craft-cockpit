@@ -49,6 +49,27 @@ class MatchField extends ActiveRecord
     }
 
     /**
+     * Returns the match fields’ structure.
+     *
+     * @return ActiveQueryInterface The relational query object.
+     */
+    public function getStructure(): ActiveQueryInterface
+    {
+        return $this->hasOne(Structure::class, ['id' => 'structureId']);
+    }
+
+    /**
+     * Returns the match fields’ fieldLayout.
+     *
+     * @return ActiveQueryInterface The relational query object.
+     */
+    public function getFieldLayout(): ActiveQueryInterface
+    {
+        return $this->hasOne(FieldLayout::class,
+            ['id' => 'fieldLayoutId']);
+    }
+
+    /**
      * Returns the associated site settings.
      *
      * @return ActiveQueryInterface The relational query object.
@@ -59,12 +80,12 @@ class MatchField extends ActiveRecord
     }
 
     /**
-     * Returns the match fields’ structure.
+     * Returns the match fields’ type.
      *
      * @return ActiveQueryInterface The relational query object.
      */
-    public function getStructure(): ActiveQueryInterface
+    public function getMatchFieldEntries(): ActiveQueryInterface
     {
-        return $this->hasOne(Structure::class, ['id' => 'structureId']);
+        return $this->hasMany(MatchFieldEntry::class, ['matchFieldId' => 'id']);
     }
 }

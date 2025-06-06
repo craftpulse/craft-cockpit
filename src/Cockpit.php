@@ -11,20 +11,9 @@
 namespace craftpulse\cockpit;
 
 use Craft;
-use craftpulse\cockpit\integrations\formie\Example;
-use Monolog\Formatter\LineFormatter;
-use Psr\Log\LogLevel;
-use Throwable;
-use craft\base\Element;
 use craft\base\Model;
 use craft\base\Plugin;
-use craft\elements\Address;
-use craft\elements\Entry;
 use craft\elements\User;
-use craft\events\DefineAttributeHtmlEvent;
-use craft\events\DefineBehaviorsEvent;
-use craft\events\DefineFieldLayoutFieldsEvent;
-use craft\events\DefineHtmlEvent;
 use craft\events\PluginEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
@@ -32,21 +21,29 @@ use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\Json;
 use craft\log\MonologTarget;
 use craft\services\Elements;
+use craft\services\Fields;
 use craft\services\Plugins;
 use craft\services\UserPermissions;
 use craft\services\Utilities;
+use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
+
 use craftpulse\cockpit\base\PluginTrait;
-use craftpulse\cockpit\behaviors\CandidateBehaviour;
+//use craftpulse\cockpit\behaviors\CandidateBehaviour;
 use craftpulse\cockpit\elements\Contact;
 use craftpulse\cockpit\elements\Department;
 use craftpulse\cockpit\elements\Job;
 use craftpulse\cockpit\elements\MatchFieldEntry;
+use craftpulse\cockpit\fields\MatchFields as MatchFieldsField;
 use craftpulse\cockpit\models\SettingsModel;
 use craftpulse\cockpit\services\ServicesTrait;
-use verbb\formie\events\RegisterIntegrationsEvent;
-use verbb\formie\services\Integrations;
+use craftpulse\cockpit\variables\CockpitVariable;
+
+use Monolog\Formatter\LineFormatter;
+use Psr\Log\LogLevel;
+use Throwable;
 use yii\base\Event;
+use yii\base\InvalidConfigException;
 use yii\base\InvalidRouteException;
 use yii\log\Dispatcher;
 use yii\log\Logger;
@@ -136,6 +133,7 @@ class Cockpit extends Plugin
             $this->_registerElements();
             $this->_registerSidebarPanels();
             $this->_registerUserFields();
+            $this->_registerFieldTypes();
         }
 
         // Register our Formie event handlers
@@ -280,6 +278,7 @@ class Cockpit extends Plugin
 
     /**
      * @return void
+     * @throws InvalidConfigException
      */
     protected function installEventHandlers(): void
     {
@@ -293,6 +292,19 @@ class Cockpit extends Plugin
                         __METHOD__
                     );
                 }
+            }
+        );
+
+        Event::on(
+            CraftVariable::class,
+            CraftVariable::EVENT_INIT,
+            function(Event $event) {
+                /** @var CraftVariable $variable */
+                $variable = $event->sender;
+                $variable->set('cockpit', [
+                    'class' => CockpitVariable::class,
+                    'viteService' => $this->vite,
+                ]);
             }
         );
 
@@ -317,12 +329,16 @@ class Cockpit extends Plugin
                 $event->rules['cockpit/settings/general'] = 'cockpit/settings/edit';
                 $event->rules['cockpit/plugins/cockpit'] = 'cockpit/settings/edit';
 
+                // Match Fields
+                $event->rules['cockpit/match-field-entries'] = 'cockpit/match-field-entries/match-field-entry-index';
+                $event->rules['cockpit/match-field-entries/<matchFieldTypeHandle:{handle}>'] = 'cockpit/match-field-entries/match-field-entry-index';
+                $event->rules['cockpit/match-field-entries/<matchFieldType:{handle}>/new'] = 'cockpit/match-field-entries/create';
+                $event->rules['cockpit/match-field-entries/<matchFieldTypeHandle:{handle}>/<elementId:\d+><slug:(?:-[^\/]*)?>'] = 'elements/edit';
+
                 // Match Field Types
                 $event->rules['cockpit/settings/matchfields'] = 'cockpit/match-fields/match-field-index';
                 $event->rules['cockpit/settings/matchfields/<matchFieldId:\d+>'] = 'cockpit/match-fields/edit-match-field';
                 $event->rules['cockpit/settings/matchfields/new'] = 'cockpit/match-fields/edit-match-field';
-                $event->rules['cockpit/match-field-entries'] = ['template' => 'cockpit/match-field-entries/_index.twig'];
-                $event->rules['cockpit/match-field-entries/<elementId:\\d+>'] = 'elements/edit';
 
                 // Contact Elements
                 $event->rules['cockpit/settings/contacts'] = 'cockpit/contacts/edit-settings';
@@ -368,7 +384,6 @@ class Cockpit extends Plugin
             }
         );
     }
-
 
     /**
      * Registers user permissions
@@ -505,6 +520,18 @@ class Cockpit extends Plugin
             Integrations::EVENT_REGISTER_INTEGRATIONS,
             function (RegisterIntegrationsEvent $event) {
                 $event->crm[] = CockpitFormie::class;
+            }
+        );
+    }
+
+    /**
+     * Registers Field Types
+     */
+    private function _registerFieldTypes(): void
+    {
+        Event::on(Fields::class, Fields::EVENT_REGISTER_FIELD_TYPES,
+            static function(RegisterComponentTypesEvent $event) {
+                $event->types[] = MatchFieldsField::class;
             }
         );
     }
