@@ -11,6 +11,10 @@
 namespace craftpulse\cockpit;
 
 use Craft;
+use Monolog\Formatter\LineFormatter;
+use Psr\Log\LogLevel;
+use Throwable;
+use craft\base\Element;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\elements\User;
@@ -29,7 +33,6 @@ use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 
 use craftpulse\cockpit\base\PluginTrait;
-//use craftpulse\cockpit\behaviors\CandidateBehaviour;
 use craftpulse\cockpit\elements\Contact;
 use craftpulse\cockpit\elements\Department;
 use craftpulse\cockpit\elements\Job;
@@ -37,16 +40,15 @@ use craftpulse\cockpit\elements\MatchFieldEntry;
 use craftpulse\cockpit\fields\MatchFields as MatchFieldsField;
 use craftpulse\cockpit\models\SettingsModel;
 use craftpulse\cockpit\services\ServicesTrait;
+use verbb\formie\events\RegisterIntegrationsEvent;
+use verbb\formie\services\Integrations;
 use craftpulse\cockpit\variables\CockpitVariable;
-
-use Monolog\Formatter\LineFormatter;
-use Psr\Log\LogLevel;
-use Throwable;
 use yii\base\Event;
 use yii\base\InvalidConfigException;
 use yii\base\InvalidRouteException;
 use yii\log\Dispatcher;
 use yii\log\Logger;
+use craftpulse\cockpit\integrations\formie\Cockpit as CockpitFormie;
 
 /**
  * Class Cockpit
@@ -135,6 +137,11 @@ class Cockpit extends Plugin
             $this->_registerFieldTypes();
         }
 
+        // Register our Formie event handlers
+        if (class_exists(Integrations::class)) {
+            $this->_registerFormieEventHandlers();
+        }
+
         // Log that the plugin has loaded
         Craft::info(
             Craft::t(
@@ -151,7 +158,7 @@ class Cockpit extends Plugin
      * Logs a message
      * @throws Throwable
      */
-    public function log(string $message, array $params = [], int $type = Logger::LEVEL_INFO): void
+    public function log(string $message, array $params = [], int $type = Logger::LEVEL_INFO, $category = 'cockpit'): void
     {
         /** @var User|null $user */
         $user = Craft::$app->getUser()->getIdentity();
@@ -164,9 +171,8 @@ class Cockpit extends Plugin
 
         $message = Craft::t('cockpit', $message . ' ' . $encoded_params, $params);
 
-        Craft::getLogger()->log($message, $type, 'cockpit');
+        Craft::getLogger()->log($message, $type, $category);
     }
-
     /**
      * @inheritdoc
      * @throws InvalidRouteException
@@ -509,6 +515,20 @@ class Cockpit extends Plugin
     }
 
     /**
+     * @return void
+     */
+    private function _registerFormieEventHandlers(): void
+    {
+        Event::on(
+            Integrations::class,
+            Integrations::EVENT_REGISTER_INTEGRATIONS,
+            function (RegisterIntegrationsEvent $event) {
+                $event->crm[] = CockpitFormie::class;
+            }
+        );
+    }
+
+    /**
      * Registers Field Types
      */
     private function _registerFieldTypes(): void
@@ -531,6 +551,19 @@ class Cockpit extends Plugin
             Craft::getLogger()->dispatcher->targets[] = new MonologTarget([
                 'name' => 'cockpit',
                 'categories' => ['cockpit'],
+                'level' => LogLevel::INFO,
+                'logContext' => false,
+                'allowLineBreaks' => true,
+                'formatter' => new LineFormatter(
+                    format: "%datetime% [%channel%.%level_name%] %message% %context%\n",
+                    dateFormat: 'Y-m-d H:i:s',
+                ),
+            ]);
+
+            // 'cockpit-applications' log target
+            Craft::getLogger()->dispatcher->targets[] = new MonologTarget([
+                'name' => 'cockpit-application',
+                'categories' => ['cockpit-application'],
                 'level' => LogLevel::INFO,
                 'logContext' => false,
                 'allowLineBreaks' => true,

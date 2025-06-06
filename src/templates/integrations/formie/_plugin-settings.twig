@@ -1,0 +1,41 @@
+{% import '_includes/forms' as forms %}
+{% import 'verbb-base/_macros' as macros %}
+
+{% set displayName = integration.displayName() %}
+
+{% set instructions %}
+    ### Step 1. Connect to the {name} API
+    Add API key with endpoint inside the Cockpit Plugin settings <a href="/cockpit/settings">Settings</a>
+{% endset %}
+
+<div class="fui-settings-block">
+    {{ instructions | t('formie', { name: displayName }) | md }}
+</div>
+
+{% if not craft.app.config.general.allowAdminChanges %}
+    <span class="warning with-icon">
+        {{ 'Integration settings can only be editable on an environment with `allowAdminChanges` enabled.' | t('formie') | md(inlineOnly=true) }}
+    </span>
+{% endif %}
+
+{#{{ macros.proxyField(fieldVariables, 'autosuggestField', {#}
+{#    label: 'Client ID' | t('formie'),#}
+{#    instructions: 'Enter your {name} {label} here.' | t('formie'),#}
+{#    name: 'clientId',#}
+{#    required: true,#}
+{#    suggestEnvVars: true,#}
+{#    value: integration.settings.clientId ?? '',#}
+{#    warning: macros.configWarning('clientId', 'formie'),#}
+{#    errors: integration.getErrors('clientId'),#}
+{#}) }}#}
+
+{#{{ macros.proxyField(fieldVariables, 'autosuggestField', {#}
+{#    label: 'Client Secret' | t('formie'),#}
+{#    instructions: 'Enter your {name} {label} here.' | t('formie'),#}
+{#    name: 'clientSecret',#}
+{#    required: true,#}
+{#    suggestEnvVars: true,#}
+{#    value: integration.settings.clientSecret ?? '',#}
+{#    warning: macros.configWarning('clientSecret', 'formie'),#}
+{#    errors: integration.getErrors('clientSecret'),#}
+{#}) }}#}
