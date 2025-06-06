@@ -73,6 +73,11 @@ class SettingsModel extends Model
      */
     public string $userGroup = 'applicants';
 
+    /**
+     * @var string the website publication match field id
+     */
+    public string $websitePublicationMatchFieldId = 'MatchFields-5904-C';
+
     // Private Properties
     // =========================================================================
 

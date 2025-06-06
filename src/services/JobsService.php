@@ -63,8 +63,6 @@ class JobsService extends Component
             return false;
         }
 
-// @TODO: only accept website publications
-
         Console::stdout('   > Publication found: ' . $publication->get('title') . PHP_EOL);
 
         $jobRequestId = $publication->get('jobRequest')['id'] ?? null;
@@ -169,6 +167,13 @@ class JobsService extends Component
      */
     public function upsertJob(Collection $publication): bool
     {
+        // Temprorary check if the publication is from the website
+        $publicationChannels = collect($publication->get('applicationInfo')['publicationChannels'] ?? []);
+        if (!$publicationChannels->contains('id', Cockpit::$plugin->getSettings()->websitePublicationMatchFieldId)) {
+            Console::stdout('   > Publication is not a website publication' . PHP_EOL, Console::FG_PURPLE);
+            return false;
+        }
+
         // set / create job
         $job = Job::find()->cockpitId($publication->get('id'))->one();
         if (!$job) {
