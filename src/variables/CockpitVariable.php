@@ -10,6 +10,7 @@
 
 namespace craftpulse\cockpit\variables;
 
+use craftpulse\cockpit\Cockpit;
 use nystudio107\pluginvite\variables\ViteVariableInterface;
 use nystudio107\pluginvite\variables\ViteVariableTrait;
 
@@ -26,4 +27,12 @@ class CockpitVariable implements ViteVariableInterface
 
     // Public Methods
     // =========================================================================
+    public function postcodeMapper(?string $postcode): ?string
+    {
+        if (!$postcode) {
+            return null;
+        }
+
+        return Cockpit::$plugin->getPostcodes()->mapPostcode($postcode);
+    }
 }
