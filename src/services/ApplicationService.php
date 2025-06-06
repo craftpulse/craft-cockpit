@@ -22,6 +22,12 @@ use Throwable;
  */
 class ApplicationService extends Component
 {
+    /**
+     * @param array $payload
+     * @return Collection|null
+     * @throws Throwable
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
     public function applyForJob(array $payload): ?Collection
     {
         $response = null;
@@ -133,6 +139,12 @@ class ApplicationService extends Component
         return $response;
     }
 
+    /**
+     * @param array $payload
+     * @return Collection|null
+     * @throws Throwable
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
     public function applyForSpontaneousJob(array $payload): ?Collection
     {
         try {
@@ -236,6 +248,10 @@ class ApplicationService extends Component
         return $response;
     }
 
+    /**
+     * @param int $id
+     * @return array|null
+     */
     private function _getCv(int $id): ?array
     {
         $asset = Asset::find()
@@ -260,6 +276,11 @@ class ApplicationService extends Component
         return $fileData;
     }
 
+    /**
+     * @param string $url
+     * @return array|null
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
     private function _getCvOnline(string $url): ?array
     {
         $client = new Client();
@@ -299,6 +320,10 @@ class ApplicationService extends Component
         return null;
     }
 
+    /**
+     * @param string|null $phone
+     * @return string|null
+     */
     private function _getPhoneRegion(?string $phone): ?string
     {
         try {

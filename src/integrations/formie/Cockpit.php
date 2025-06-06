@@ -16,36 +16,76 @@ use verbb\formie\models\IntegrationFormSettings;
 use yii\base\Exception;
 use craftpulse\cockpit\Cockpit as Plugin;
 
+/**
+ *
+ */
 class Cockpit extends Crm
 {
     /**
      * @var array|null
      */
     public ?array $applicationFieldMappings = null;
+    /**
+     * @var array|null
+     */
     public ?array $applicationCandidateFieldMappings = null;
+    /**
+     * @var array|null
+     */
     public ?array $applicationSpontaneousFieldMappings = null;
+    /**
+     * @var array|null
+     */
     public ?array $applicationSpontaneousCandidateFieldMappings = null;
 
+    /**
+     * @var bool
+     */
     public bool $mapToApplication = false;
+    /**
+     * @var bool
+     */
     public bool $mapToApplicationCandidate = false;
+    /**
+     * @var bool
+     */
     public bool $mapToSpontaneousApplication = false;
+    /**
+     * @var bool
+     */
     public bool $mapToSpontaneousCandidateApplication = false;
 
+    /**
+     * @return string
+     */
     public static function displayName(): string
     {
         return Craft::t('formie', 'Cockpit ATS');
     }
 
+    /**
+     * @return string
+     */
     public function getIconUrl(): string
     {
         return Craft::$app->getAssetManager()->getPublishedUrl("@craftpulse/cockpit/icon.svg", true);
     }
 
+    /**
+     * @return string
+     */
     public function getDescription(): string
     {
         return Craft::t('cockpit', 'This is a Cockpit application integration.');
     }
 
+    /**
+     * @return string
+     * @throws Exception
+     * @throws LoaderError
+     * @throws RuntimeError
+     * @throws SyntaxError
+     */
     public function getSettingsHtml(): string
     {
         $variables = $this->getSettingsHtmlVariables();
@@ -68,6 +108,10 @@ class Cockpit extends Crm
         return Craft::$app->getView()->renderTemplate('cockpit/integrations/formie/_form-settings', $formSettings);
     }
 
+    /**
+     * @return IntegrationFormSettings
+     * @throws \verbb\formie\errors\IntegrationException
+     */
     public function fetchFormSettings(): IntegrationFormSettings
     {
         $settings = [];
@@ -188,6 +232,15 @@ class Cockpit extends Crm
         return new IntegrationFormSettings($settings);
     }
 
+    /**
+     * @param Submission $submission
+     * @return bool
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Throwable
+     * @throws \craft\errors\InvalidFieldException
+     * @throws \verbb\formie\errors\IntegrationException
+     * @throws \yii\base\InvalidConfigException
+     */
     public function sendPayload(Submission $submission): bool
     {
         try {
@@ -288,6 +341,9 @@ class Cockpit extends Crm
         return true;
     }
 
+    /**
+     * @return bool
+     */
     public function fetchConnection(): bool
     {
         if (Plugin::$plugin->getSettings()->apiKey && Plugin::$plugin->getSettings()->apiUrl) {
